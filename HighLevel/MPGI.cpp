@@ -6,3 +6,8 @@
 #include "Interfaces/OnlineSessionInterface.h"
 #include "UObject/NoExportTypes.h"
 
+UMPGI::UMPGI()
+{
+    return;
+}
+

@@ -14,7 +14,7 @@ UENUM(BlueprintType, Blueprintable)
 enum class EGPStatus : uint8 {
 	ELobby,
 	EPrepare,
-	EInGame
+	EPlaying
 };
 
 UENUM(BlueprintType, Blueprintable)

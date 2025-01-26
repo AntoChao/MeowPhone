@@ -1,1 +1,1 @@
-#include "CommonEnum.h"
+#include "CommonStruct.h"

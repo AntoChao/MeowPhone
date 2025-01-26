@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+
 #include "CommonStruct.generated.h"
 
 USTRUCT(BlueprintType)
@@ -35,17 +36,25 @@ struct FLocalizedText
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Localization")
     FString spanishStr;
 
-    FString GetTextForCurrentLanguage(ELanguage curLanguage) const
+    FString GetTextForCurrentLanguage() const
     {
-        switch (curLanguage)
+        UMPGI* curGameInstance = Cast<UMPGI>(GetGameInstance());
+        if (curGameInstance)
         {
-        case ELanguage::EEnglish:
-            return englishStr;
-        case ELanguage::EChinese:
-            return chineseStr;
-        case ELanguage::ESpanish:
-            return spanishStr;
-        default:
+            switch (curGameInstance->getGameLanguage())
+            {
+            case ELanguage::EEnglish:
+                return englishStr;
+            case ELanguage::EChinese:
+                return chineseStr;
+            case ELanguage::ESpanish:
+                return spanishStr;
+            default:
+                return englishStr;
+            }
+        }
+        else
+        {
             return englishStr;
         }
     }
