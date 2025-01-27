@@ -41,5 +41,5 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Common Methods")
 		virtual void BeginPlay() override;
 	UFUNCTION(BlueprintCallable, Category = "Common Methods")
-		void UpdateMPProgression(int modifier) void;
+		void UpdateMPProgression(int modifier);
 };

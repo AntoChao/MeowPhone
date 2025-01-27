@@ -66,8 +66,11 @@ protected :
     UFUNCTION(BlueprintCallable, Category = "Interface Method")
         bool IsInventoryFull();
     
-// controller direct relation
+// controller/ input reaction
 protected :
+    UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
+        ECharacterAction curAction;
+
     UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
         int curSpeed;
     UPROPERTY(BlueprintReadWrite, Category = "Control Properties")

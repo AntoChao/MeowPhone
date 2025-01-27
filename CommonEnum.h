@@ -24,12 +24,7 @@ enum class ETeam : uint8 {
 };
 
 UENUM(BlueprintType, Blueprintable)
-enum class ECharacterHumanAction : uint8 {
-	ENone
-};
-
-UENUM(BlueprintType, Blueprintable)
-enum class ECharacterCatAction : uint8 {
+enum class ECharacterAction : uint8 {
 	ENone
 };
 

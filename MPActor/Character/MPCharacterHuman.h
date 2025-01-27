@@ -13,49 +13,31 @@ class AMPCharacterCat : public AMPCharacter
 public :
     AMPCharacterHuman();
 
-// ability
-protected :
-    UPROPERTY(BlueprintReadWrite, Category = "Ability Properties")
-        TArray<EAbility> initABilities;
 
-    UPROPERTY(BlueprintReadWrite, Category = "Ability Properties")
-        TArray<UAbility> allABilities;
-
-    UFUNCTION(BlueprintCallable, Category = "Interface Method")
-        void InitializeAllAbility();
-        
 // interactable interface
-public :
+public:
     UFUNCTION(BlueprintCallable, Category = "Interface Method")
-        virtual bool IsInteractable(AMPCharacter* player) override;
+    virtual bool IsInteractable(AMPCharacter* player) override;
 
     UFUNCTION(BlueprintCallable, Category = "Interface Method")
-        virtual FLocalizedText GetInteractHintText() override;
+    virtual FLocalizedText GetInteractHintText() override;
 
     UFUNCTION(BlueprintCallable, Category = "Interface Method")
-        virtual void BeInteracted(AMPCharacter* player) override;
+    virtual void BeInteracted(AMPCharacter* player) override;
 
-// controller direct relation
-protected :
+// controller/ input reaction
+protected:
     UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
-        ECatAction curAction;
+    bool isHoldingCat;
+    UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
+    AMPCharacterCat* catHolding;
 
-    UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
-        bool isBeingHolded;
-    UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
-        AMPCharacterHuman* humanHolding;
-    UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
-        float holdTotalTime;
-    UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
-        float curHoldTime;
-    UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
-        float curHoldPercentage;
-    
-public :
+public:
     UFUNCTION(BlueprintCallable, Category = "Interface Method")
-        virtual void Interact() override;
+    virtual void Interact() override;
     UFUNCTION(BlueprintCallable, Category = "Control Method")
-        virtual void InteractHuman() override;
+    virtual void InteractHuman() override;
     UFUNCTION(BlueprintCallable, Category = "Control Method")
-        virtual void InteractCat() override;
+    virtual void InteractCat() override;
+
 }

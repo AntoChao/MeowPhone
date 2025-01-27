@@ -1,5 +1,5 @@
 #include "MPGM.h"
-#include "MPGI"
+#include "MPGI.h"
 
 AMPGM:AMPGM()
 {
@@ -8,5 +8,6 @@ AMPGM:AMPGM()
 
 AMPGM:BeginPlay()
 {
-    UMPGI* mpGameInstance = Cast<UMPGI>(GetGameInstance());
+    Super::BeginPlay();
+    mpGameInstance = Cast<UMPGI>(GetGameInstance());
 }
