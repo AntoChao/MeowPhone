@@ -2,15 +2,15 @@
 
 #include "CoreMinimal.h"
 #include "MPFactory.h"
-#include "MPFactoryHuman.generated.h"
+#include "MPFactoryCat.generated.h"
 
 UCLASS(minimalapi)
-class MEOWPHONE_API UMPFactoryHuman : public UMPFactory
+class MEOWPHONE_API UMPFactoryCat : public UMPFactory
 {
 	GENERATED_BODY()
 	
 public:
-	UMPFactoryHuman();
+	UMPFactoryCat();
 
 public :
 	UFUNCTION(BlueprintCallable, Category = "Common Methods")

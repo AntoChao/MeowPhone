@@ -1,24 +1,59 @@
 #include "MPItem.h"
 
+#include "TimeManager.h"
+#include "Components/StaticMeshComponent.h"
+#include "Components/BoxComponent.h"
+#include "Components/AudioComponent.h"
+
+#include "../../CommonStruct.h"
+
 AMPItem::AMPItem()
 {
-	
+	bReplicates = true;
+
+	USceneComponent* root = CreateDefaultSubobject<USceneComponent>(TEXT("RootComponent"));
+	SetRootComponent(root);
+
+	itemBodyMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ItemMesh"));
+
+    itemBodyMesh->SetupAttachment(RootComponent);
+    itemBodyMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+    itemBodyMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
+
+	itemCollision = CreateDefaultSubobject<UBoxComponent>(TEXT("ItemCollision"));
+    itemCollision->SetupAttachment(RootComponent);
+    itemCollision->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+    itemCollision->SetCollisionObjectType(ECC_WorldDynamic);
+    itemCollision->SetCollisionResponseToAllChannels(ECR_Overlap);
+
+    itemAudioComp = CreateDefaultSubobject<UAudioComponent>(TEXT("ItemAudio"));
+    itemAudioComp->SetupAttachment(RootComponent);
 }
 
 // interactable interface
 bool AMPItem::IsInteractable(AMPCharacter* player)
 {
-	return;
+	return !isPickedUp;
 }
 
-FLocalizedText AMPItem::GetInteractHintText() 
+FLocalizedText AMPItem::GetInteractHintText(AMPCharacter* player) 
 {
-	return;
+	if (IsInteractable(player))
+	{
+		return interactableText;
+	}
+	else 
+	{
+		return uninteractableText;
+	}
 }
 
 void AMPItem::BeInteracted(AMPCharacter* player)
 {
-	return;
+	if (player)
+	{
+		player->PickupAnItem(this);
+	}	
 }
 
 // initialize / interact
@@ -29,30 +64,173 @@ void AMPItem::BeInitialized(AMPCharacter* player)
 
 void AMPItem::BePickedUp(AMPCharacter* player)
 {
-	return;
+	isPickedUp = true;
+	owner = player;
+
+	if (itemBodyMesh)
+    {
+        itemBodyMesh->SetVisibility(false);
+		itemBodyMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    }
+
+    if (itemCollision)
+    {
+        itemCollision->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    }
 }
 void AMPItem::BeDroped(AMPCharacter* player)
 {
-	return;
+	isPickedUp = false;
+	
+	if (itemBodyMesh)
+    {
+        itemBodyMesh->SetVisibility(true);
+		itemBodyMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+    }
+
+    if (itemCollision)
+    {
+        itemCollision->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+    }
 }
+
 // usage
-void AMPItem::BeUsed(AMPCharacter* player, AActor* targetActor)
+void AMPItem::BeUsed(AActor* targetActor)
 {
-	return;
+	if (IsAbleToBeUsed(player, targetActor))
+	{
+		switch (itemType)
+		{
+			case EItemType::EDirectUse:
+			{
+				ApplyUsageEffectDirect(targetActor);
+				EndUsageEffectDirect(targetActor); 
+				break;
+			}
+			case EItemType::EDurationUse:
+			{
+				StartUsageEffectDuration(targetActor);
+				break;
+			}	
+			default:
+				break;
+		}
+	}
 }
-void AMPItem::ApplyUsageEffect(AMPCharacter* player, AActor* targetActor)
+bool AMPItem::IsAbleToBeUsed(AActor* targetActor)
 {
-	return;
+	return !isBeingUse && !isInCooldown;
+}  
+
+/* ApplyUsageEffectDirect(AActor* targetActor)
+*	no need to save targetActor
+*/
+void AMPItem::ApplyUsageEffectDirect(AActor* targetActor)
+{
+	// effect ...
 }
-void AMPItem::ExpireUsageEffect(AMPCharacter* player, AActor* targetActor)
+
+void AMPItem::EndUsageEffectDirect(AActor* targetActor)
 {
-	return;
+	if (isSingleUse)
+	{
+		if (owner)
+		{
+			owner->DeleteItem(this);
+		}
+	}
+	else 
+	{
+		StartCooldown();
+	}
 }
-void AMPItem::StartCooldown(AMPCharacter* player, AActor* targetActor)
+
+
+void AMPItem::StartUsageEffectDuration(AActor* targetActor)
 {
-	return;
+	isBeingUse = true;
+	targetActorSaved = targetActor;
+	curUsageCountDown = totalUsageDuration;
+
+	ApplyUsageEffectDuration();
 }
-void AMPItem::EndCooldown(AMPCharacter* player, AActor* targetActor)
+
+void AMPItem::ApplyUsageEffectDuration()
 {
-	return;
+	ApplyUsageEffectDurationEffect();
+	ApplyUsageEffectDurationCountdown();
+}
+void AMPItem::ApplyUsageEffectDurationEffect()
+{
+	// effect ...
+}
+void AMPItem::ApplyUsageEffectDurationCountdown()
+{
+	if (curUsageCountDown > 0)
+	{
+		UWorld* serverWorld = GetWorld();
+		if (serverWorld)
+		{	
+			curUsageCountDown -= 1;
+
+			serverWorld->GetTimerManager().ClearTimer(usageTimerHandle);
+			FTimerDelegate usageTimerDel;
+			usageTimerDel.BindUFunction(this, FName("ApplyUsageEffectDuration"));
+			serverWorld->GetTimerManager().SetTimer(usageTimerHandle, 
+				usageTimerDel, 1, false);
+		}
+	}
+	else 
+	{
+		ExpireUsageEffectDuration();
+	}
+}
+
+void AMPItem::ExpireUsageEffectDuration()
+{
+	isBeingUse = false;
+	targetActorSaved = nullptr;
+
+	if (isSingleUse)
+	{
+		if (owner)
+		{
+			owner->DeleteItem(this);
+		}
+	}
+	else 
+	{
+		StartCooldown();
+	}
+}
+void AMPItem::StartCooldown()
+{
+	isInCooldown = true;
+	curCooldownCountDown = totalCooldown;
+	CooldownCountDown();
+}
+void AMPItem::CooldownCountDown()
+{
+	if (curCooldownCountDown > 0)
+	{
+		if (serverWorld)
+		{	
+			curCooldownCountDown -=1;
+
+			UWorld* serverWorld = GetWorld();
+			serverWorld->GetTimerManager().ClearTimer(usageCooldownTimerHandle);
+			FTimerDelegate usageCooldownTimerDel;
+			usageCooldownTimerDel.BindUFunction(this, FName("CooldownCountDown"));
+			serverWorld->GetTimerManager().SetTimer(usageCooldownTimerHandle, 
+				usageCooldownTimerDel, totalCooldown, false);
+		}
+	}
+	else 
+	{
+		EndCooldown();
+	}
+}
+void AMPItem::EndCooldown()
+{
+	isInCooldown = false;
 }

@@ -11,4 +11,22 @@ class MEOWPHONE_API UMPFactory : public UObject
 	
 public:
 	UMPFactory();
+
+// common
+protected:
+	FActorSpawnParameters spawnParams
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Common Methods")
+		UWorld* gameWorld;
+
+public:
+	UFUNCTION(BlueprintCallable, Category = "Common Methods")
+		void SetGameWorld(UWorld* aWorld);
+
+	UFUNCTION(BlueprintCallable, Category = "Common Methods")
+		virtual AActor* SpawnMPActor(int actorCode, FVector actorLocation, FRotator actorRotation);
+
+	UFUNCTION(BlueprintCallable, Category = "Common Methods")
+		virtual UObject* SpawnMPObject(AActor* owner, int actorCode);
+	
 };

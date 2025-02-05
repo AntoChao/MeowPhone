@@ -19,16 +19,16 @@ public:
 
 // common GS properties
 public:
-	UPROPERTY(BlueprintReadWrite, Category = "Common Properties")
+	UPROPERTY(Replicated, BlueprintReadWrite, Category = "Common Properties")
 		TArray<AMPCharacterHuman*> allHumans;
 
-	UPROPERTY(BlueprintReadWrite, Category = "Common Properties")
+	UPROPERTY(Replicated, BlueprintReadWrite, Category = "Common Properties")
 		TArray<AMPCharacterCat*> allCats;
 	
-	UPROPERTY(BlueprintReadWrite, Category = "Common Properties")
+	UPROPERTY(Replicated, BlueprintReadWrite, Category = "Common Properties")
 		TArray<AMPItem*> allItems;
 	
-	UPROPERTY(BlueprintReadWrite, Category = "Common Properties")
+	UPROPERTY(Replicated, BlueprintReadWrite, Category = "Common Properties")
 		TArray<AMPEnvActor*> allEnvActors;
 
 	UPROPERTY(BlueprintReadWrite, Category = "Common Properties")

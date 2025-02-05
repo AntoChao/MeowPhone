@@ -14,7 +14,22 @@ UENUM(BlueprintType, Blueprintable)
 enum class EGPStatus : uint8 {
 	ELobby,
 	EPrepare,
-	EPlaying
+	EGameplay
+};
+
+UENUM(BlueprintType, Blueprintable)
+enum class EHUDType : uint8 {
+	EInit,
+	EOption,
+	ESessionGeneral,
+	ECredit,
+	ECreateSession,
+	ESearchSession,
+	ELobby,
+	EGameplayHuman,
+	EGameplayCat,
+	EMenu,
+	EEnd
 };
 
 UENUM(BlueprintType, Blueprintable)
@@ -24,8 +39,43 @@ enum class ETeam : uint8 {
 };
 
 UENUM(BlueprintType, Blueprintable)
-enum class ECharacterAction : uint8 {
+enum class ECatRace : uint8 {
+	ECat1,
+	ECat2,
+	EDiedCat
+};
+
+UENUM(BlueprintType, Blueprintable)
+enum class EHumanProfession : uint8 {
+	EHuman1,
+	EHuman2,
+	EDiedHuman
+};
+/**/
+UENUM(BlueprintType, Blueprintable)
+enum class EHumanAction : uint8 {
 	ENone
+};
+
+UENUM(BlueprintType, Blueprintable)
+enum class ECatAction : uint8 {
+	EStraggle,
+	EInteractHuman,
+	EInteractCat,
+	EInteracEnvActor,
+	EPickupItem,
+	ENone
+};
+
+UENUM(BlueprintType, Blueprintable)
+enum class EEnvActor : uint8 {
+	ENone
+};
+
+UENUM(BlueprintType, Blueprintable)
+enum class EEnvActorType : uint8 {
+	EDirectInteract,
+	EDurationInteract
 };
 
 UENUM(BlueprintType, Blueprintable)
@@ -34,6 +84,17 @@ enum class EItem : uint8 {
 };
 
 UENUM(BlueprintType, Blueprintable)
+enum class EItemType : uint8 {
+	EDirectUse,
+	EDurationUse
+};
+
+UENUM(BlueprintType, Blueprintable)
 enum class EAbility : uint8 {
 	ENone
+};
+
+UENUM(BlueprintType, Blueprintable)
+enum class EAICatPersonality : uint8 {
+	ECat1
 };

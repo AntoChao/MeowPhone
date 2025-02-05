@@ -2,19 +2,19 @@
 
 #include "CoreMinimal.h"
 #include "MPFactory.h"
-#include "MPFactoryHuman.generated.h"
+#include "MPFactoryEnvironment.generated.h"
 
 UCLASS(minimalapi)
-class MEOWPHONE_API UMPFactoryHuman : public UMPFactory
+class MEOWPHONE_API UMPFactoryEnvironment : public UMPFactory
 {
 	GENERATED_BODY()
 	
 public:
-	UMPFactoryHuman();
+	UMPFactoryEnvironment();
 
 public :
 	UFUNCTION(BlueprintCallable, Category = "Common Methods")
-		virtual AActor* SpawnMPActor(int actorCode, FVector actorLocation, FRotator actorRotation) override;
+		virtual AActor* SpawnMPActor(int actorCode, FVector actorLoEnvironmention, FRotator actorRotation) override;
 
 	UFUNCTION(BlueprintCallable, Category = "Common Methods")
 		virtual UObject* SpawnMPObject(AActor* owner, int actorCode) override;

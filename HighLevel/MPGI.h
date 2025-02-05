@@ -4,7 +4,7 @@
 #include "Engine/GameInstance.h"
 #include "MPGI.generated.h"
 
-enum ELanguage;
+enum class ELanguage : uint8;
 struct FSessionInfo;
 class FOnlineSessionSearch;
 class OnlineSessionPtr;
@@ -96,10 +96,10 @@ protected:
 	FOnDestroySessionCompleteDelegate destroySessionCompleteDelegate;
 
 	FDelegateHandle createSessionsCompletedHandle;
-	FDelegateHandle searchForSessionsCompletedDelegate;
-	FDelegateHandle joinSessionCompletedDelegate;
-	FDelegateHandle endSessionCompletedDelegate;
-	FDelegateHandle destroySessionCompleteDelegate
+	FDelegateHandle searchForSessionsCompletedHandle;
+	FDelegateHandle joinSessionCompletedHandle;
+	FDelegateHandle endSessionCompletedHandle;
+	FDelegateHandle destroySessionCompleteHandle;
 
 	UFUNCTION(BlueprintCallable, Category = "Session Complete Methods")
 		void HostSessionCompleted(FName sessionName, bool hostCompleted);
@@ -111,6 +111,9 @@ protected:
 		void JoinSessionCompleted(FName sessionName);
 
 	UFUNCTION(BlueprintCallable, Category = "Session Complete Methods")
+		bool TravelToSession(FName sessionName)
+	
+	UFUNCTION(BlueprintCallable, Category = "Session Complete Methods")
 		void EndSessionCompleted(FName sessionName, bool endCompleted);
 
 	UFUNCTION(BlueprintCallable, Category = "Session Complete Methods")
@@ -118,7 +121,9 @@ protected:
 
 // getter && setter
 public:
-	UFUNCTION(BlueprintCallable, Category = "Session Complete Methods")
+	UFUNCTION(BlueprintCallable, Category = " getter && setter")
 		ELanguage getGameLanguage();
 
+	UFUNCTION(BlueprintCallable, Category = " getter && setter")
+		FName getCurPlayerName();
 };

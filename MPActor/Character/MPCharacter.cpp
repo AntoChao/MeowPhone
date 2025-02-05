@@ -1,107 +1,306 @@
 #include "MPCharacter.h"
 
-AMPCHaracter::AMPCHaracter()
+#include "Camera/CameraComponent.h"
+#include "GameFramework/SpringArmComponent.h"
+
+#include "../../CommonEnum.h"
+#include "../../CommonStruct.h"
+#include "../Item/MPItem.h"
+
+AMPCharacter::AMPCharacter()
 {
-	return;
+	PrimaryActorTick.bCanEverTick = true;
+
+	bReplicates = true;
+
+	GetCapsuleComponent()->InitCapsuleSize(55.f, 96.0f);
 }
 
 // common class methods
-void AMPCHaracter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+void AMPCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
-	return;
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	// DOREPLIFETIME(AMPCharacter, selectedMaterial);
 }
 
-void AMPCHaracter::BeginPlay()
+void AMPCharacter::BeginPlay()
 {
-	return;
+	Super::BeginPlay();
+
+	InitializeItems();
 }
 
-void AMPCHaracter::Tick(float deltaTime)
+void AMPCharacter::Tick(float deltaTime)
 {
-	return;
+	Super::Tick(DeltaTime);
+
+	Detect();
 }
 
 // detect 
-void AMPCHaracter::Detect()
-{
-	return;
-}
 
-void AMPCHaracter::DetectReaction()
+void AMPCharacter::Detect()
 {
-	return;
+	if (IsValid(characterCamera)) {
+		detectStart = characterCamera->GetComponentLocation();
+		detectDirection = characterCamera->GetForwardVector();
+		detectEnd = ((detectDirection * detectDistance) + detectStart);
+		
+		GetWorld()->LineTraceSingleByChannel(detectHit, detectStart, detectEnd, ECC_Visibility, DefaultComponentQueryParams, DefaultResponseParam);
+		DetectReaction();
+	}
+}
+void AMPCharacter::DetectReaction()
+{
+	if (detectHit.bBlockingHit)
+	{
+		detectedActor = detectHit.GetActor();
+		UClass* detectedClass = detectedActor->GetClass();
+
+		if (detectedActor && detectedClass->ImplementsInterface(UMPInteractable::StaticClass()))
+		{
+			// safely retrieve the interface
+            IMPInteractable* detectedInterface = Cast<IMPInteractable>(detectedActor);
+            if (detectedInterface)
+            {
+                // create TScriptInterface for interaction
+                TScriptInterface<IMPInteractable> scriptInterface;
+				scriptInterface.SetObject(detectedActor);
+				scriptInterface.SetInterface(detectedInterface);
+
+				// update inspected actor
+				detectInteractableActor = scriptInterface;
+
+				ableToInteractCurrently = true;
+				curDetectHintText = detectInteractableActor->GetInteractHintText(this);
+            }
+			else 
+			{
+				ableToInteractCurrently = false;
+				curDetectHintText = invalidDetectHintText;
+			}
+		}
+		else 
+		{
+			ableToInteractCurrently = false;
+			curDetectHintText = invalidDetectHintText;
+		}
+	}
+	else 
+	{
+		ableToInteractCurrently = false;
+		curDetectHintText = invalidDetectHintText;
+	}
 }
 
 // inventory
-void AMPCHaracter::InitializeItems()
+void AMPCharacter::InitializeItems()
 {
-	return;
+	inventory.Empty();
+	for (EMPItem eachItemTag : initItems)
+	{
+		AddAnItem(eachItemTag);
+	}
 }
 
-bool AMPCHaracter::IsInventoryFull()
+void AMPCharacter::AddAnItem(EMPItem aItemTag)
 {
-	return;
+	if (IsAbleToAddItem())
+	{
+		AGameModeBase* curGameMode = UGameplayStatics::GetGameMode(GetWorld());
+		AMPGMGameplay* curMPGameMode = Cast<AMPGMGameplay>(curGameMode);
+
+		if (curMPGameMode)
+		{
+			AMPItem* newItem = curMPGameMode->SpawnItem(this, aItemTag, GetActorLocation(), GetActorRotation());
+			if (newItem)
+			{
+				newItem->BeInitialized(this);
+				newItem->BePickedUp(this);
+				
+				inventory.Add(newItem);
+			}
+		}
+	}
+}
+
+bool AMPCharacter::IsAbleToAddItem()
+{
+	return !IsInventoryFull();
+}
+
+bool AMPCharacter::IsInventoryFull()
+{
+	return inventoryCapacity == inventory.Num();
+}
+
+void AMPCharacter::PickupAnItem(AMPItem* aItem)
+{
+	if (IsAbleToAddItem())
+	{
+		aItem->BePickedUp(this);
+		
+		inventory.Add(aItem);
+	}
+}
+void AMPCharacter::DeleteItem(AMPItem* itemToDelete)
+{
+	bool deleteItemFound = false;
+	int deleteItemIndex = 0;
+	
+	for (int i = 0; i < inventory.Num(); i++)
+	{
+		if (inventory[i] == itemToDelete)
+		{
+			deleteItemFound = true;
+			deleteItemIndex = i;
+		}
+	}
+
+	if (deleteItemFound)
+	{
+		inventory[deleteItemIndex]->Destroy();
+		// or itemToDelete->Destroy();
+		inventory[deleteItemIndex] = nullptr;
+	}
 }
 
 // controller/ input reaction
-void AMPCHaracter::PossessedBy(AController* newController)
+void AMPCharacter::PossessedBy(AController* newController)
 {
 	return;
 }
 
-
-void AMPCHaracter::Look(FVector direction)
+bool AMPCharacter::CheckIfIsAbleToLook()
 {
-	return;
+	return true;
 }
-void AMPCHaracter::Move(FVector direction)
+bool AMPCharacter::CheckIfIsAbleToMove()
 {
-	return;
+	return true;
 }
-
-void AMPCHaracter::Run()
+void AMPCharacter::UpdateSpeed()
 {
-	return;
+	if (GetCharacterMovement())
+	{
+		GetCharacterMovement()->MaxWalkSpeed = curSpeed;
+	}
 }
-void AMPCHaracter::RunStop()
+bool AMPCharacter::CheckIfIsAbleToInteract()
 {
-	return;
-}
-void AMPCHaracter::Jump()
-{
-	return;
+	return true;
 }
 
-void AMPCHaracter::Interact()
+void AMPCharacter::Look(FVector direction)
 {
-	return;
+	if (isAbleToLook)
+	{
+		AddControllerYawInput(direction.X * GetWorld()->GetDeltaSeconds());
+		AddControllerPitchInput(-1 * direction.Y * GetWorld()->GetDeltaSeconds());
+	}
 }
-void AMPCHaracter::InteractEnvActor()
+void AMPCharacter::Move(FVector direction)
 {
-	return;
-}
-void AMPCHaracter::InteractPickUpItem()
-{
-	return;
-}
-void AMPCHaracter::InteractHuman()
-{
-	return;
-}
-void AMPCHaracter::InteractCat()
-{
-	return;
+	if (isAbleToMove)
+	{
+		AddMovementInput(GetActorForwardVector(), direction.Y);
+		AddMovementInput(GetActorRightVector(), direction.X);
+	}
 }
 
-void AMPCHaracter::SelectItem(int itemIndex)
+void AMPCharacter::Run()
 {
-	return;
+	if (isAbleToRun)
+	{
+		isRunning = true;
+		curSpeed = moveSpeed + runSpeed + extraSpeed;
+		UpdateSpeed();
+	}
 }
-void AMPCHaracter::UseCurItem()
+void AMPCharacter::RunStop()
 {
-	return;
+	isRunning = false;
+	curSpeed = moveSpeed + extraSpeed;
+	UpdateSpeed();
 }
-void AMPCHaracter::DropCurItem()
+void AMPCharacter::Jump()
 {
-	return;
+	if (isAbleToJump)
+	{
+		Jump();
+	}
+}
+void AMPCharacter::JumpEnd()
+{
+	StopJumping();
+}
+
+void AMPCharacter::SelectItem(int itemIndex)
+{
+	if (curHoldingItemIndex == itemIndex)
+	{
+		// double select -> unselect
+		UnselectCurItem();
+	}
+	else 
+	{
+		if (itemIndex >= 0 && itemIndex < inventory.Num())
+		{
+			curHoldingItemIndex = itemIndex;
+			curHoldingItem = inventory[itemIndex];
+		}
+		else
+		{
+			UnselectCurItem();
+		}
+	}
+}
+void AMPCharacter::UnselectCurItem()
+{
+	curHoldingItemIndex = -1;
+	curHoldingItem = nullptr;
+}
+void AMPCharacter::UseCurItem()
+{
+	if (curHoldingItem)
+	{
+		if (IsAbleToUseCurItem())
+		{
+			curHoldingItem->BeUsed(this, detectedActor);
+		}
+	}
+}
+bool AMPCharacter::IsAbleToUseCurItem()
+{
+	if (curHoldingItem)
+	{
+		return curHoldingItem->IsAbleToBeUsed(this, detectedActor);
+	}
+
+	return false;
+}
+void AMPCharacter::DropCurItem()
+{
+	if (curHoldingItem)
+	{
+		curHoldingItem->BeDroped(this);
+		inventory[curHoldingItemIndex] = nullptr;
+		curHoldingItemIndex = -1;
+	}
+}
+
+ETeam AMPCharacter::GetCharacterTeam()
+{
+	AMPControllerPlayer* mpPC = Cast<AMPControllerPlayer>(GetController());
+	if (mpPC)
+	{
+		AMPPlayerState* mpPS = Cast<AMPPlayerState>(mpPC->GetPlayerState());
+		if (mpPS)
+		{
+			return playerTeam;
+		}		
+	}
+
+	return ETeam::ECat;
 }
