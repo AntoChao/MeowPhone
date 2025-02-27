@@ -1,6 +1,6 @@
 #include "MPItem.h"
 
-#include "TimeManager.h"
+#include "TimerManager.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/BoxComponent.h"
 #include "Components/AudioComponent.h"
@@ -36,7 +36,7 @@ bool AMPItem::IsInteractable(AMPCharacter* player)
 	return !isPickedUp;
 }
 
-FLocalizedText AMPItem::GetInteractHintText(AMPCharacter* player) 
+FText AMPItem::GetInteractHintText(AMPCharacter* player) 
 {
 	if (IsInteractable(player))
 	{
@@ -65,7 +65,7 @@ void AMPItem::BeInitialized(AMPCharacter* player)
 void AMPItem::BePickedUp(AMPCharacter* player)
 {
 	isPickedUp = true;
-	owner = player;
+	itemOwner = player;
 
 	if (itemBodyMesh)
     {
@@ -97,7 +97,7 @@ void AMPItem::BeDroped(AMPCharacter* player)
 // usage
 void AMPItem::BeUsed(AActor* targetActor)
 {
-	if (IsAbleToBeUsed(player, targetActor))
+	if (IsAbleToBeUsed(targetActor))
 	{
 		switch (itemType)
 		{
@@ -134,9 +134,9 @@ void AMPItem::EndUsageEffectDirect(AActor* targetActor)
 {
 	if (isSingleUse)
 	{
-		if (owner)
+		if (itemOwner)
 		{
-			owner->DeleteItem(this);
+			itemOwner->DeleteItem(this);
 		}
 	}
 	else 
@@ -193,9 +193,9 @@ void AMPItem::ExpireUsageEffectDuration()
 
 	if (isSingleUse)
 	{
-		if (owner)
+		if (itemOwner)
 		{
-			owner->DeleteItem(this);
+			itemOwner->DeleteItem(this);
 		}
 	}
 	else 
@@ -213,15 +213,16 @@ void AMPItem::CooldownCountDown()
 {
 	if (curCooldownCountDown > 0)
 	{
+		UWorld* serverWorld = GetWorld();
+
 		if (serverWorld)
 		{	
 			curCooldownCountDown -=1;
-
-			UWorld* serverWorld = GetWorld();
-			serverWorld->GetTimerManager().ClearTimer(usageCooldownTimerHandle);
+	
+			serverWorld->GetTimerManager().ClearTimer(cooldownTimerHandle);
 			FTimerDelegate usageCooldownTimerDel;
 			usageCooldownTimerDel.BindUFunction(this, FName("CooldownCountDown"));
-			serverWorld->GetTimerManager().SetTimer(usageCooldownTimerHandle, 
+			serverWorld->GetTimerManager().SetTimer(cooldownTimerHandle,
 				usageCooldownTimerDel, totalCooldown, false);
 		}
 	}
@@ -233,4 +234,9 @@ void AMPItem::CooldownCountDown()
 void AMPItem::EndCooldown()
 {
 	isInCooldown = false;
+}
+
+void AMPItem::GetEliminated()
+{
+	Destroy();
 }

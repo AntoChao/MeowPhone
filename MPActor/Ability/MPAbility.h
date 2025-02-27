@@ -1,11 +1,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Object.h"
+#include "UObject/Object.h"
 
-#include "Components/TimelineComponent.h"
+#include "TimerManager.h"
 
-#include "MPItem.generated.h"
+#include "MPAbility.generated.h"
 
 enum class EAbility : uint8;
 class AMPCharacterCat;
@@ -16,74 +16,83 @@ class UMPAbility : public UObject
 {
     GENERATED_BODY()
 
-public :
+public:
     UMPAbility();
 
-// common Ability properties
-protected :
-    UPROPERTY(BlueprintReadWrite, Category = "Common Properties")
-        EAbility abilityTag;
+    // common Ability properties
+protected:
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Common Properties")
+    EAbility abilityTag;
 
-public :
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Common Properties")
+    AMPCharacterCat* abilityOwner;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Common Properties")
+    UWorld* ownerWorld;
+
+public:
     /* BeInitialized
     * this->SetOwner(player);
     */
-    UFUNCTION(BlueprintCallable, Category = "Usage Method")
-        void BeInitialized(AMPCharacterCat* player);
+    UFUNCTION(BlueprintCallable, Category = "Common Method")
+    void BeInitialized(AMPCharacterCat* player);
 
-// usage
-protected :
+    UFUNCTION(BlueprintCallable, Category = "Common Method")
+    EAbility GetAbilityTag();
+
+    // usage
+protected:
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Usage Properties")
+    EAbilityType abilityType;
+
     UPROPERTY(BlueprintReadWrite, Category = "Usage Properties")
-        bool isBeingUsed;
-    
+    bool isBeingUse = false;
     UPROPERTY(BlueprintReadWrite, Category = "Usage Properties")
-        bool isBeingUse = false;
-    UPROPERTY(BlueprintReadWrite, Category = "Usage Properties")
-        AActor* targetActorSaved = nullptr;
-    UPROPERTY(BlueprintReadWrite, Category = "Usage Properties")
-        float totalUsageDuration;
+    AActor* targetActorSaved = nullptr;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Usage Properties")
+    float totalUsageDuration;
     UPROPERTY(BlueprintReadWrite, Category = "Cooldown Properties")
-        float curUsageCountDown;
-    UPROPERTY(BlueprintReadWrite, Category = "Usage Properties")
-        FTimeline usageTimerHandle;
+    float curUsageCountDown;
+    
+    FTimerHandle usageTimerHandle;
 
     // cooldown
     UPROPERTY(BlueprintReadWrite, Category = "Cooldown Properties")
-        bool isInCooldown;
+    bool isInCooldown;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cooldown Properties")
+    float totalCooldown;
     UPROPERTY(BlueprintReadWrite, Category = "Cooldown Properties")
-        float totalCooldown;
-    UPROPERTY(BlueprintReadWrite, Category = "Cooldown Properties")
-        float curCooldownCountDown;
-    UPROPERTY(BlueprintReadWrite, Category = "Cooldown Properties")
-        FTimeline cooldownTimerHandle;
+    float curCooldownCountDown;
+    
+    FTimerHandle cooldownTimerHandle;
 
-public :
+public:
     UFUNCTION(BlueprintCallable, Category = "Usage Method")
-        void BeUsed(AActor* targetActor);
+    void BeUsed(AActor* targetActor);
     UFUNCTION(BlueprintCallable, Category = "Usage Method")
-        bool IsAbleToBeUsed(AActor* targetActor);
+    bool IsAbleToBeUsed(AActor* targetActor);
 
     UFUNCTION(BlueprintCallable, Category = "Usage Method")
-        virtual void ApplyUsageEffectDirect(AActor* targetActor);
+    virtual void ApplyUsageEffectDirect(AActor* targetActor);
     UFUNCTION(BlueprintCallable, Category = "Interface Method")
-        void EndUsageEffectDirect(AActor* targetActor);  
+    void EndUsageEffectDirect(AActor* targetActor);
 
     UFUNCTION(BlueprintCallable, Category = "Usage Method")
-        void StartUsageEffectDuration(AActor* targetActor);    
+    void StartUsageEffectDuration(AActor* targetActor);
     UFUNCTION(BlueprintCallable, Category = "Usage Method")
-        void ApplyUsageEffectDuration();
+    void ApplyUsageEffectDuration();
     UFUNCTION(BlueprintCallable, Category = "Usage Method")
-        virtual void ApplyUsageEffectDurationEffect();
+    virtual void ApplyUsageEffectDurationEffect();
     UFUNCTION(BlueprintCallable, Category = "Usage Method")
-        void ApplyUsageEffectDurationCountdown();
+    void ApplyUsageEffectDurationCountdown();
     UFUNCTION(BlueprintCallable, Category = "Usage Method")
-        void ExpireUsageEffectDuration();
+    void ExpireUsageEffectDuration();
 
     UFUNCTION(BlueprintCallable, Category = "Usage Method")
-        void StartCooldown();
+    void StartCooldown();
     UFUNCTION(BlueprintCallable, Category = "Usage Method")
-        void CooldownCountDown();
+    void CooldownCountDown();
     UFUNCTION(BlueprintCallable, Category = "Usage Method")
-        void EndCooldown();
+    void EndCooldown();
 
-}
+};

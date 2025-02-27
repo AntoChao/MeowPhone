@@ -9,35 +9,35 @@ enum class EHumanAction : uint8;
 class AMPCharacterCat;
 
 UCLASS(BlueprintType, Blueprintable)
-class AMPCharacterCat : public AMPCharacter
+class AMPCharacterHuman : public AMPCharacter
 {
     GENERATED_BODY()
 
-public :
+public:
     AMPCharacterHuman();
 
 
-// interactable interface
-protected :
-    UPROPERTY(BlueprintReadWrite, Category = "Interface Properties")
-    FLocalizedText catInteractHintText;
-    UPROPERTY(BlueprintReadWrite, Category = "Interface Properties")
-    FLocalizedText uninteractableCatHintText;
+    // interactable interface
+protected:
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interface Properties")
+    FText catInteractHintText;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interface Properties")
+    FText uninteractableCatHintText;
 
 public:
     UFUNCTION(BlueprintCallable, Category = "Interface Method")
     virtual bool IsInteractable(AMPCharacter* player) override;
 
     UFUNCTION(BlueprintCallable, Category = "Interface Method")
-    virtual FLocalizedText GetInteractHintText(AMPCharacter* player) override;
+    virtual FText GetInteractHintText(AMPCharacter* player) override;
 
     UFUNCTION(BlueprintCallable, Category = "Interface Method")
     virtual void BeInteracted(AMPCharacter* player) override;
 
-// controller/ input reaction
+    // controller/ input reaction
 protected:
     UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
-        EHumanAction curHumanAction;
+    EHumanAction curHumanAction;
 
     UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
     bool isHoldingCat = false;
@@ -50,13 +50,11 @@ protected:
     AMPCharacterCat* catRubbing;
 
 protected:
-    UFUNCTION(BlueprintCallable, Category = "Control Method")
     virtual bool CheckIfIsAbleToLook() override;
-    UFUNCTION(BlueprintCallable, Category = "Control Method")
     virtual bool CheckIfIsAbleToMove() override;
-    UFUNCTION(BlueprintCallable, Category = "Control Method")
     virtual bool CheckIfIsAbleToInteract() override;
 
+public :
     UFUNCTION(BlueprintCallable, Category = "Control Method")
     void StartHoldingCat(AMPCharacterCat* catToHold);
     UFUNCTION(BlueprintCallable, Category = "Control Method")
@@ -68,6 +66,5 @@ protected:
     void StopToBeRubbed();
 
 public:
-    UFUNCTION(BlueprintCallable, Category = "Interface Method")
     virtual void Interact() override;
-}
+};

@@ -5,7 +5,7 @@
 #include "MPGMInit.generated.h"
 
 UCLASS(minimalapi)
-class MEOWPHONE_API AMPGMInit : public AMPGM
+class AMPGMInit : public AMPGM
 {
 	GENERATED_BODY()
 	

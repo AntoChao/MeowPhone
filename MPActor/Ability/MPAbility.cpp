@@ -10,25 +10,31 @@ UMPAbility::UMPAbility()
 }
 
 // common Ability methods
-bool UMPAbility::BeInitialized(AMPCharacter* player)
+void UMPAbility::BeInitialized(AMPCharacterCat* player)
 {
-	return;
+	abilityOwner = player;
+	ownerWorld = abilityOwner->GetWorld();
+}
+
+EAbility UMPAbility::GetAbilityTag()
+{
+	return abilityTag;
 }
 
 // usage
 void UMPAbility::BeUsed(AActor* targetActor)
 {
-	if (IsAbleToBeUsed(player, targetActor))
+	if (IsAbleToBeUsed(targetActor))
 	{
-		switch (itemType)
+		switch (abilityType)
 		{
-			case EItemType::EDirectUse:
+			case EAbilityType::EDirectUse:
 			{
 				ApplyUsageEffectDirect(targetActor);
 				EndUsageEffectDirect(targetActor);
 				break;
 			}
-			case EItemType::EDurationUse:
+			case EAbilityType::EDurationUse:
 			{
 				StartUsageEffectDuration(targetActor);
 				break;
@@ -77,15 +83,14 @@ void UMPAbility::ApplyUsageEffectDurationCountdown()
 {
 	if (curUsageCountDown > 0)
 	{
-		UWorld* serverWorld = GetWorld();
-		if (serverWorld)
+		if (ownerWorld)
 		{	
 			curUsageCountDown -= 1;
 
-			serverWorld->GetTimerManager().ClearTimer(usageTimerHandle);
+			ownerWorld->GetTimerManager().ClearTimer(usageTimerHandle);
 			FTimerDelegate usageTimerDel;
 			usageTimerDel.BindUFunction(this, FName("ApplyUsageEffectDuration"));
-			serverWorld->GetTimerManager().SetTimer(usageTimerHandle, 
+			ownerWorld->GetTimerManager().SetTimer(usageTimerHandle,
 				usageTimerDel, 1, false);
 		}
 	}
@@ -112,15 +117,14 @@ void UMPAbility::CooldownCountDown()
 {
 	if (curCooldownCountDown > 0)
 	{
-		if (serverWorld)
+		if (ownerWorld)
 		{	
 			curCooldownCountDown -=1;
 
-			UWorld* serverWorld = GetWorld();
-			serverWorld->GetTimerManager().ClearTimer(usageCooldownTimerHandle);
+			ownerWorld->GetTimerManager().ClearTimer(cooldownTimerHandle);
 			FTimerDelegate usageCooldownTimerDel;
 			usageCooldownTimerDel.BindUFunction(this, FName("CooldownCountDown"));
-			serverWorld->GetTimerManager().SetTimer(usageCooldownTimerHandle, 
+			ownerWorld->GetTimerManager().SetTimer(cooldownTimerHandle,
 				usageCooldownTimerDel, totalCooldown, false);
 		}
 	}

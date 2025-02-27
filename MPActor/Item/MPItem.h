@@ -4,7 +4,7 @@
 #include "GameFramework/Actor.h"
 #include "../MPInteractable.h"
 
-#include "Components/TimelineComponent.h"
+#include "TimerManager.h"
 
 #include "MPItem.generated.h"
 
@@ -24,10 +24,10 @@ public :
 
 // common item properties
 protected :
-    UPROPERTY(BlueprintReadWrite, Category = "Common Properties")
-        FLocalizedText itemName;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Common Properties")
+        FText itemName;
 
-    UPROPERTY(BlueprintReadWrite, Category = "Common Properties")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Common Properties")
         EItem itemTag;
 
 // components
@@ -46,17 +46,17 @@ protected :
     UPROPERTY(BlueprintReadWrite, Category = "Interact Properties")
         bool isPickedUp = false;
     
-    UPROPERTY(BlueprintReadWrite, Category = "Interact Properties")
-        FLocalizedText interactableText;
-    UPROPERTY(BlueprintReadWrite, Category = "Interact Properties")
-        FLocalizedText uninteractableText;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interact Properties")
+        FText interactableText;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interact Properties")
+        FText uninteractableText;
 
 public:
     UFUNCTION(BlueprintCallable, Category = "Interface Method")
         virtual bool IsInteractable(AMPCharacter* player) override;
 
     UFUNCTION(BlueprintCallable, Category = "Interface Method")
-        virtual FLocalizedText GetInteractHintText(AMPCharacter* player) override;
+        virtual FText GetInteractHintText(AMPCharacter* player) override;
 
     UFUNCTION(BlueprintCallable, Category = "Interface Method")
         virtual void BeInteracted(AMPCharacter* player) override;
@@ -64,7 +64,7 @@ public:
 // initialize / interact
 protected :
     UPROPERTY(BlueprintReadWrite, Category = "Cooldown Properties")
-        AMPCharacter* owner = nullptr;
+        AMPCharacter* itemOwner = nullptr;
 
 public :
     UFUNCTION(BlueprintCallable, Category = "Interact Method")
@@ -78,31 +78,29 @@ public :
     
 // usage
 protected :
-    UPROPERTY(BlueprintReadWrite, Category = "Usage Properties")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Usage Properties")
         EItemType itemType;
 
-    UPROPERTY(BlueprintReadWrite, Category = "Usage Properties")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Usage Properties")
         bool isSingleUse = false;
     UPROPERTY(BlueprintReadWrite, Category = "Usage Properties")
         bool isBeingUse = false;
     UPROPERTY(BlueprintReadWrite, Category = "Usage Properties")
         AActor* targetActorSaved = nullptr;
-    UPROPERTY(BlueprintReadWrite, Category = "Usage Properties")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Usage Properties")
         float totalUsageDuration;
     UPROPERTY(BlueprintReadWrite, Category = "Cooldown Properties")
         float curUsageCountDown;
-    UPROPERTY(BlueprintReadWrite, Category = "Usage Properties")
-        FTimeline usageTimerHandle;
+    FTimerHandle usageTimerHandle;
 
     // cooldown
     UPROPERTY(BlueprintReadWrite, Category = "Cooldown Properties")
         bool isInCooldown;
-    UPROPERTY(BlueprintReadWrite, Category = "Cooldown Properties")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cooldown Properties")
         float totalCooldown;
     UPROPERTY(BlueprintReadWrite, Category = "Cooldown Properties")
         float curCooldownCountDown;
-    UPROPERTY(BlueprintReadWrite, Category = "Cooldown Properties")
-        FTimeline cooldownTimerHandle;
+    FTimerHandle cooldownTimerHandle;
 
 public :
     /* no item is direct use, player select an item and then use it or drop it */
@@ -134,4 +132,7 @@ public :
     UFUNCTION(BlueprintCallable, Category = "Usage Method")
         void EndCooldown();
 
-}
+public :
+    UFUNCTION(BlueprintCallable, Category = "Usage Method")
+        void GetEliminated();
+};

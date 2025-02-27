@@ -1,8 +1,8 @@
 #include "MPEnvActor.h"
 
-#include "TimeManager.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/BoxComponent.h"
+#include "Components/AudioComponent.h"
 #include "Components/AudioComponent.h"
 
 #include "../../CommonStruct.h"
@@ -12,19 +12,19 @@ AMPEnvActor::AMPEnvActor()
 
 }
 
-bool AMPEnvActor::IsInteractable(AMPCharacter* player)
+bool AMPEnvActor::IsInteractable(AMPCharacter* targetActor)
 {
-	return;
+	return false;
 }
 
-FLocalizedText AMPEnvActor::GetInteractHintText()
+FText AMPEnvActor::GetInteractHintText(AMPCharacter* targetActor)
 {
-	return;
+	return envActorName;
 }
 
-void AMPEnvActor::BeInteracted(AMPCharacter* player)
+void AMPEnvActor::BeInteracted(AMPCharacter* targetActor)
 {
-	if (IsAbleToBeUsed(player, targetActor))
+	if (IsInteractable(targetActor))
 	{
 		switch (envActorType)
 		{
@@ -45,11 +45,11 @@ void AMPEnvActor::BeInteracted(AMPCharacter* player)
 	}
 }
 
-void AMPEnvActor::ApplyInteractEffectDirect(AActor* targetActor)
+void AMPEnvActor::ApplyInteractEffectDirect(AMPCharacter* targetActor)
 {
 	// just override to apply effect
 }
-void AMPEnvActor::EndInteractEffectDirect(AActor* targetActor)
+void AMPEnvActor::EndInteractEffectDirect(AMPCharacter* targetActor)
 {
 	if (isSingleUse)
 	{
@@ -61,10 +61,10 @@ void AMPEnvActor::EndInteractEffectDirect(AActor* targetActor)
 	}
 }
 
-void AMPEnvActor::StartInteractEffectDuration(AActor* targetActor)
+void AMPEnvActor::StartInteractEffectDuration(AMPCharacter* targetActor)
 {
-	isBeingUse = true;
-	targetActorSaved = targetActor;
+	isInteracting = true;
+	interactedCharacter = targetActor;
 	curInteractCountDown = totalInteractDuration;
 
 	ApplyInteractEffectDuration();
@@ -104,8 +104,8 @@ void AMPEnvActor::ApplyInteractEffectDurationCountdown()
 
 void AMPEnvActor::ExpireInteractEffectDuration()
 {
-	isBeingUse = false;
-	targetActorSaved = nullptr;
+	isInteracting = false;
+	interactedCharacter = nullptr;
 
 	if (isSingleUse)
 	{
@@ -126,11 +126,11 @@ void AMPEnvActor::CooldownCountDown()
 {
 	if (curCooldownCountDown > 0)
 	{
+		UWorld* serverWorld = GetWorld();
 		if (serverWorld)
 		{	
 			curCooldownCountDown -= 1;
 
-			UWorld* serverWorld = GetWorld();
 			serverWorld->GetTimerManager().ClearTimer(cooldownTimerHandle);
 			FTimerDelegate cooldownTimerDel;
 			cooldownTimerDel.BindUFunction(this, FName("CooldownCountDown"));

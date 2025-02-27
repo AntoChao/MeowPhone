@@ -3,18 +3,16 @@
 #include "MPSave.h"
 #include "Kismet/GameplayStatics.h"
 
-#include "OnlineSubsystem.h"
-#include "OnlineSessionSettings.h"
-#include "Interfaces/OnlineSessionInterface.h"
 #include "UObject/NoExportTypes.h"
 
 UMPGI::UMPGI()
 {
+	/*
     createSessionsCompletedDelegate = FOnCreateSessionsCompleteDelegate::CreateUObject(this, &UMPGI::HostSessionCompleted);
 	searchForSessionsCompletedDelegate = FOnFindSessionsCompleteDelegate::CreateUObject(this, &UMPGI::SearchForSessionsCompleted);;
     joinSessionCompletedDelegate = FOnJoinSessionCompleteDelegate::CreateUObject(this, &UMPGI::JoinSessionCompleted);;
 	endSessionCompletedDelegate = FOnEndSessionCompleteDelegate::CreateUObject(this, &UMPGI::EndSessionCompleted);;
-	destroySessionCompleteDelegate = FOnDestroySessionCompleteDelegate::CreateUObject(this, &UMPGI::DestroySessionCompleted);;
+	destroySessionCompleteDelegate = FOnDestroySessionCompleteDelegate::CreateUObject(this, &UMPGI::DestroySessionCompleted);;*/
 }
 
 // common game instance section 
@@ -49,7 +47,7 @@ FString UMPGI::GenerateRandomUserString()
 
     for (int i = 0; i < 6; ++i)
     {
-        int32 randomDigit = FMath::RnadRange(0, 9);
+        int32 randomDigit = FMath::RandRange(0, 9);
         base += FString::FromInt(randomDigit);
     }
     return base;
@@ -57,7 +55,7 @@ FString UMPGI::GenerateRandomUserString()
 
 void UMPGI::SaveGame()
 {
-    UMPSave* dataToSave = Cast<UMPSave>(UGameplayStatics::LoadGameFromSLot("Slot1", 0));
+    UMPSave* dataToSave = Cast<UMPSave>(UGameplayStatics::LoadGameFromSlot("Slot1", 0));
     if (dataToSave == nullptr)
     {
         dataToSave = Cast<UMPSave>(UGameplayStatics::CreateSaveGameObject(UMPSave::StaticClass()));
@@ -87,7 +85,7 @@ void UMPGI::LoadGame()
         CreateSaveFile();
     }
 }
-
+/*
 // session section
 void UMPGI::HostSession(FName sessionName, int numPlayers)
 {
@@ -138,7 +136,7 @@ void UMPGI::SearchForSessions()
 		if (IOnlineSessionPtr onlineSessionInterface = onlineSubsystem->GetSessionInterface())
 		{
 			searchForSessionsCompletedHandle = onlineSessionInterface->AddOnFindSessionsCompleteDelegate_Handle(searchForSessionsCompletedDelegate);
-
+			
 			searchSettings = MakeShareable(new FOnlineSessionSearch());
 			searchSettings->bIsLanQuery = (IOnlineSubsystem::Get()->GetSubsystemName() == "NULL");
 			searchSettings->MaxSearchResults = 10000;
@@ -269,12 +267,6 @@ void UMPGI::SearchForSessionsCompleted(bool searchCompleted)
 
 					UE_LOG(LogTemp, Warning, TEXT("Session search info created for %s"), *Info.SessionName);
 				}
-
-                /*
-				if (searchWidget)
-				{
-					searchWidget->refreshSearchResult(SessionList);
-				}*/
 			}
 		}
 	}
@@ -344,7 +336,7 @@ void UMPGI::DestroySessionCompleted(FName sessionName, bool destroyCompleted)
 			onlineSessionInterface->ClearOnDestroySessionCompleteDelegate_Handle(destroySessionCompletedHandle);
 		}
 	}
-}
+}*/
 
 
 // getter && setter
@@ -353,7 +345,7 @@ ELanguage UMPGI::getGameLanguage()
     return gameLanguage;
 }
 
-FName UMPGI::getCurPlayerName()
+FString UMPGI::getCurPlayerName()
 {
     return curPlayerName;
 }

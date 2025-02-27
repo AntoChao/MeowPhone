@@ -4,21 +4,30 @@
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
+// high level
+#include "../../HighLevel/MPGMGameplay.h"
+
+// input
+#include "EnhancedInputComponent.h"
+#include "EnhancedInputSubsystems.h"
+#include "InputActionValue.h"
+
+// related
 #include "MPPlayerState.h"
 #include "../Character/MPCharacter.h"
 
 // hud
-#include "Widget/MPHUDCat.h"
-#include "Widget/MPHUDCreateSession.h"
-#include "Widget/MPHUDCredit.h"
-#include "Widget/MPHUDEnd.h"
-#include "Widget/MPHUDHuman.h"
-#include "Widget/MPHUDInit.h"
-#include "Widget/MPHUDLobby.h"
-#include "Widget/MPHUDMenu.h"
-#include "Widget/MPHUDOption.h"
-#include "Widget/MPHUDSearchSession.h"
-#include "Widget/MPHUDSessionGeneral.h"
+#include "Widget/HUDCat.h"
+#include "Widget/HUDCreateSession.h"
+#include "Widget/HUDCredit.h"
+#include "Widget/HUDEnd.h"
+#include "Widget/HUDHuman.h"
+#include "Widget/HUDInit.h"
+#include "Widget/HUDLobby.h"
+#include "Widget/HUDMenu.h"
+#include "Widget/HUDOption.h"
+#include "Widget/HUDSearchSession.h"
+#include "Widget/HUDSessionGeneral.h"
 
 AMPControllerPlayer::AMPControllerPlayer()
 {
@@ -28,7 +37,18 @@ AMPControllerPlayer::AMPControllerPlayer()
 // common player controller properties
 void AMPControllerPlayer::BeginPlay() 
 {
-    return;
+    Super::BeginPlay();
+}
+
+void AMPControllerPlayer::InitializePS(int aPlayerIndex)
+{
+    AMPPlayerState* curPlayerState = Cast<AMPPlayerState>(PlayerState);
+    if (curPlayerState)
+    {
+        curPlayerState->playerIndex = aPlayerIndex;
+        curPlayerState->playerTeam = ETeam::ECat;
+        curPlayerState->catRace = ECatRace::ECatExp;
+    }
 }
 
 // hud manager
@@ -47,11 +67,11 @@ void AMPControllerPlayer::AttachHUD(EHUDType hudType, int zOrder)
 {
     switch(hudType)
     {
-        case EHUDType::EInit
+        case EHUDType::EInit :
         {
             if (!initHUD && initHUDClass)
             {
-                initHUD = CreateWidget<UMPHUDInit>(this, initHUDClass);
+                initHUD = CreateWidget<UHUDInit>(this, initHUDClass);
                 if (initHUD != nullptr)
                 {
                     TurnUIInputOn();
@@ -61,11 +81,11 @@ void AMPControllerPlayer::AttachHUD(EHUDType hudType, int zOrder)
             }
             break;
         }
-        case EHUDType::EOption
+        case EHUDType::EOption :
         {
             if (!optionHUD && optionHUDClass)
             {
-                optionHUD = CreateWidget<UMPHUDOption>(this, optionHUDClass);
+                optionHUD = CreateWidget<UHUDOption>(this, optionHUDClass);
                 if (optionHUD != nullptr)
                 {
                     TurnUIInputOn();
@@ -75,11 +95,11 @@ void AMPControllerPlayer::AttachHUD(EHUDType hudType, int zOrder)
             }
             break;
         }
-        case EHUDType::ESessionGeneral
+        case EHUDType::ESessionGeneral :
         {
             if (!sessionGeneralHUD && sessionGeneralHUDClass)
             {
-                sessionGeneralHUD = CreateWidget<UMPHUDSessionGeneral>(this, sessionGeneralHUDClass);
+                sessionGeneralHUD = CreateWidget<UHUDSessionGeneral>(this, sessionGeneralHUDClass);
                 if (sessionGeneralHUD != nullptr)
                 {
                     TurnUIInputOn();
@@ -89,11 +109,11 @@ void AMPControllerPlayer::AttachHUD(EHUDType hudType, int zOrder)
             }
             break;
         }
-        case EHUDType::ECreateSession
+        case EHUDType::ECreateSession :
         {
             if (!createSessionHUD && createSessionHUDClass)
             {
-                createSessionHUD = CreateWidget<UMPHUDCreateSession>(this, createSessionHUDClass);
+                createSessionHUD = CreateWidget<UHUDCreateSession>(this, createSessionHUDClass);
                 if (createSessionHUD != nullptr)
                 {
                     TurnUIInputOn();
@@ -103,11 +123,11 @@ void AMPControllerPlayer::AttachHUD(EHUDType hudType, int zOrder)
             }
             break;
         }
-        case EHUDType::ESearchSession
+        case EHUDType::ESearchSession :
         {
             if (!searchSessionHUD && searchSessionHUDClass)
             {
-                searchSessionHUD = CreateWidget<UMPHUDSearchSession>(this, searchSessionHUDClass);
+                searchSessionHUD = CreateWidget<UHUDSearchSession>(this, searchSessionHUDClass);
                 if (searchSessionHUD != nullptr)
                 {
                     TurnUIInputOn();
@@ -117,11 +137,11 @@ void AMPControllerPlayer::AttachHUD(EHUDType hudType, int zOrder)
             }
             break;
         }
-        case EHUDType::ELobby
+        case EHUDType::ELobby :
         {
             if (!lobbyHUD && lobbyHUDClass)
             {
-                lobbyHUD = CreateWidget<UMPHUDLobby>(this, lobbyHUDClass);
+                lobbyHUD = CreateWidget<UHUDLobby>(this, lobbyHUDClass);
                 if (lobbyHUD != nullptr)
                 {
                     TurnUIInputOn();
@@ -131,11 +151,11 @@ void AMPControllerPlayer::AttachHUD(EHUDType hudType, int zOrder)
             }
             break;
         }
-        case EHUDType::EGameplayHuman
+        case EHUDType::EGameplayHuman :
         {
             if (!humanHUD && humanHUDClass)
             {
-                humanHUD = CreateWidget<UMPHUDHuman>(this, humanHUDClass);
+                humanHUD = CreateWidget<UHUDHuman>(this, humanHUDClass);
                 if (humanHUD != nullptr)
                 {
                     TurnGameplayInputOn();
@@ -145,11 +165,11 @@ void AMPControllerPlayer::AttachHUD(EHUDType hudType, int zOrder)
             }
             break;
         }
-        case EHUDType::EGameplayCat
+        case EHUDType::EGameplayCat :
         {
             if (!catHUD && catHUDClass)
             {
-                catHUD = CreateWidget<UMPHUDCat>(this, catHUDClass);
+                catHUD = CreateWidget<UHUDCat>(this, catHUDClass);
                 if (catHUD != nullptr)
                 {
                     TurnGameplayInputOn();
@@ -159,11 +179,11 @@ void AMPControllerPlayer::AttachHUD(EHUDType hudType, int zOrder)
             }
             break;
         }
-        case EHUDType::EMenu
+        case EHUDType::EMenu :
         {
             if (!menuHUD && menuHUDClass)
             {
-                menuHUD = CreateWidget<UMPHUDMenu>(this, menuHUDClass);
+                menuHUD = CreateWidget<UHUDMenu>(this, menuHUDClass);
                 if (menuHUD != nullptr)
                 {
                     TurnUIInputOn();
@@ -173,11 +193,11 @@ void AMPControllerPlayer::AttachHUD(EHUDType hudType, int zOrder)
             }
             break;
         }
-        case EHUDType::EEnd
+        case EHUDType::EEnd :
         {
             if (!endHUD && endHUDClass)
             {
-                endHUD = CreateWidget<UMPHUDEnd>(this, endHUDClass);
+                endHUD = CreateWidget<UHUDEnd>(this, endHUDClass);
                 if (endHUD != nullptr)
                 {
                     TurnUIInputOn();
@@ -193,7 +213,7 @@ void AMPControllerPlayer::RemoveHUD(EHUDType hudType)
 {
     switch(hudType)
     {
-        case EHUDType::EInit
+        case EHUDType::EInit :
         {
             if (initHUD)
             {
@@ -203,7 +223,7 @@ void AMPControllerPlayer::RemoveHUD(EHUDType hudType)
             }
             break;
         }
-        case EHUDType::EOption
+        case EHUDType::EOption :
         {
             if (optionHUD)
             {
@@ -213,7 +233,7 @@ void AMPControllerPlayer::RemoveHUD(EHUDType hudType)
             }
             break;
         }
-        case EHUDType::ESessionGeneral
+        case EHUDType::ESessionGeneral :
         {
             if (sessionGeneralHUD)
             {
@@ -223,7 +243,7 @@ void AMPControllerPlayer::RemoveHUD(EHUDType hudType)
             }
             break;
         }
-        case EHUDType::ECreateSession
+        case EHUDType::ECreateSession :
         {
             if (createSessionHUD)
             {
@@ -233,7 +253,7 @@ void AMPControllerPlayer::RemoveHUD(EHUDType hudType)
             }
             break;
         }
-        case EHUDType::ESearchSession
+        case EHUDType::ESearchSession :
         {
             if (searchSessionHUD)
             {
@@ -243,7 +263,7 @@ void AMPControllerPlayer::RemoveHUD(EHUDType hudType)
             }
             break;
         }
-        case EHUDType::ELobby
+        case EHUDType::ELobby :
         {
             if (lobbyHUD)
             {
@@ -253,7 +273,7 @@ void AMPControllerPlayer::RemoveHUD(EHUDType hudType)
             }
             break;
         }
-        case EHUDType::EGameplayHuman
+        case EHUDType::EGameplayHuman :
         {
             if (humanHUD)
             {
@@ -263,7 +283,7 @@ void AMPControllerPlayer::RemoveHUD(EHUDType hudType)
             }
             break;
         }
-        case EHUDType::EGameplayCat
+        case EHUDType::EGameplayCat :
         {
             if (catHUD)
             {
@@ -273,7 +293,7 @@ void AMPControllerPlayer::RemoveHUD(EHUDType hudType)
             }
             break;
         }
-        case EHUDType::EMenu
+        case EHUDType::EMenu :
         {
             if (menuHUD)
             {
@@ -283,7 +303,7 @@ void AMPControllerPlayer::RemoveHUD(EHUDType hudType)
             }
             break;
         }
-        case EHUDType::EEnd
+        case EHUDType::EEnd :
         {
             if (endHUD)
             {
@@ -299,7 +319,7 @@ void AMPControllerPlayer::RemoveHUD(EHUDType hudType)
 // game progress update
 void AMPControllerPlayer::LobbyStartUpdate()
 {
-    AMPPlayerState* theState = Cast<AMPPlayerState>(eachPlayer->PlayerState);
+    AMPPlayerState* theState = Cast<AMPPlayerState>(PlayerState);
     if (theState)
     {
         theState->isReady = false;
@@ -308,7 +328,7 @@ void AMPControllerPlayer::LobbyStartUpdate()
 }
 void AMPControllerPlayer::PrepareStartUpdate()
 {
-    AMPPlayerState* theState = Cast<AMPPlayerState>(eachPlayer->PlayerState);
+    AMPPlayerState* theState = Cast<AMPPlayerState>(PlayerState);
     if (theState)
     {
         theState->isReady = false;
@@ -317,7 +337,7 @@ void AMPControllerPlayer::PrepareStartUpdate()
 }
 void AMPControllerPlayer::GameplayStartUpdate()
 {
-    AMPPlayerState* theState = Cast<AMPPlayerState>(eachPlayer->PlayerState);
+    AMPPlayerState* theState = Cast<AMPPlayerState>(PlayerState);
     if (theState)
     {
         theState->isReady = false;
@@ -328,11 +348,13 @@ void AMPControllerPlayer::GameplayStartUpdate()
 // character relation
 void AMPControllerPlayer::OnPossess(APawn* inPawn)
 {
+    Super::OnPossess(inPawn);
+
     controlledBody = Cast<AMPCharacter>(inPawn);
     SetupMappingContext();
     SetupInputComponent();
 }
-void AMPControllerPlayer::UnPossess()
+void AMPControllerPlayer::UnPossessEffect()
 {
     return;
 }
@@ -343,7 +365,7 @@ void AMPControllerPlayer::UnPossess()
 */
 void AMPControllerPlayer::ControlledBodyDied()
 {
-    AMPPlayerState* theState = Cast<AMPPlayerState>(eachPlayer->PlayerState);
+    AMPPlayerState* theState = Cast<AMPPlayerState>(PlayerState);
     if (theState)
     {
         theState->isDied = true;
@@ -354,7 +376,15 @@ void AMPControllerPlayer::ControlledBodyDied()
 
     if (mpGameMode)
     {
-        mpGameMode->RegisterPlayerDeath(this);
+        FVector diedLocation = FVector::ZeroVector;
+        FRotator diedRotation = FRotator::ZeroRotator;
+
+        if (controlledBody)
+        {
+            diedLocation = controlledBody->GetActorLocation();
+            diedRotation = controlledBody->GetActorRotation();
+        }
+        mpGameMode->RegisterPlayerDeath(this, diedLocation, diedRotation);
     }
 }
 
@@ -369,12 +399,12 @@ void AMPControllerPlayer::SetupMappingContext()
 
 			if (subsystem)
 			{
-				subsystem->AddMappingContext(gameplayMappingContext, 0);
+				subsystem->AddMappingContext(gpGamppingContext, 0);
 			}
 		}
 	}
 }
-void AMPControllerPlayer::SetupInputComponent();
+void AMPControllerPlayer::SetupInputComponent()
 {
     Super::SetupInputComponent();
 
@@ -385,6 +415,7 @@ void AMPControllerPlayer::SetupInputComponent();
         enhancedInput->BindAction(lookAction, ETriggerEvent::Triggered, this, &AMPControllerPlayer::LookFunc);
 
         enhancedInput->BindAction(moveAction, ETriggerEvent::Triggered, this, &AMPControllerPlayer::MoveFunc);
+        enhancedInput->BindAction(moveAction, ETriggerEvent::Completed, this, &AMPControllerPlayer::MoveEndFunc);
 
         enhancedInput->BindAction(runAction, ETriggerEvent::Triggered, this, &AMPControllerPlayer::RunFunc);
         enhancedInput->BindAction(runAction, ETriggerEvent::Completed, this, &AMPControllerPlayer::RunEndFunc);
@@ -398,8 +429,8 @@ void AMPControllerPlayer::SetupInputComponent();
         enhancedInput->BindAction(selectItemTwoAction, ETriggerEvent::Started, this, &AMPControllerPlayer::SelectItemTwoFunc);
         enhancedInput->BindAction(selectItemThreeAction, ETriggerEvent::Started, this, &AMPControllerPlayer::SelectItemThreeFunc);
         
-        enhancedInput->BindAction(useCurItemAction, ETriggerEvent::Started, this, &AMPControllerPlayer::UnselectCurItemFunc);
-        enhancedInput->BindAction(dropCurItemAction, ETriggerEvent::Started, this, &AMPControllerPlayer::UnselectCurItemFunc);
+        enhancedInput->BindAction(useCurItemAction, ETriggerEvent::Started, this, &AMPControllerPlayer::UseCurItemFunc);
+        enhancedInput->BindAction(dropCurItemAction, ETriggerEvent::Started, this, &AMPControllerPlayer::DropCurItemFunc);
         
         enhancedInput->BindAction(useAbilityAction, ETriggerEvent::Started, this, &AMPControllerPlayer::UseAbilityFunc);
     }
@@ -414,57 +445,72 @@ void AMPControllerPlayer::OpenMenuFunc(const FInputActionValue& value)
 }
 void AMPControllerPlayer::LookFunc(const FInputActionValue& value)
 {
-    if (controlledBody) {
+    if (controlledBody) 
+    {
 		FVector2D lookVector = value.Get<FVector2D>();
+
+        lookVector.X *= lookXSensitive;
+        lookVector.Y *= lookYSensitive;
+
 		controlledBody->Look(lookVector);
 	}
 }
 void AMPControllerPlayer::MoveFunc(const FInputActionValue& value)
 {
-    if (controlledBody) {
-		FVector2D moveVector = value.Get<FVector2D>();
+    if (controlledBody) 
+    {
+        FVector2D moveVector = value.Get<FVector2D>();
 		controlledBody->Move(moveVector);
 	}
 }
+void AMPControllerPlayer::MoveEndFunc(const FInputActionValue& value)
+{
+    if (controlledBody) 
+    {
+        controlledBody->MoveStop();
+    }
+}
 void AMPControllerPlayer::RunFunc(const FInputActionValue& value)
 {
-    if (controlledBody) {
+    if (controlledBody) 
+    {
 		if (value.Get<bool>())
 		{
-			controlledBody->Run();
+            controlledBody->Run();
 		}
 	}
 }
 void AMPControllerPlayer::RunEndFunc(const FInputActionValue& value)
 {
-    if (controlledBody) {
-		if (value.Get<bool>())
-		{
-			controlledBody->RunStop();
-		}
+    if (controlledBody) 
+    {
+        controlledBody->RunStop();
 	}
 }
 void AMPControllerPlayer::JumpFunc(const FInputActionValue& value)
 {
-    if (controlledBody) {
+    if (controlledBody) 
+    {
 		if (value.Get<bool>())
 		{
-			controlledBody->Jump();
+            controlledBody->JumpStart();
 		}
 	}
 }
-voidAMPControllerPlayer:: JumpEndFunc(const FInputActionValue& value)
+void AMPControllerPlayer:: JumpEndFunc(const FInputActionValue& value)
 {
-    if (controlledBody) {
+    if (controlledBody) 
+    {
 		if (value.Get<bool>())
 		{
-			controlledBody->JumpEnd();
+            controlledBody->JumpEnd();
 		}
 	}
 }
 void AMPControllerPlayer::InteractFunc(const FInputActionValue& value)
 {
-    if (controlledBody) {
+    if (controlledBody) 
+    {
 		if (value.Get<bool>())
 		{
 			controlledBody->Interact();
@@ -473,7 +519,8 @@ void AMPControllerPlayer::InteractFunc(const FInputActionValue& value)
 }
 void AMPControllerPlayer::SelectItemOneFunc(const FInputActionValue& value)
 {
-    if (controlledBody) {
+    if (controlledBody) 
+    {
 		if (value.Get<bool>())
 		{
 			controlledBody->SelectItem(1);
@@ -482,7 +529,8 @@ void AMPControllerPlayer::SelectItemOneFunc(const FInputActionValue& value)
 }
 void AMPControllerPlayer::SelectItemTwoFunc(const FInputActionValue& value)
 {
-    if (controlledBody) {
+    if (controlledBody) 
+    {
 		if (value.Get<bool>())
 		{
 			controlledBody->SelectItem(2);
@@ -491,7 +539,8 @@ void AMPControllerPlayer::SelectItemTwoFunc(const FInputActionValue& value)
 }
 void AMPControllerPlayer::SelectItemThreeFunc(const FInputActionValue& value)
 {
-    if (controlledBody) {
+    if (controlledBody) 
+    {
 		if (value.Get<bool>())
 		{
 			controlledBody->SelectItem(3);
@@ -500,7 +549,8 @@ void AMPControllerPlayer::SelectItemThreeFunc(const FInputActionValue& value)
 }
 void AMPControllerPlayer::UseCurItemFunc(const FInputActionValue& value)
 {
-    if (controlledBody) {
+    if (controlledBody) 
+    {
 		if (value.Get<bool>())
 		{
 			controlledBody->UseCurItem();
@@ -509,7 +559,8 @@ void AMPControllerPlayer::UseCurItemFunc(const FInputActionValue& value)
 }
 void AMPControllerPlayer::DropCurItemFunc(const FInputActionValue& value)
 {
-    if (controlledBody) {
+    if (controlledBody) 
+    {
 		if (value.Get<bool>())
 		{
 			controlledBody->DropCurItem();

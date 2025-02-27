@@ -4,8 +4,10 @@
 #include "UObject/Class.h"
 #include "MPFactory.generated.h"
 
-UCLASS(minimalapi)
-class MEOWPHONE_API UMPFactory : public UObject
+class UWorld;
+
+UCLASS(Blueprintable)
+class UMPFactory : public UObject
 {
 	GENERATED_BODY()
 	
@@ -14,10 +16,15 @@ public:
 
 // common
 protected:
-	FActorSpawnParameters spawnParams
+	FActorSpawnParameters spawnParams;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Common Methods")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Common Property")
 		UWorld* gameWorld;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Common Property")
+		AActor* spawnedActor = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Common Property")
+		UObject* spawnedObject = nullptr;
 
 public:
 	UFUNCTION(BlueprintCallable, Category = "Common Methods")

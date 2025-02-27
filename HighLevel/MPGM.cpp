@@ -1,12 +1,12 @@
 #include "MPGM.h"
 #include "MPGI.h"
 
-AMPGM:AMPGM()
+AMPGM::AMPGM()
 {
 
 }
 
-AMPGM:BeginPlay()
+void AMPGM::BeginPlay()
 {
     Super::BeginPlay();
     mpGameInstance = Cast<UMPGI>(GetGameInstance());

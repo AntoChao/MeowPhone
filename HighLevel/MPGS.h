@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameStateBase.h"
-#include "AMPGS.generated.h"
+#include "MPGS.generated.h"
 
 class AMPCharacterHuman;
 class AMPCharacterCat;
@@ -10,12 +10,14 @@ class AMPItem;
 class AMPEnvActor;
 
 UCLASS(minimalapi)
-class MEOWPHONE_API AMPGS : public AGameStateBase
+class AMPGS : public AGameStateBase
 {
 	GENERATED_BODY()
 	
 public:
 	AMPGS();
+
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 // common GS properties
 public:

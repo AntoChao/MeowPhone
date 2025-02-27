@@ -7,31 +7,29 @@
 
 class UMPGI;
 class AMPControllerPlayer;
+enum class EHUDType : uint8;
 enum class EAbility : uint8;
 
 UCLASS()
 class UMPHUD : public UUserWidget
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 
-public:
-    UMPHUD();
-
-protected :
+protected:
     virtual void NativeConstruct() override;
 
-// common HUD properties
-protected :
-    UPROPERTY(BlueprintReadWrite, Category = "HUD Properties")
-        EHUDType curHUDType;
+    // common HUD properties
+protected:
+    UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "HUD Properties")
+    EHUDType curHUDType;
 
     UPROPERTY(BlueprintReadWrite, Category = "HUD Properties")
-        UMPGI* curGameInstance;
+    UMPGI* curGameInstance;
 
     UPROPERTY(BlueprintReadWrite, Category = "HUD Properties")
-        AMPControllerPlayer* owner;
+    AMPControllerPlayer* owner;
 
-public :
+public:
     UFUNCTION(BlueprintCallable, Category = "HUD Methods")
-		void SetOwner(AMPControllerPlayer* theOwner);
-}
+    void SetOwner(AMPControllerPlayer* theOwner);
+};

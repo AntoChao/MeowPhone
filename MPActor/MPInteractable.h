@@ -2,13 +2,13 @@
 
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
-#include "RLActor.generated.h"
+#include "MPInteractable.generated.h"
 
 struct FLocalizedText;
 class AMPCharacter;
 
 UINTERFACE(MinimalAPI, Meta = (CannotImplementInterfaceInBlueprint))
-class MEOWPHONE_API UMPInteractable : public UInterface
+class UMPInteractable : public UInterface
 {
     GENERATED_BODY()
 };
@@ -22,7 +22,7 @@ public:
         virtual bool IsInteractable(AMPCharacter* player) = 0;
 
     UFUNCTION(BlueprintCallable, Category = "Interface Method")
-        virtual FLocalizedText GetInteractHintText(AMPCharacter* player) = 0;
+        virtual FText GetInteractHintText(AMPCharacter* player) = 0;
 
     UFUNCTION(BlueprintCallable, Category = "Interface Method")
         virtual void BeInteracted(AMPCharacter* player) = 0;

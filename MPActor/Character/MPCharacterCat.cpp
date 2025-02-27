@@ -1,19 +1,30 @@
 #include "MPCharacterCat.h"
 
+#include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetMathLibrary.h"
+#include "Kismet/KismetMathLibrary.h"
+#include "GameFramework/SpringArmComponent.h"
+#include "Camera/CameraComponent.h"
+#include "../PLayer/MPPlayerState.h"
+
 #include "../../CommonEnum.h"
 #include "../../CommonStruct.h"
+
+#include "../../HighLevel/MPGMGameplay.h"
 #include "MPCharacterHuman.h"
 #include "../Ability/MPAbility.h"
 
 AMPCharacterCat::AMPCharacterCat()
 {
+	bUseControllerRotationYaw = false;
+
     cameraSpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("Character SpringArm"));
     cameraSpringArm->SetupAttachment(RootComponent);
     cameraSpringArm->TargetArmLength = 300.0f; 
     cameraSpringArm->bUsePawnControlRotation = true;
-
+		
     characterCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("Character Camera"));
-    characterCamera->SetupAttachment(SpringArm, USpringArmComponent::SocketName);
+    characterCamera->SetupAttachment(cameraSpringArm, USpringArmComponent::SocketName);
 }
 
 void AMPCharacterCat::BeginPlay()
@@ -21,6 +32,11 @@ void AMPCharacterCat::BeginPlay()
 	Super::BeginPlay();
 	
 	InitializeAllAbility();
+}
+
+void AMPCharacterCat::Tick(float deltaTime)
+{
+	Super::Tick(deltaTime);
 }
 
 // ability
@@ -32,13 +48,16 @@ void AMPCharacterCat::InitializeAllAbility()
 
 void AMPCharacterCat::InitializeActiveAbility()
 {
+	if (GetWorld()) { return; }
+
 	activeAbility = nullptr;
 	AMPPlayerState* curPlayerState = Cast<AMPPlayerState>(GetPlayerState());
-	AMPGameplay* curGameMode = UGameplayStatics::GetGameMode(GetWorld());
-	
-	if (curPlayerState && curGameMode)
+	AGameModeBase* curGameMode = UGameplayStatics::GetGameMode(GetWorld());
+	AMPGMGameplay* curMPGameMode = Cast<AMPGMGameplay>(curGameMode);
+
+	if (curPlayerState && curMPGameMode)
 	{
-		activeAbility = curGameMode->SpawnAbility(this, curPlayerState->playerSelectedAbility)
+		activeAbility = curMPGameMode->SpawnAbility(this, curPlayerState->playerSelectedAbility);
 		if (activeAbility)
 		{
 			activeAbility->BeInitialized(this);
@@ -47,20 +66,39 @@ void AMPCharacterCat::InitializeActiveAbility()
 }
 void AMPCharacterCat::InitializeAllPassiveAbility()
 {
-	allPassiveAbilities.Empty;
-	AMPGameplay* curGameMode = UGameplayStatics::GetGameMode(GetWorld());
+	allPassiveAbilities.Empty();
+	AMPGMGameplay* curGameMode = Cast<AMPGMGameplay>(UGameplayStatics::GetGameMode(GetWorld()));
 	
 	if (curGameMode)
 	{
 		int i = 0;
 		for (EAbility eachAbilityTag : initPassiveAbilities)
 		{
-			allPassiveAbilities[i] = curGameMode->SpawnAbility(this, eachAbilityTag)
+			allPassiveAbilities[i] = curGameMode->SpawnAbility(this, eachAbilityTag);
 			if (allPassiveAbilities[i])
 			{
 				allPassiveAbilities[i]->BeInitialized(this);
 				i ++;
 			}
+		}
+	}
+}
+
+void AMPCharacterCat::UseActiveAbility()
+{
+	if (activeAbility)
+	{
+		activeAbility->BeUsed(detectedActor);
+	}
+}
+
+void AMPCharacterCat::UsePassiveAbility(EAbility abilityType)
+{
+	for (UMPAbility* eachPassiveAbility : allPassiveAbilities)
+	{
+		if (eachPassiveAbility->GetAbilityTag() == abilityType)
+		{
+			eachPassiveAbility->BeUsed(detectedActor);
 		}
 	}
 }
@@ -71,7 +109,7 @@ bool AMPCharacterCat::IsInteractable(AMPCharacter* player)
 	return !isBeingHolded;
 }
 
-FLocalizedText AMPCharacterCat::GetInteractHintText(AMPCharacter* player)
+FText AMPCharacterCat::GetInteractHintText(AMPCharacter* player)
 {
 	if (IsInteractable(player))
 	{
@@ -83,7 +121,7 @@ FLocalizedText AMPCharacterCat::GetInteractHintText(AMPCharacter* player)
 			}
 			case ETeam::ECat :
 			{
-				return humanInteractHintText;
+				return catInteractHintText;
 			}
 		}
 	}
@@ -101,6 +139,8 @@ FLocalizedText AMPCharacterCat::GetInteractHintText(AMPCharacter* player)
 			}
 		}
 	}
+
+	return uninteractableHumanHintText;
 }
 
 void AMPCharacterCat::BeInteracted(AMPCharacter* player)
@@ -138,11 +178,49 @@ bool AMPCharacterCat::CheckIfIsAbleToInteract()
 	return true;
 }
 
+void AMPCharacterCat::Move(FVector2D direction)
+{
+	if (!CheckIfIsAbleToMove() || direction.IsNearlyZero())
+	{
+		return;
+	}
+
+	GEngine->AddOnScreenDebugMessage(1, 5.0f, FColor::Yellow, TEXT("Character: Move"));
+	isMoving = true;
+
+	FRotator ControlRotation = GetControlRotation();
+	ControlRotation.Pitch = 0;
+
+	FVector CameraForwardVector = UKismetMathLibrary::GetForwardVector(ControlRotation);
+	FVector CameraRightVector = UKismetMathLibrary::GetRightVector(ControlRotation);
+	CameraForwardVector.Z = 0; // Flatten the vector to the horizontal plane
+	CameraRightVector.Z = 0;
+	CameraForwardVector.Normalize();
+	CameraRightVector.Normalize();
+
+	FVector MoveDirection = CameraForwardVector * direction.Y + CameraRightVector * direction.X;
+	MoveDirection.Normalize();
+
+	AddMovementInput(MoveDirection, 1.0f);
+
+	if (!MoveDirection.IsNearlyZero())
+	{
+		FRotator TargetRotation = MoveDirection.Rotation();
+		TargetRotation.Pitch = 0;
+		TargetRotation.Roll = 0;
+
+		FRotator CurrentRotation = GetActorRotation();
+		FRotator NewRotation = FMath::RInterpTo(CurrentRotation, TargetRotation, GetWorld()->GetDeltaSeconds(), rotationRate);
+
+		SetActorRotation(NewRotation);
+	}
+}
+
 void AMPCharacterCat::StartedToBeHold(AMPCharacter* humanPlayer)
 {
 	// update cat stats
 	isBeingHolded = true;
-	humanHolding = Cast<AMPCharacterHuman>(humanPlayer)
+	humanHolding = Cast<AMPCharacterHuman>(humanPlayer);
 	curHoldTime = 0;
 }
 void AMPCharacterCat::EndToBeHold()
@@ -185,7 +263,7 @@ void AMPCharacterCat::StopToRub()
 */
 void AMPCharacterCat::Interact()
 {
-	if (CheckIfIsAbleToInteract)
+	if (CheckIfIsAbleToInteract())
 	{
 		if (isRubbing)
 		{

@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "../MPInteractable.h"
+#include "UObject/ScriptInterface.h"
 
 #include "MPCharacter.generated.h"
 
@@ -13,12 +14,12 @@ class AMPItem;
 enum class ETeam : uint8;
 
 UCLASS(BlueprintType, Blueprintable)
-class MEOWPHONE_API AMPCharacter : public ACharacter, public IMPInteractable
+class AMPCharacter : public ACharacter, public IMPInteractable
 {
     GENERATED_BODY()
 
 public :
-    AMPCHaracter();
+    AMPCharacter();
 
 // common class methods
 public :
@@ -28,23 +29,31 @@ public :
 
     virtual void Tick(float deltaTime) override;
 
+// interactable interface
+public :
+    virtual bool IsInteractable(AMPCharacter* player) override;
+
+    virtual FText GetInteractHintText(AMPCharacter* player) override;
+
+    virtual void BeInteracted(AMPCharacter* player) override;
+
 // camera component
 protected :
 	/* camera 
     * is different between human and cat
 	* human -> first person, cat -> third person
     */
-    UPROPERTY(BlueprintReadWrite, Category = "Camera Properties")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera Properties")
         USpringArmComponent* cameraSpringArm;
 
-    UPROPERTY(BlueprintReadWrite, Category = "Camera Properties")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera Properties")
         UCameraComponent* characterCamera;
 
 // detect 
     FComponentQueryParams DefaultComponentQueryParams;
 	FCollisionResponseParams DefaultResponseParam;
 
-    UPROPERTY(BlueprintReadWrite, Category = "Detect Properties")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Detect Properties")
         float detectDistance;
     
     UPROPERTY(BlueprintReadWrite, Category = "Detect Properties")
@@ -56,17 +65,17 @@ protected :
     UPROPERTY(BlueprintReadWrite, Category = "Detect Properties")
         FHitResult detectHit;
 
-    UPROPERTY(BlueprintReadWrite, Category = "Detect Properties")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Detect Properties")
         AActor* detectedActor; // should never be able to interact, only used for item/ ability
-    UPROPERTY(BlueprintReadWrite, Category = "Detect Properties")
-        TScripInterface<IMPInteractable> detectInteractableActor;
-    
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Detect Properties")
+        TScriptInterface<IMPInteractable> detectInteractableActor;
+
     UPROPERTY(BlueprintReadWrite, Category = "Common Properties")
         bool ableToInteractCurrently; // hide or not the interact UI
     UPROPERTY(BlueprintReadWrite, Category = "Common Properties")
-        FLocalizedText curDetectHintText;
+        FText curDetectHintText;
     UPROPERTY(BlueprintReadWrite, Category = "Common Properties")
-        FLocalizedText invalidDetectHintText;
+        FText invalidDetectHintText;
 
     UFUNCTION(BlueprintCallable, Category = "Detect Method")
         void Detect(); // calculate and fire the hit
@@ -75,16 +84,16 @@ protected :
 
 // common properties
 protected :
-    UPROPERTY(BlueprintReadWrite, Category = "Character Common Properties")
-        FLocalizedText characterName;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character Common Properties")
+    FText characterName;
     
 // inventory
 protected :
-    UPROPERTY(BlueprintReadWrite, Category = "Inventory Properties")
-        TArray<EMPItem> initItems;
-    UPROPERTY(BlueprintReadWrite, Category = "Inventory Properties")
-        TArray<AMPItem> inventory;
-    UPROPERTY(BlueprintReadWrite, Category = "Inventory Properties")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory Properties")
+        TArray<EItem> initItems;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory Properties")
+        TArray<AMPItem*> inventory;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory Properties")
         int inventoryCapacity;
     
     UPROPERTY(BlueprintReadWrite, Category = "Inventory Properties")
@@ -95,7 +104,7 @@ protected :
     UFUNCTION(BlueprintCallable, Category = "Inventory Method")
         void InitializeItems();
     UFUNCTION(BlueprintCallable, Category = "Inventory Method")
-        void AddAnItem(EMPItem aItemTag);
+        void AddAnItem(EItem aItemTag);
     UFUNCTION(BlueprintCallable, Category = "Inventory Method")
         bool IsAbleToAddItem();
     UFUNCTION(BlueprintCallable, Category = "Inventory Method")
@@ -110,49 +119,67 @@ public :
 
 // controller/ input reaction
 protected :
+    // possession
+    virtual void PossessedBy(AController* newController) override;
+
+    // animation control
+    UFUNCTION(BlueprintCallable, Category = "Control Method")
+    virtual void UpdateMovingControls();
+
+    UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
+    bool isMoving = false;
+    UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
+    bool isRunning = false;
+    UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
+    bool isJumping = false;
+    UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
+    bool isJumpGotInterupted = false;
+    UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
+    bool isFalling = false;
+
     UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
         bool isAbleToRun = true;
     UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
-        bool isRunning = false;
-    UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
         int curSpeed;
-    UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Control Properties")
         int moveSpeed;
-    UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Control Properties")
         int runSpeed;
-    UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Control Properties")
         int extraSpeed;
 
     UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
         bool isAbleToJump = true;
 
     UFUNCTION(BlueprintCallable, Category = "Control Method")
-        virtual void PossessedBy(AController* newController) override;
-    
+        virtual bool CheckIfIsAbleToLook();
     UFUNCTION(BlueprintCallable, Category = "Control Method")
-        bool CheckIfIsAbleToLook();
-    UFUNCTION(BlueprintCallable, Category = "Control Method")
-        bool CheckIfIsAbleToMove();
+        virtual bool CheckIfIsAbleToMove();
     UFUNCTION(BlueprintCallable, Category = "Control Method")
         void UpdateSpeed();
 
     UFUNCTION(BlueprintCallable, Category = "Control Method")
-        bool CheckIfIsAbleToInteract();
+        virtual bool CheckIfIsAbleToInteract();
 
 public :
     UFUNCTION(BlueprintCallable, Category = "Control Method")
-        void Look(FVector direction);
+        void Look(FVector2D direction);
     UFUNCTION(BlueprintCallable, Category = "Control Method")
-        void Move(FVector direction);
+        virtual void Move(FVector2D direction);
+    UFUNCTION(BlueprintCallable, Category = "Control Method")
+        void MoveStop();
 
     UFUNCTION(BlueprintCallable, Category = "Control Method")
         void Run();
     UFUNCTION(BlueprintCallable, Category = "Control Method")
         void RunStop();
     UFUNCTION(BlueprintCallable, Category = "Control Method")
-        void Jump();
+        void JumpStart();
     UFUNCTION(BlueprintCallable, Category = "Control Method")
         void JumpEnd();
+
+    UFUNCTION(BlueprintCallable, Category = "Control Method")
+        virtual void Interact();
 
     UFUNCTION(BlueprintCallable, Category = "Control Method")
         void SelectItem(int itemIndex);
@@ -169,5 +196,4 @@ public :
 public :
     UFUNCTION(BlueprintCallable, Category = "Getter Method")
         ETeam GetCharacterTeam();
-    
-}
+};

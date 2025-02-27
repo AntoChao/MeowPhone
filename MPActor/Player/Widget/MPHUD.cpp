@@ -1,10 +1,5 @@
 #include "MPHUD.h"
-#include "../../HighLevel/MPGI.h"
-
-UMPHUD::UMPHUD()
-{
-
-}
+#include "../../../HighLevel/MPGI.h"
 
 void UMPHUD::NativeConstruct()
 {

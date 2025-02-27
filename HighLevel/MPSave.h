@@ -2,11 +2,11 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/SaveGame.h"
-#include "../CommonEnum"
+#include "../CommonEnum.h"
 #include "MPSave.generated.h"
 
 UCLASS(minimalapi)
-class MEOWPHONE_API UMPSave : public USaveGame
+class UMPSave : public USaveGame
 {
 	GENERATED_BODY()
 	

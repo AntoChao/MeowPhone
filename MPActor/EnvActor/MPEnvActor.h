@@ -4,100 +4,103 @@
 #include "GameFramework/Actor.h"
 #include "../MPInteractable.h"
 
-#include "Components/TimelineComponent.h"
+#include "TimerManager.h"
 
 #include "MPEnvActor.generated.h"
 
 enum class EEnvActor : uint8;
+enum class EEnvActorType : uint8;
+
 class UStaticMeshComponent;
 class UBoxComponent;
 class UAudioComponent;
 
 UCLASS(BlueprintType, Blueprintable)
-class AMPCharacter : public AActor, public IMPInteractable
+class AMPEnvActor : public AActor, public IMPInteractable
 {
     GENERATED_BODY()
 
-public :
+public:
     AMPEnvActor();
 
-// common envActor properties
-protected :
-    UPROPERTY(BlueprintReadWrite, Category = "Common Properties")
-        FLocalizedText envActorName;
+    // common envActor properties
+protected:
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Common Properties")
+    FText envActorName;
 
-    UPROPERTY(BlueprintReadWrite, Category = "Common Properties")
-        EEnvActorType envActorTag;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Common Properties")
+    EEnvActor envActorTag;
 
-// components
-protected :
-    UPROPERTY(BlueprintReadWrite, Category = "Common Properties")
-        UStaticMeshComponent* envActorBodyMesh;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Common Properties")
+    EEnvActorType envActorType;
 
-    UPROPERTY(BlueprintReadWrite, Category = "Common Properties")
-        UBoxComponent* envActorCollision;
+    // components
+protected:
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Common Properties")
+    UStaticMeshComponent* envActorBodyMesh;
 
-    UPROPERTY(BlueprintReadWrite, Category = "Common Properties")
-        UAudioComponent* envActorAudioComp;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Common Properties")
+    UBoxComponent* envActorCollision;
 
-// interactable interface
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Common Properties")
+    UAudioComponent* envActorAudioComp;
+
+    // interactable interface
 public:
     UFUNCTION(BlueprintCallable, Category = "Interface Method")
-        virtual bool IsInteractable(AMPCharacter* player) override;
+    virtual bool IsInteractable(AMPCharacter* targetActor) override;
 
     UFUNCTION(BlueprintCallable, Category = "Interface Method")
-        virtual FLocalizedText GetInteractHintText(AMPCharacter* player) override;
+    virtual FText GetInteractHintText(AMPCharacter* targetActor) override;
 
     UFUNCTION(BlueprintCallable, Category = "Interface Method")
-        virtual void BeInteracted(AMPCharacter* player) override;
+    virtual void BeInteracted(AMPCharacter* targetActor) override;
 
-protected :
+protected:
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interface Properties")
+    bool isSingleUse = false;
     UPROPERTY(BlueprintReadWrite, Category = "Interface Properties")
-        bool isSingleUse = false;
+    bool isInteracting = false;
     UPROPERTY(BlueprintReadWrite, Category = "Interface Properties")
-        bool isInteracting = false;
+    AMPCharacter* interactedCharacter = nullptr;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interface Properties")
+    float totalInteractDuration;
     UPROPERTY(BlueprintReadWrite, Category = "Interface Properties")
-        AMPCharacter* interactedCharacter - nullptr;
-    UPROPERTY(BlueprintReadWrite, Category = "Interface Properties")
-        float totalInteractDuration;
-    UPROPERTY(BlueprintReadWrite, Category = "Interface Properties")
-        float curInteractCountDown;
-    UPROPERTY(BlueprintReadWrite, Category = "Interface Properties")
-        FTimeline interactTimerHandle;
+    float curInteractCountDown;
+    FTimerHandle interactTimerHandle;
 
     // cooldown
     UPROPERTY(BlueprintReadWrite, Category = "Interface Properties")
-        bool isInCooldown;
+    bool isInCooldown;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interface Properties")
+    float totalCooldown;
     UPROPERTY(BlueprintReadWrite, Category = "Interface Properties")
-        float totalCooldown;
-    UPROPERTY(BlueprintReadWrite, Category = "Interface Properties")
-        float curCooldownCountDown;
-    UPROPERTY(BlueprintReadWrite, Category = "Interface Properties")
-        FTimeline cooldownTimerHandle;
+    float curCooldownCountDown;
+    FTimerHandle cooldownTimerHandle;
 
-// interact specific
-protected :
+    // interact specific
+protected:
     UFUNCTION(BlueprintCallable, Category = "Interface Method")
-        virtual void ApplyInteractEffectDirect(AActor* targetActor);    
+    virtual void ApplyInteractEffectDirect(AMPCharacter* targetActor);
     UFUNCTION(BlueprintCallable, Category = "Interface Method")
-        void EndInteractEffectDirect(AActor* targetActor);    
-    
-    UFUNCTION(BlueprintCallable, Category = "Interface Method")
-        void StartInteractEffectDuration(AActor* targetActor);    
-    UFUNCTION(BlueprintCallable, Category = "Interface Method")
-        void ApplyInteractEffectDuration();
-    UFUNCTION(BlueprintCallable, Category = "Interface Method")
-        virtual void ApplyInteractEffectDurationEffect();
-    UFUNCTION(BlueprintCallable, Category = "Interface Method")
-        void ApplyInteractEffectDurationCountdown();
+    void EndInteractEffectDirect(AMPCharacter* targetActor);
 
     UFUNCTION(BlueprintCallable, Category = "Interface Method")
-        void ExpireInteractEffectDuration();
+    void StartInteractEffectDuration(AMPCharacter* targetActor);
+    UFUNCTION(BlueprintCallable, Category = "Interface Method")
+    void ApplyInteractEffectDuration();
+    UFUNCTION(BlueprintCallable, Category = "Interface Method")
+    virtual void ApplyInteractEffectDurationEffect();
+    UFUNCTION(BlueprintCallable, Category = "Interface Method")
+    void ApplyInteractEffectDurationCountdown();
 
     UFUNCTION(BlueprintCallable, Category = "Interface Method")
-        void StartCooldown();
+    void ExpireInteractEffectDuration();
+
     UFUNCTION(BlueprintCallable, Category = "Interface Method")
-        void CooldownCountDown();
+    void StartCooldown();
     UFUNCTION(BlueprintCallable, Category = "Interface Method")
-        void EndCooldown();
-}
+    void CooldownCountDown();
+    UFUNCTION(BlueprintCallable, Category = "Interface Method")
+    void EndCooldown();
+};

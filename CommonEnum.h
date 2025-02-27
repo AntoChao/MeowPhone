@@ -40,6 +40,7 @@ enum class ETeam : uint8 {
 
 UENUM(BlueprintType, Blueprintable)
 enum class ECatRace : uint8 {
+	ECatExp,
 	ECat1,
 	ECat2,
 	EDiedCat
@@ -47,6 +48,7 @@ enum class ECatRace : uint8 {
 
 UENUM(BlueprintType, Blueprintable)
 enum class EHumanProfession : uint8 {
+	EHumanExp,
 	EHuman1,
 	EHuman2,
 	EDiedHuman
@@ -92,6 +94,12 @@ enum class EItemType : uint8 {
 UENUM(BlueprintType, Blueprintable)
 enum class EAbility : uint8 {
 	ENone
+};
+
+UENUM(BlueprintType, Blueprintable)
+enum class EAbilityType : uint8 {
+	EDirectUse,
+	EDurationUse
 };
 
 UENUM(BlueprintType, Blueprintable)

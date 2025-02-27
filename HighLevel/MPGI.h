@@ -2,23 +2,21 @@
 
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
+#include "Templates/SharedPointer.h"
+
+#include "OnlineSubsystem.h"
+#include "OnlineSessionSettings.h"
+#include "Interfaces/OnlineSessionInterface.h"
+
 #include "MPGI.generated.h"
 
 enum class ELanguage : uint8;
 struct FSessionInfo;
-class FOnlineSessionSearch;
-class OnlineSessionPtr;
-
-class FOnCreateSessionsCompleteDelegate;
-class FOnFindSessionsCompleteDelegate;
-class FOnJoinSessionCompleteDelegate;
-class FOnEndSessionCompleteDelegate;
-class FOnDestroySessionCompleteDelegate;
 
 class FDelegateHandle;
 
 UCLASS(minimalapi)
-class MEOWPHONE_API UMPGI : public UGameInstance
+class UMPGI : public UGameInstance
 {
 	GENERATED_BODY()
 	
@@ -27,11 +25,11 @@ public:
 
 // common game instance section 
 protected:
-	UPROPERTY(BlueprintReadWrite, Category = "Common Properties")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Common Properties")
 		ELanguage gameLanguage;
 
-	UPROPERTY(BlueprintReadWrite, Category = "Common Properties")
-		FName curPlayerName;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Common Properties")
+		FString curPlayerName;
 
 public:
 	UFUNCTION(BlueprintCallable, Category = "Common Methods")
@@ -56,12 +54,13 @@ public:
 		
 // session section
 protected:
+	/*
 	UPROPERTY(BlueprintReadWrite, Category = "Session Properties")
 		TSharedPtr<FOnlineSessionSearch> searchSettings;
 
 	UPROPERTY(BlueprintReadWrite, Category = "Session Properties")
 		OnlineSessionPtr sessionInterface;
-
+	
 	UPROPERTY(BlueprintReadWrite, Category = "Session Properties")
 		bool foundSuccessed;
 	
@@ -118,6 +117,7 @@ protected:
 
 	UFUNCTION(BlueprintCallable, Category = "Session Complete Methods")
 		void DestroySessionCompleted(FName sessionName, bool destroyCompleted);
+	*/
 
 // getter && setter
 public:
@@ -125,5 +125,5 @@ public:
 		ELanguage getGameLanguage();
 
 	UFUNCTION(BlueprintCallable, Category = " getter && setter")
-		FName getCurPlayerName();
+		FString getCurPlayerName();
 };

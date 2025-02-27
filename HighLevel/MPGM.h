@@ -7,7 +7,7 @@
 class UMPGI;
 
 UCLASS(minimalapi)
-class MEOWPHONE_API AMPGM : public AGameModeBase
+class AMPGM : public AGameModeBase
 {
 	GENERATED_BODY()
 	

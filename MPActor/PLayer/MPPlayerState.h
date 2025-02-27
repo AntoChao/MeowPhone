@@ -12,36 +12,36 @@ enum class EAbility : uint8;
 enum class EHumanProfession : uint8;*/
 
 UCLASS(BlueprintType, Blueprintable)
-class MEOWPHONE_API AMPPlayerState : public APlayerController
+class AMPPlayerState : public APlayerState
 {
     GENERATED_BODY()
 
-public :
+public:
     AMPPlayerState();
 
-// Common playerstate
-public :
-    UPROPERTY(BlueprintReadWrite, Category = "Common Properties")
-        FString playerName;
+    // Common playerstate
+public:
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Common Properties")
+    FString playerName;
 
-    UPROPERTY(BlueprintReadWrite, Category = "Common Properties")
-        int playerIndex;
-    
-    UPROPERTY(BlueprintReadWrite, Category = "Common Properties")
-        ETeam playerTeam;
-    
-    UPROPERTY(BlueprintReadWrite, Category = "Common Properties")
-        ECatRace catRace;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Common Properties")
+    int playerIndex;
 
-    UPROPERTY(BlueprintReadWrite, Category = "Ability Properties")
-        EAbility playerSelectedAbility;
-    
-    UPROPERTY(BlueprintReadWrite, Category = "Common Properties")
-        EHumanProfession humanProfession;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Common Properties")
+    ETeam playerTeam;
 
-    UPROPERTY(BlueprintReadWrite, Category = "Common Properties")
-        bool isReady = false;
-    
-    UPROPERTY(BlueprintReadWrite, Category = "Common Properties")
-        bool isDied = false;
-}
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Common Properties")
+    ECatRace catRace;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability Properties")
+    EAbility playerSelectedAbility;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Common Properties")
+    EHumanProfession humanProfession;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Common Properties")
+    bool isReady = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Common Properties")
+    bool isDied = false;
+};

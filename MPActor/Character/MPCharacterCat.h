@@ -20,16 +20,18 @@ public :
 
     virtual void BeginPlay() override;
 
+    virtual void Tick(float deltaTime) override;
+
 // ability
 protected:    
-    UPROPERTY(BlueprintReadWrite, Category = "Ability Properties")
-    UMPAbility activeAbility;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability Properties")
+    UMPAbility* activeAbility;
     
-    UPROPERTY(BlueprintReadWrite, Category = "Ability Properties")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability Properties")
     TArray<EAbility> initPassiveAbilities;
 
     UPROPERTY(BlueprintReadWrite, Category = "Ability Properties")
-    TArray<UMPAbility> allPassiveAbilities;
+    TArray<UMPAbility*> allPassiveAbilities;
 
 
     UFUNCTION(BlueprintCallable, Category = "Ability Method")
@@ -49,21 +51,21 @@ public :
     
 // interactable interface
 protected :
-    UPROPERTY(BlueprintReadWrite, Category = "Interface Properties")
-    FLocalizedText humanInteractHintText;
-    UPROPERTY(BlueprintReadWrite, Category = "Interface Properties")
-    FLocalizedText catInteractHintText;
-    UPROPERTY(BlueprintReadWrite, Category = "Interface Properties")
-    FLocalizedText uninteractableHumanHintText;
-    UPROPERTY(BlueprintReadWrite, Category = "Interface Properties")
-    FLocalizedText uninteractableCatHintText;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interface Properties")
+    FText humanInteractHintText;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interface Properties")
+    FText catInteractHintText;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interface Properties")
+    FText uninteractableHumanHintText;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interface Properties")
+    FText uninteractableCatHintText;
 
 public:
     UFUNCTION(BlueprintCallable, Category = "Interface Method")
     virtual bool IsInteractable(AMPCharacter* player) override;
 
     UFUNCTION(BlueprintCallable, Category = "Interface Method")
-    virtual FLocalizedText GetInteractHintText(AMPCharacter* player) override;
+    virtual FText GetInteractHintText(AMPCharacter* player) override;
 
     UFUNCTION(BlueprintCallable, Category = "Interface Method")
     virtual void BeInteracted(AMPCharacter* player) override;
@@ -77,13 +79,13 @@ protected:
     bool isBeingHolded = false;
     UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
     AMPCharacterHuman* humanHolding;
-    UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Control Properties")
     float holdTotalTime;
     UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
     float curHoldTime;
     UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
     float curHoldPercentage;
-    UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Control Properties")
     float holdModifier;
 
     UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
@@ -91,14 +93,21 @@ protected:
     UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
     AMPCharacterHuman* humanRubbing;
 
-protected :
-    UFUNCTION(BlueprintCallable, Category = "Control Method")
+public :
     virtual bool CheckIfIsAbleToLook() override;
-    UFUNCTION(BlueprintCallable, Category = "Control Method")
     virtual bool CheckIfIsAbleToMove() override;
-    UFUNCTION(BlueprintCallable, Category = "Control Method")
     virtual bool CheckIfIsAbleToInteract() override;
 
+    virtual void Move(FVector2D direction) override;
+
+protected:
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability Properties")
+    float rotationRate = 400.0f;
+    /*
+    UFUNCTION(BlueprintCallable, Category = "Tick Method")
+    void UpdateRotation(FVector2D Direction);*/
+
+public :
     UFUNCTION(BlueprintCallable, Category = "Control Method")
     void StartedToBeHold(AMPCharacter* humanPlayer);
     UFUNCTION(BlueprintCallable, Category = "Control Method")
@@ -112,6 +121,5 @@ protected :
     void StopToRub();
 
 public:
-    UFUNCTION(BlueprintCallable, Category = "Interface Method")
     virtual void Interact() override;
-}
+};

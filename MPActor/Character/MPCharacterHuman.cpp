@@ -1,4 +1,4 @@
-#include "MPCharacterCat.h"
+#include "MPCharacterHuman.h"
 
 #include "../../CommonEnum.h"
 #include "../../CommonStruct.h"
@@ -14,13 +14,13 @@ AMPCharacterHuman::AMPCharacterHuman()
 }
 
 // interactable interface
-bool AMPCharacterHuman::IsInteractable(AMPCharacter* )
+bool AMPCharacterHuman::IsInteractable(AMPCharacter* player)
 {
 	// only cat can interact with human?
-	return player->GetCharacterTeam == ETeam::ECat; 
+	return player->GetCharacterTeam() == ETeam::ECat;
 }
 
-FLocalizedText AMPCharacterHuman::GetInteractHintText(AMPCharacter* player)
+FText AMPCharacterHuman::GetInteractHintText(AMPCharacter* player)
 {
 	if (IsInteractable(player))
 	{
@@ -40,11 +40,11 @@ void AMPCharacterHuman::BeInteracted(AMPCharacter* player)
 		{
 			case ETeam::ECat :
 			{
-				AMPCharacterCat* cat = Cast<AMPCharacterCat>(player);
-				if (cat)
+				AMPCharacterCat* aCat = Cast<AMPCharacterCat>(player);
+				if (aCat)
 				{
-					StartToBeRubbed(rubbedCat);
-					cat->StartToRub(this);
+					StartToBeRubbed(aCat);
+					aCat->StartToRub(this);
 				}
 			}
 		}
