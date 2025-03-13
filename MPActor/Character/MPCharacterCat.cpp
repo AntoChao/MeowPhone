@@ -279,3 +279,9 @@ void AMPCharacterCat::Interact()
 		}
 	}
 }
+
+// animation
+void AMPCharacterCat::PlayCatAnimMontage(ECatAnimMontage aMontage)
+{
+	
+}

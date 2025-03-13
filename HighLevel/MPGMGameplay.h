@@ -63,6 +63,15 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "Lobby Methods")
 		void RemoveControlledCharacters(AMPControllerPlayer* aPlayer);
 	
+
+// game state initialize
+protected:
+	UPROPERTY(BlueprintReadWrite, Category = "GameState Properties")
+		AMPGS* theGameState;
+
+	UFUNCTION(BlueprintCallable, Category = "GameState Methods")
+		void InitializeGameState();
+	
 // factories
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Factory Properties")
@@ -123,24 +132,6 @@ protected:
 
 // game process
 protected:
-	UPROPERTY(BlueprintReadWrite, Category = "GameProgress Properties")
-		EGPStatus curGameplayStatus;
-	
-	UPROPERTY(BlueprintReadWrite, Category = "GameProgress Properties")
-		bool isReady = false;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GameProgress Properties")
-		int readyTotalTime;
-	UPROPERTY(BlueprintReadWrite, Category = "GameProgress Properties")
-		int curReadyTime;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GameProgress Properties")
-		int prepareTotalTime;
-	UPROPERTY(BlueprintReadWrite, Category = "GameProgress Properties")
-		int curPrepareTime;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GameProgress Properties")
-		int gameplayTotalTime;
-	UPROPERTY(BlueprintReadWrite, Category = "GameProgress Properties")
-		int curGameplayTime;
-	
 	FTimerHandle readyTimerHandle;
 	FTimerHandle prepareTimerHandle;
 	FTimerHandle gameplayTimerHandle;

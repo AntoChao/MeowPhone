@@ -9,6 +9,11 @@ class AMPCharacterCat;
 class AMPItem;
 class AMPEnvActor;
 
+/* Some thoughts
+The reason why GameState should hold all attributes related with the game
+Its because it allows easy access for players
+As GameState is exisitng in each player instance. There is no need for player to use server rpc
+*/
 UCLASS(minimalapi)
 class AMPGS : public AGameStateBase
 {
@@ -33,6 +38,27 @@ public:
 	UPROPERTY(Replicated, BlueprintReadWrite, Category = "Common Properties")
 		TArray<AMPEnvActor*> allEnvActors;
 
+	// Gameplay progression
+	UPROPERTY(BlueprintReadWrite, Category = "GameProgress Properties")
+		EGPStatus curGameplayStatus;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GameProgress Properties")
+		bool isMostPlayerReady = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GameProgress Properties")
+		int readyTotalTime;
+	UPROPERTY(BlueprintReadWrite, Category = "GameProgress Properties")
+		int curReadyTime;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GameProgress Properties")
+		int prepareTotalTime;
+	UPROPERTY(BlueprintReadWrite, Category = "GameProgress Properties")
+		int curPrepareTime;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GameProgress Properties")
+		int gameplayTotalTime;
+	UPROPERTY(BlueprintReadWrite, Category = "GameProgress Properties")
+		int curGameplayTime;
+	
+	// MP Progression
 	UPROPERTY(BlueprintReadWrite, Category = "Common Properties")
 		float totalMPProgression;
 	UPROPERTY(BlueprintReadWrite, Category = "Common Properties")

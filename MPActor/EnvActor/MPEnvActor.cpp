@@ -7,9 +7,29 @@
 
 #include "../../CommonStruct.h"
 
+/* Declaration
+The difference between direct usage vs duration usage lies on the effect
+	A direct usage means that it only requires one single input and directly effect
+	A duration usage means that the effect is not instant, not a pick up or consumable..
+*/
 AMPEnvActor::AMPEnvActor()
 {
+	PrimaryActorTick.bCanEverTick = false;
 
+    // Setup scene root
+    envActorSceneRoot = CreateDefaultSubobject<USceneComponent>(TEXT("SceneRoot"));
+    RootComponent = envActorSceneRoot;
+
+    // Setup mesh and attach to root
+    envActorBodyMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BodyMesh"));
+    envActorBodyMesh->SetupAttachment(RootComponent);
+
+    // Collision and audio remain the same
+    envActorCollision = CreateDefaultSubobject<UBoxComponent>(TEXT("Collision"));
+    envActorCollision->SetupAttachment(RootComponent);
+
+    envActorAudioComp = CreateDefaultSubobject<UAudioComponent>(TEXT("AudioComp"));
+    envActorAudioComp->SetupAttachment(RootComponent);
 }
 
 bool AMPEnvActor::IsInteractable(AMPCharacter* targetActor)

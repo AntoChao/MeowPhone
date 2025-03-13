@@ -11,6 +11,7 @@
 enum class EEnvActor : uint8;
 enum class EEnvActorType : uint8;
 
+class USceneComponent;
 class UStaticMeshComponent;
 class UBoxComponent;
 class UAudioComponent;
@@ -36,6 +37,9 @@ protected:
 
     // components
 protected:
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+    USceneComponent* envActorSceneRoot;
+    
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Common Properties")
     UStaticMeshComponent* envActorBodyMesh;
 

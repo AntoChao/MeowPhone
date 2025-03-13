@@ -122,4 +122,13 @@ public :
 
 public:
     virtual void Interact() override;
+
+// animation
+protected:
+    // all animations montages
+    
+public:
+    UFUNCTION(BlueprintCallable, Category = "Animation Method")
+    void PlayCatAnimMontage(ECatAnimMontage aMontage);
+
 };

@@ -20,6 +20,15 @@ void AMPGS::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimePro
 	DOREPLIFETIME(AMPGS, allCats);
 	DOREPLIFETIME(AMPGS, allItems);
 	DOREPLIFETIME(AMPGS, allEnvActors);
+
+	DOREPLIFETIME(AMPGS, isMostPlayerReady);
+
+	DOREPLIFETIME(AMPGS, curReadyTime);
+	DOREPLIFETIME(AMPGS, curPrepareTime);
+	DOREPLIFETIME(AMPGS, curGameplayTime);
+	DOREPLIFETIME(AMPGS, curMPProgression);
+	DOREPLIFETIME(AMPGS, curMPProgressionPercentage);
+	
 }
 
 void AMPGS::BeginPlay()

@@ -430,6 +430,7 @@ void AMPControllerPlayer::SetupInputComponent()
         enhancedInput->BindAction(selectItemThreeAction, ETriggerEvent::Started, this, &AMPControllerPlayer::SelectItemThreeFunc);
         
         enhancedInput->BindAction(useCurItemAction, ETriggerEvent::Started, this, &AMPControllerPlayer::UseCurItemFunc);
+        enhancedInput->BindAction(useCurItemAction, ETriggerEvent::Ongoing, this, &AMPControllerPlayer::UseCurItemFunc);
         enhancedInput->BindAction(dropCurItemAction, ETriggerEvent::Started, this, &AMPControllerPlayer::DropCurItemFunc);
         
         enhancedInput->BindAction(useAbilityAction, ETriggerEvent::Started, this, &AMPControllerPlayer::UseAbilityFunc);

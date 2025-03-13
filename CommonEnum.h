@@ -70,8 +70,17 @@ enum class ECatAction : uint8 {
 };
 
 UENUM(BlueprintType, Blueprintable)
-enum class EEnvActor : uint8 {
+enum class ECatAnimMontage : uint8 {
+	EPush,
+	EUseMeowPhone,
 	ENone
+};
+
+UENUM(BlueprintType, Blueprintable)
+enum class EEnvActor : uint8 {
+	ENone,
+	EPushable, // small objects to throw
+	ECustom, // window, machine -> all the duration ones
 };
 
 UENUM(BlueprintType, Blueprintable)
