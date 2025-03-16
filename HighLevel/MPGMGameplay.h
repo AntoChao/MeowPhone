@@ -5,6 +5,8 @@
 #include "TimerManager.h"
 #include "MPGMGameplay.generated.h"
 
+class AMPGS;
+
 class UFactoryAIController;
 class UFactoryHuman;
 class UFactoryCat;
@@ -14,9 +16,8 @@ class UFactoryAbility;
 
 class AMPControllerPlayer;
 class AMPCharacter;
-class AMPEnvActor;
+class AMPEnvActorComp;
 
-enum class EGPStatus : uint8;
 enum class EMPEnvActor : uint8;
 enum class EMPItem : uint8;
 enum class EAbility : uint8;
@@ -105,7 +106,7 @@ protected:
 
 public :
 	UFUNCTION(BlueprintCallable, Category = "Factory Methods")
-		AMPEnvActor* SpawnEnvironment(EEnvActor envTag, FVector spawnLocation, FRotator spawnRotation);
+		AMPEnvActorComp* SpawnEnvironment(EEnvActor envTag, FVector spawnLocation, FRotator spawnRotation);
 	UFUNCTION(BlueprintCallable, Category = "Factory Methods")
 		AMPItem* SpawnItem(EItem itemTag, FVector spawnLocation, FRotator spawnRotation);
 	UFUNCTION(BlueprintCallable, Category = "Factory Methods")

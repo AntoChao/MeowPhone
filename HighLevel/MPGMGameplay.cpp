@@ -51,10 +51,6 @@ void AMPGMGameplay::PostLogin(APlayerController* newPlayer)
 		// should attach lobby hud at beginning
 		curPlayer->AttachHUD(EHUDType::ELobby, 0); // hud enum + zorder
 
-		if (isSinglePlayerTesting)
-		{
-			StartGame();
-		}
 	}
 }
 
@@ -81,6 +77,11 @@ void AMPGMGameplay::BeginPlay()
 	InitializeGameState();
 	StartLobby();
 	SetupFactoryInstances();
+
+	if (isSinglePlayerTesting)
+	{
+		StartGame();
+	}
 }
 
 void AMPGMGameplay::RemoveControlledCharacters(AMPControllerPlayer* aPlayer)
@@ -108,7 +109,7 @@ void AMPGMGameplay::RemoveControlledCharacters(AMPControllerPlayer* aPlayer)
 // game state initialize
 void AMPGMGameplay::InitializeGameState() 
 {
-	theGameState = Cast<AMPGS>(GetGameState());    
+	theGameState = Cast<AMPGS>(GameState);
 }
 
 // factories
@@ -147,7 +148,7 @@ void AMPGMGameplay::SetupFactoryInstances()
 }
 
 	// factory spawn
-AMPEnvActor* AMPGMGameplay::SpawnEnvironment(EEnvActor envTag, FVector spawnLocation, FRotator spawnRotation)
+AMPEnvActorComp* AMPGMGameplay::SpawnEnvironment(EEnvActor envTag, FVector spawnLocation, FRotator spawnRotation)
 {
 	if (environmentFactoryInstance)
 	{
@@ -155,7 +156,7 @@ AMPEnvActor* AMPGMGameplay::SpawnEnvironment(EEnvActor envTag, FVector spawnLoca
 
 		if (spawnActor)
 		{
-			AMPEnvActor* envSpawn = Cast<AMPEnvActor>(spawnActor);
+			AMPEnvActorComp* envSpawn = Cast<AMPEnvActorComp>(spawnActor);
 			if (envSpawn)
 			{
 				return envSpawn;

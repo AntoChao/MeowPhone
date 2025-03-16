@@ -3,15 +3,15 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "GeometryCollection/GeometryCollectionComponent.h"
-#include "MPFractureEnvActor.generated.h"
+#include "MPEnvActorCompFracture.generated.h"
 
 UCLASS(Blueprintable, BlueprintType)
-class AMPFractureEnvActor : public AActor
+class AMPEnvActorCompFracture : public AActor
 {
     GENERATED_BODY()
 
 public:
-    AMPFractureEnvActor();
+    AMPEnvActorCompFracture();
 
 protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Fracture EnvActor Properties")

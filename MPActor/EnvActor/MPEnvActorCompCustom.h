@@ -1,17 +1,17 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "MPEnvActor.h"
+#include "MPEnvActorComp.h"
 
-#include "MPEnvActorCustom.generated.h"
+#include "MPEnvActorCompCustom.generated.h"
 
 UCLASS(BlueprintType, Blueprintable)
-class AMPEnvActorCustom : public AMPEnvActor
+class AMPEnvActorCompCustom : public AMPEnvActorComp
 {
     GENERATED_BODY()
 
 public:
-    AMPEnvActorCustom();
+    AMPEnvActorCompCustom();
 
     // interactable interface
 public:

@@ -4,7 +4,7 @@
 #include "../MPActor/Character/MPCharacterCat.h"
 #include "../MPActor/Character/MPCharacterHuman.h"
 #include "../MPActor/Item/MPItem.h"
-#include "../MPActor/EnvActor/MPEnvActor.h"
+#include "../MPActor/EnvActor/MPEnvActorComp.h"
 #include "Net/UnrealNetwork.h"
 
 AMPGS::AMPGS()

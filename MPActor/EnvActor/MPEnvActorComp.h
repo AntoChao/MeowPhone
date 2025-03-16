@@ -6,7 +6,7 @@
 
 #include "TimerManager.h"
 
-#include "MPEnvActor.generated.h"
+#include "MPEnvActorComp.generated.h"
 
 enum class EEnvActor : uint8;
 enum class EEnvActorType : uint8;
@@ -17,12 +17,12 @@ class UBoxComponent;
 class UAudioComponent;
 
 UCLASS(BlueprintType, Blueprintable)
-class AMPEnvActor : public AActor, public IMPInteractable
+class AMPEnvActorComp : public AActor, public IMPInteractable
 {
     GENERATED_BODY()
 
 public:
-    AMPEnvActor();
+    AMPEnvActorComp();
 
     // common envActor properties
 protected:
@@ -42,9 +42,6 @@ protected:
     
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Common Properties")
     UStaticMeshComponent* envActorBodyMesh;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Common Properties")
-    UBoxComponent* envActorCollision;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Common Properties")
     UAudioComponent* envActorAudioComp;

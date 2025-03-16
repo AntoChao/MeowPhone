@@ -1,4 +1,4 @@
-#include "MPEnvActor.h"
+#include "MPEnvActorComp.h"
 
 #include "Components/StaticMeshComponent.h"
 #include "Components/BoxComponent.h"
@@ -7,12 +7,7 @@
 
 #include "../../CommonStruct.h"
 
-/* Declaration
-The difference between direct usage vs duration usage lies on the effect
-	A direct usage means that it only requires one single input and directly effect
-	A duration usage means that the effect is not instant, not a pick up or consumable..
-*/
-AMPEnvActor::AMPEnvActor()
+AMPEnvActorComp::AMPEnvActorComp()
 {
 	PrimaryActorTick.bCanEverTick = false;
 
@@ -24,38 +19,42 @@ AMPEnvActor::AMPEnvActor()
     envActorBodyMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BodyMesh"));
     envActorBodyMesh->SetupAttachment(RootComponent);
 
-    // Collision and audio remain the same
-    envActorCollision = CreateDefaultSubobject<UBoxComponent>(TEXT("Collision"));
-    envActorCollision->SetupAttachment(RootComponent);
-
+    // Audio remain the same
     envActorAudioComp = CreateDefaultSubobject<UAudioComponent>(TEXT("AudioComp"));
     envActorAudioComp->SetupAttachment(RootComponent);
 }
 
-bool AMPEnvActor::IsInteractable(AMPCharacter* targetActor)
+bool AMPEnvActorComp::IsInteractable(AMPCharacter* targetActor)
 {
 	return false;
 }
 
-FText AMPEnvActor::GetInteractHintText(AMPCharacter* targetActor)
+FText AMPEnvActorComp::GetInteractHintText(AMPCharacter* targetActor)
 {
 	return envActorName;
 }
 
-void AMPEnvActor::BeInteracted(AMPCharacter* targetActor)
+void AMPEnvActorComp::BeInteracted(AMPCharacter* targetActor)
 {
+
+	GEngine->AddOnScreenDebugMessage(6, 5.0f, FColor::Yellow, TEXT("EnvActor Be Interacted"));
+
 	if (IsInteractable(targetActor))
 	{
 		switch (envActorType)
 		{
 			case EEnvActorType::EDirectInteract:
 			{
+				GEngine->AddOnScreenDebugMessage(6, 5.0f, FColor::Yellow, TEXT("EnvActor Be Interacted: Applying Direct Effect"));
+
 				ApplyInteractEffectDirect(targetActor);
 				EndInteractEffectDirect(targetActor);
 				break;
 			}
 			case EEnvActorType::EDurationInteract:
 			{
+				GEngine->AddOnScreenDebugMessage(6, 5.0f, FColor::Yellow, TEXT("EnvActor Be Interacted: Applying Duration Effect"));
+
 				StartInteractEffectDuration(targetActor);
 				break;
 			}	
@@ -65,11 +64,12 @@ void AMPEnvActor::BeInteracted(AMPCharacter* targetActor)
 	}
 }
 
-void AMPEnvActor::ApplyInteractEffectDirect(AMPCharacter* targetActor)
+void AMPEnvActorComp::ApplyInteractEffectDirect(AMPCharacter* targetActor)
 {
 	// just override to apply effect
+	return;
 }
-void AMPEnvActor::EndInteractEffectDirect(AMPCharacter* targetActor)
+void AMPEnvActorComp::EndInteractEffectDirect(AMPCharacter* targetActor)
 {
 	if (isSingleUse)
 	{
@@ -81,7 +81,7 @@ void AMPEnvActor::EndInteractEffectDirect(AMPCharacter* targetActor)
 	}
 }
 
-void AMPEnvActor::StartInteractEffectDuration(AMPCharacter* targetActor)
+void AMPEnvActorComp::StartInteractEffectDuration(AMPCharacter* targetActor)
 {
 	isInteracting = true;
 	interactedCharacter = targetActor;
@@ -90,17 +90,17 @@ void AMPEnvActor::StartInteractEffectDuration(AMPCharacter* targetActor)
 	ApplyInteractEffectDuration();
 }
 
-void AMPEnvActor::ApplyInteractEffectDuration()
+void AMPEnvActorComp::ApplyInteractEffectDuration()
 {
 	ApplyInteractEffectDurationEffect();
 	ApplyInteractEffectDurationCountdown();
 }
-void AMPEnvActor::ApplyInteractEffectDurationEffect()
+void AMPEnvActorComp::ApplyInteractEffectDurationEffect()
 {
 	// override to apply effect
 	
 }
-void AMPEnvActor::ApplyInteractEffectDurationCountdown()
+void AMPEnvActorComp::ApplyInteractEffectDurationCountdown()
 {
 	if (curInteractCountDown > 0)
 	{
@@ -122,7 +122,7 @@ void AMPEnvActor::ApplyInteractEffectDurationCountdown()
 	}
 }
 
-void AMPEnvActor::ExpireInteractEffectDuration()
+void AMPEnvActorComp::ExpireInteractEffectDuration()
 {
 	isInteracting = false;
 	interactedCharacter = nullptr;
@@ -136,13 +136,13 @@ void AMPEnvActor::ExpireInteractEffectDuration()
 		StartCooldown();
 	}
 }
-void AMPEnvActor::StartCooldown()
+void AMPEnvActorComp::StartCooldown()
 {
 	isInCooldown = true;
 	curCooldownCountDown = totalCooldown;
 	CooldownCountDown();
 }
-void AMPEnvActor::CooldownCountDown()
+void AMPEnvActorComp::CooldownCountDown()
 {
 	if (curCooldownCountDown > 0)
 	{
@@ -163,7 +163,7 @@ void AMPEnvActor::CooldownCountDown()
 		EndCooldown();
 	}
 }
-void AMPEnvActor::EndCooldown()
+void AMPEnvActorComp::EndCooldown()
 {
 	isInCooldown = false;
 }

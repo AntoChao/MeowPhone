@@ -1,19 +1,19 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "MPEnvActor.h"
+#include "MPEnvActorComp.h"
 
-#include "MPEnvActorPushable.generated.h"
+#include "MPEnvActorCompPushable.generated.h"
 
-class AMPFractureEnvActor;
+class AMPEnvActorCompFracture;
 
 UCLASS(BlueprintType, Blueprintable)
-class AMPEnvActorPushable : public AMPEnvActor
+class AMPEnvActorCompPushable : public AMPEnvActorComp
 {
     GENERATED_BODY()
 
 public:
-    AMPEnvActorPushable();
+    AMPEnvActorCompPushable();
 
     // Common methods
 protected:
@@ -46,9 +46,10 @@ protected:
     float breakableThreshold = 500000.0f;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Push Attribute")
-    TSubclassOf<AMPFractureEnvActor> FracturedVersionClass;
+    TSubclassOf<AMPEnvActorCompFracture> fracturedItemClass;
 
 public:
+    UFUNCTION()
     void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, 
-               UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit);
+        UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit);
 };

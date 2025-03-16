@@ -263,8 +263,12 @@ void AMPCharacterCat::StopToRub()
 */
 void AMPCharacterCat::Interact()
 {
+	GEngine->AddOnScreenDebugMessage(5, 5.0f, FColor::Yellow, TEXT("Cat Interact 1"));
+
 	if (CheckIfIsAbleToInteract())
 	{
+		GEngine->AddOnScreenDebugMessage(5, 5.0f, FColor::Yellow, TEXT("Cat Interact 2"));
+
 		if (isRubbing)
 		{
 			StopToRub();
@@ -275,7 +279,13 @@ void AMPCharacterCat::Interact()
 		}
 		else if (detectInteractableActor)
 		{
+			GEngine->AddOnScreenDebugMessage(5, 5.0f, FColor::Yellow, TEXT("Cat Interact 3"));
+
 			detectInteractableActor->BeInteracted(this);
+		}
+		else
+		{
+			GEngine->AddOnScreenDebugMessage(5, 5.0f, FColor::Yellow, TEXT("Cat Interact 4"));
 		}
 	}
 }
