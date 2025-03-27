@@ -46,6 +46,18 @@ protected:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Common Properties")
     UAudioComponent* envActorAudioComp;
 
+    // zone related logic
+protected:
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zone Properties")
+    int zoneCode = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zone  Properties")
+    bool isAbleToBeRandomlized = false;
+    
+public:
+    UFUNCTION(BlueprintCallable, Category = "Zone")
+    virtual void BeRandomized();
+
     // interactable interface
 public:
     UFUNCTION(BlueprintCallable, Category = "Interface Method")
@@ -104,4 +116,10 @@ protected:
     void CooldownCountDown();
     UFUNCTION(BlueprintCallable, Category = "Interface Method")
     void EndCooldown();
+
+    // setter && getter
+public:
+    UFUNCTION(BlueprintCallable, Category = "Interface Method")
+    bool CheckIfIsRandomizable();
+
 };

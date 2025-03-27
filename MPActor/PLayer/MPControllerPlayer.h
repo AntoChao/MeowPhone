@@ -145,6 +145,10 @@ protected :
         UInputAction* runAction;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input Properties")
         UInputAction* jumpAction;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input Properties")
+        UInputAction* crouchAction;
+    
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input Properties")
         UInputAction* interactAction;
     
@@ -183,6 +187,11 @@ public :
         void JumpFunc(const FInputActionValue& value);
     UFUNCTION(BlueprintCallable, Category = "Input Method")
         void JumpEndFunc(const FInputActionValue& value);
+    UFUNCTION(BlueprintCallable, Category = "Input Method")
+        void CrouchFunc(const FInputActionValue& value);
+    UFUNCTION(BlueprintCallable, Category = "Input Method")
+        void CrouchEndFunc(const FInputActionValue& value);
+        
     UFUNCTION(BlueprintCallable, Category = "Input Method")
         void InteractFunc(const FInputActionValue& value);
     UFUNCTION(BlueprintCallable, Category = "Input Method")

@@ -9,6 +9,11 @@
 
 class USpringArmComponent;
 class UCameraComponent;
+
+enum class EMovementMode : uint8;
+enum class EMovementLocomotion : uint8;
+enum class EMovementAirStatus : uint8;
+
 enum class EMPItem : uint8;
 class AMPItem;
 enum class ETeam : uint8;
@@ -52,6 +57,9 @@ protected :
 // detect 
     FComponentQueryParams DefaultComponentQueryParams;
 	FCollisionResponseParams DefaultResponseParam;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Detect Properties")
+        bool isAbleToFireTraceLine = true;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Detect Properties")
         float detectDistance;
@@ -122,41 +130,56 @@ protected :
     // possession
     virtual void PossessedBy(AController* newController) override;
 
-    // animation control
+    // movement/ animation control
     UFUNCTION(BlueprintCallable, Category = "Control Method")
     virtual void UpdateMovingControls();
 
     UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
-    bool isMoving = false;
+        EMovementMode curMovementMode = EMovementMode::EStanding;
     UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
-    bool isRunning = false;
+        EMovementLocomotion curLocomotionState = EMovementLocomotion::EIdle;
     UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
-    bool isJumping = false;
-    UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
-    bool isJumpGotInterupted = false;
-    UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
-    bool isFalling = false;
+        EMovementAirStatus curAirState = EMovementAirStatus::EGround;
 
-    UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
-        bool isAbleToRun = true;
+
     UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
         int curSpeed;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Control Properties")
         int moveSpeed;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Control Properties")
         int runSpeed;
+    UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
+        int crouchSpeed;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Control Properties")
         int extraSpeed;
 
-    UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
-        bool isAbleToJump = true;
+    UFUNCTION(BlueprintCallable, Category = "Control Method")
+        void UpdateSpeed();
+
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Control Properties")
+        float wallDetectionHeightPercentage = 0.8f;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Control Properties")
+        float wallDetectionDownward = -10.0f;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Control Properties")
+        float wallDetectionRadius = 15.0f;
+        UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Control Properties")
+        float wallDetectionAngleTolerance = 0.3f;
 
     UFUNCTION(BlueprintCallable, Category = "Control Method")
         virtual bool CheckIfIsAbleToLook();
     UFUNCTION(BlueprintCallable, Category = "Control Method")
         virtual bool CheckIfIsAbleToMove();
     UFUNCTION(BlueprintCallable, Category = "Control Method")
-        void UpdateSpeed();
+        virtual bool CheckIfIsAbleToRun();
+    UFUNCTION(BlueprintCallable, Category = "Control Method")
+        virtual bool CheckIfIsAbleToCrouch();
+    UFUNCTION(BlueprintCallable, Category = "Control Method")
+        virtual bool CheckIfIsAbleToJump();
+    UFUNCTION(BlueprintCallable, Category = "Control Method")
+        virtual bool CheckIfIsAbleToDoubleJump();
+    UFUNCTION(BlueprintCallable, Category = "Control Method")
+        virtual bool CheckIfIsAbleToClimb();
 
     UFUNCTION(BlueprintCallable, Category = "Control Method")
         virtual bool CheckIfIsAbleToInteract();
@@ -164,19 +187,25 @@ protected :
 public :
     UFUNCTION(BlueprintCallable, Category = "Control Method")
         void Look(FVector2D direction);
+    
     UFUNCTION(BlueprintCallable, Category = "Control Method")
         virtual void Move(FVector2D direction);
     UFUNCTION(BlueprintCallable, Category = "Control Method")
-        void MoveStop();
-
+        virtual void MoveStop();
     UFUNCTION(BlueprintCallable, Category = "Control Method")
         void Run();
     UFUNCTION(BlueprintCallable, Category = "Control Method")
         void RunStop();
     UFUNCTION(BlueprintCallable, Category = "Control Method")
-        void JumpStart();
+        void CrouchStart();
     UFUNCTION(BlueprintCallable, Category = "Control Method")
-        void JumpEnd();
+        void CrouchEnd();
+        
+    UFUNCTION(BlueprintCallable, Category = "Control Method")
+        virtual oid JumpStart();
+    UFUNCTION(BlueprintCallable, Category = "Control Method")
+        virtual void JumpEnd();
+
 
     UFUNCTION(BlueprintCallable, Category = "Control Method")
         virtual void Interact();
@@ -192,8 +221,16 @@ public :
     UFUNCTION(BlueprintCallable, Category = "Control Method")
         void DropCurItem();
 
-// general getter
+// general setter and getter
 public :
     UFUNCTION(BlueprintCallable, Category = "Getter Method")
         ETeam GetCharacterTeam();
+    
+    UFUNCTION(BlueprintCallable, Category = "Setter Method")
+        void SetMovementMode(EMovementMode NewMode);
+    UFUNCTION(BlueprintCallable, Category = "Setter Method")
+        void SetLocomotionState(EMovementLocomotion NewLocomotion);
+    UFUNCTION(BlueprintCallable, Category = "Setter Method")
+        void SetAirState(EMovementAirStatus NewAirState);
+        
 };

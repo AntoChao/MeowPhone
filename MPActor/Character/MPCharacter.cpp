@@ -74,16 +74,20 @@ void AMPCharacter::Detect()
 		bool bHit = GetWorld()->LineTraceSingleByChannel(detectHit, detectStart, detectEnd, ECC_Visibility, DefaultComponentQueryParams, DefaultResponseParam);
 		
 		FColor LineColor = bHit ? FColor::Green : FColor::Red;
-		DrawDebugLine(
-			GetWorld(),
-			detectStart,
-			detectEnd,
-			LineColor,
-			false,       // Persistent lines? False means temporary
-			0.5f,        // Duration in seconds
-			0,           // Depth priority (default)
-			2.0f         // Thickness
-		);
+		
+		if (isAbleToFireTraceLine)
+		{
+			DrawDebugLine(
+				GetWorld(),
+				detectStart,
+				detectEnd,
+				LineColor,
+				false,       // Persistent lines? False means temporary
+				0.5f,        // Duration in seconds
+				0,           // Depth priority (default)
+				2.0f         // Thickness
+			);
+		}
 
 		DetectReaction();
 	}
@@ -213,31 +217,24 @@ void AMPCharacter::PossessedBy(AController* newController)
 void AMPCharacter::UpdateMovingControls()
 {
 	if (GetCharacterMovement()->IsFalling())
-	{
-		if (GetVelocity().Z > 0)
-		{
-			isJumpGotInterupted = false;
-			isJumping = true;
-			isFalling = false;
-		}
-		else if (GetVelocity().Z <= 0)
-		{
-			isJumpGotInterupted = false;
-			isJumping = false;
-			isFalling = true;
-		}
-	}
-	else if (!GetCharacterMovement()->IsFalling())
-	{
-		if (isJumping)
-		{
-			isJumpGotInterupted = true;
-		}
-		isJumping = false;
-		isFalling = false;
-
-	}
+    {
+        if (GetVelocity().Z > 0)
+        {
+            if (curAirState != EMovementAirStatus::EDoubleJump)
+                SetAirState(EMovementAirStatus::EJump);
+        }
+        else
+        {
+            SetAirState(EMovementAirStatus::EFalling);
+        }
+    }
+    else
+    {
+        if (curAirState != EMovementAirStatus::EGround)
+            SetAirState(EMovementAirStatus::EGround);
+    }
 }
+
 bool AMPCharacter::CheckIfIsAbleToLook()
 {
 	return true;
@@ -246,6 +243,27 @@ bool AMPCharacter::CheckIfIsAbleToMove()
 {
 	return true;
 }
+bool AMPCharacter::CheckIfIsAbleToRun()
+{
+	return curMovementMode == EMovementMode::EStanding;
+}
+bool AMPCharacter::CheckIfIsAbleToCrouch()
+{
+	return curMovementMode == EStanding && curAirState == EGround;
+}
+bool AMPCharacter::CheckIfIsAbleToJump()
+{
+	return curAirState == EMovementAirStatus::EGround;
+}
+bool AMPCharacter::CheckIfIsAbleToDoubleJump()
+{
+	return false; // in general character can not double jump
+}
+bool AMPCharacter::CheckIfIsAbleToClimb()
+{
+	return true;
+}
+
 void AMPCharacter::UpdateSpeed()
 {
 	if (GetCharacterMovement())
@@ -260,7 +278,6 @@ bool AMPCharacter::CheckIfIsAbleToInteract()
 
 void AMPCharacter::Look(FVector2D direction)
 {
-	bool testValue = CheckIfIsAbleToLook();
 	if (CheckIfIsAbleToLook())
 	{
 		AddControllerYawInput(direction.X * GetWorld()->GetDeltaSeconds());
@@ -273,47 +290,77 @@ void AMPCharacter::Move(FVector2D direction)
 	{
 		GEngine->AddOnScreenDebugMessage(1, 5.0f, FColor::Yellow, TEXT("Character: Move"));
 
-		isMoving = true;
+		SetLocomotionState(EMovementLocomotion::EWalk);
 		AddMovementInput(GetActorForwardVector(), direction.Y);
 		AddMovementInput(GetActorRightVector(), direction.X);
 	}
 }
 void AMPCharacter::MoveStop()
 {
-	GEngine->AddOnScreenDebugMessage(2, 5.0f, FColor::Yellow, TEXT("Character: Move Stop"));
-	isMoving = false;
+	GEngine->AddOnScreenDebugMessage(1, 5.0f, FColor::Yellow, TEXT("Character: Move Stop"));
+	SetLocomotionState(EMovementLocomotion::EIdle);
 }
 
 void AMPCharacter::Run()
 {
-	if (isAbleToRun)
+	if (CheckIfIsAbleToRun())
 	{
-		GEngine->AddOnScreenDebugMessage(3, 5.0f, FColor::Yellow, TEXT("Character: Run"));
-		isRunning = true;
+		GEngine->AddOnScreenDebugMessage(2, 5.0f, FColor::Yellow, TEXT("Character: Run"));
+		SetLocomotionState(EMovementLocomotion::ERun);
 		curSpeed = moveSpeed + runSpeed + extraSpeed;
 		UpdateSpeed();
 	}
 }
 void AMPCharacter::RunStop()
 {
-	GEngine->AddOnScreenDebugMessage(4, 5.0f, FColor::Yellow, TEXT("Character: Run Stop"));
-	isRunning = false;
+	GEngine->AddOnScreenDebugMessage(2, 5.0f, FColor::Yellow, TEXT("Character: Run Stop"));
+	SetLocomotionState(EMovementLocomotion::EWalk);
 	curSpeed = moveSpeed + extraSpeed;
 	UpdateSpeed();
 }
+
+void AMPCharacter::CrouchStart()
+{
+	if (CheckIfIsAbleToCrouch())
+	{
+		GEngine->AddOnScreenDebugMessage(3, 5.0f, FColor::Yellow, TEXT("Character: Crouch"));
+		Crouch(); // Uses built-in UE crouch
+		SetMovementMode(EMovementMode::ECrouch);
+		curSpeed = crouchSpeed + extraSpeed;
+		UpdateSpeed();
+	}
+}
+
+void AMPCharacter::CrouchEnd()
+{
+	GEngine->AddOnScreenDebugMessage(3, 5.0f, FColor::Yellow, TEXT("Character: Crouch End"));
+	UnCrouch(); // Uses built-in UE uncrouch
+	SetMovementMode(EMovementMode::EStanding);
+	curSpeed = moveSpeed + extraSpeed;
+	UpdateSpeed();
+}
+
 void AMPCharacter::JumpStart()
 {
-	if (isAbleToJump)
+	if (CheckIfIsAbleToJump())
 	{
-		GEngine->AddOnScreenDebugMessage(5, 5.0f, FColor::Yellow, TEXT("Character: Jump"));
+		GEngine->AddOnScreenDebugMessage(4, 5.0f, FColor::Yellow, TEXT("Character: Jump Start"));
 		Jump();
+		SetAirState(EMovementAirStatus::EJump);
+	}
+	else if (CheckIfIsAbleToDoubleJump())
+	{
+		GEngine->AddOnScreenDebugMessage(5, 5.0f, FColor::Yellow, TEXT("Character: Double Jump Start"));
+		LaunchCharacter(FVector(0, 0, 600), true, true);
+		SetAirState(EMovementAirStatus::EDoubleJump);
 	}
 }
 void AMPCharacter::JumpEnd()
 {
-	GEngine->AddOnScreenDebugMessage(6, 5.0f, FColor::Yellow, TEXT("Character: Jump End"));
+	GEngine->AddOnScreenDebugMessage(4, 5.0f, FColor::Yellow, TEXT("Character: Jump End"));
 	StopJumping();
 }
+
 
 void AMPCharacter::Interact()
 {
@@ -374,6 +421,7 @@ void AMPCharacter::DropCurItem()
 	}
 }
 
+// setter && getters 
 ETeam AMPCharacter::GetCharacterTeam()
 {
 	AMPControllerPlayer* mpPC = Cast<AMPControllerPlayer>(GetController());
@@ -387,4 +435,30 @@ ETeam AMPCharacter::GetCharacterTeam()
 	}
 
 	return ETeam::ECat;
+}
+
+void AMPCharacter::SetMovementMode(EMovementMode newMode)
+{
+    if (curMovementMode != newMode)
+    {
+        curMovementMode = newMode;
+        // Trigger any special logic (FX/sound/etc)
+    }
+}
+
+void AMPCharacter::SetLocomotionState(EMovementLocomotion newLocomotion)
+{
+    if (curLocomotionState != newLocomotion)
+    {
+        curLocomotionState = newLocomotion;
+        UpdateSpeed();
+    }
+}
+
+void AMPCharacter::SetAirState(EMovementAirStatus newAirState)
+{
+    if (curAirState != newAirState)
+    {
+        curAirState = newAirState;
+    }
 }

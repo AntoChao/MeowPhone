@@ -24,6 +24,11 @@ AMPEnvActorComp::AMPEnvActorComp()
     envActorAudioComp->SetupAttachment(RootComponent);
 }
 
+void AMPEnvActorComp::BeRandomized()
+{
+	return;
+}
+
 bool AMPEnvActorComp::IsInteractable(AMPCharacter* targetActor)
 {
 	return false;
@@ -166,4 +171,9 @@ void AMPEnvActorComp::CooldownCountDown()
 void AMPEnvActorComp::EndCooldown()
 {
 	isInCooldown = false;
+}
+
+bool CheckIfIsRandomizable()
+{
+	return isAbleToBeRandomlized;
 }

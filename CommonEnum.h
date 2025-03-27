@@ -18,6 +18,24 @@ enum class EGPStatus : uint8 {
 };
 
 UENUM(BlueprintType, Blueprintable)
+enum class EMissionTaskType : uint8
+{
+    EStealth      UMETA(DisplayName = "Stealth"),
+    EAssassination UMETA(DisplayName = "Assassination"),
+    ECollection   UMETA(DisplayName = "Collection"),
+};
+
+UENUM(BlueprintType, Blueprintable)
+enum class EMissionTaskStatus : uint8
+{
+    ENoActive,
+	EInProgress,
+	ESuccess,
+	EFail
+};
+
+
+UENUM(BlueprintType, Blueprintable)
 enum class EHUDType : uint8 {
 	EInit,
 	EOption,
@@ -53,11 +71,39 @@ enum class EHumanProfession : uint8 {
 	EHuman2,
 	EDiedHuman
 };
-/**/
+
+// complex movement system
+UENUM(BlueprintType)
+enum class EMovementMode : uint8
+{
+    EStanding       UMETA(DisplayName = "Standing"),
+	ECrouch         UMETA(DisplayName = "Crouch"),
+    EClimbing       UMETA(DisplayName = "Climbing")
+};
+
+UENUM(BlueprintType)
+enum class EMovementLocomotion : uint8
+{
+    EIdle           UMETA(DisplayName = "Idle"),
+    EWalk           UMETA(DisplayName = "Walk"),
+    ERun            UMETA(DisplayName = "Run"),
+};
+
+UENUM(BlueprintType)
+enum class EMovementAirStatus : uint8
+{
+    EGround         UMETA(DisplayName = "Grounded"),
+    EJump           UMETA(DisplayName = "Jump"),
+    EDoubleJump     UMETA(DisplayName = "Double Jump"),
+    EFalling        UMETA(DisplayName = "Falling")
+};
+
+// interactions
 UENUM(BlueprintType, Blueprintable)
 enum class EHumanAction : uint8 {
 	ENone
 };
+
 
 UENUM(BlueprintType, Blueprintable)
 enum class ECatAction : uint8 {

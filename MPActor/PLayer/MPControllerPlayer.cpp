@@ -423,6 +423,9 @@ void AMPControllerPlayer::SetupInputComponent()
         enhancedInput->BindAction(jumpAction, ETriggerEvent::Triggered, this, &AMPControllerPlayer::JumpFunc);
         enhancedInput->BindAction(jumpAction, ETriggerEvent::Completed, this, &AMPControllerPlayer::JumpEndFunc);
 
+        enhancedInput->BindAction(crouchAction, ETriggerEvent::Triggered, this, &AMPControllerPlayer::CrouchFunc);
+        enhancedInput->BindAction(crouchAction, ETriggerEvent::Completed, this, &AMPControllerPlayer::CrouchEndFunc);
+
         enhancedInput->BindAction(interactAction, ETriggerEvent::Started, this, &AMPControllerPlayer::InteractFunc);
         
         enhancedInput->BindAction(selectItemOneAction, ETriggerEvent::Started, this, &AMPControllerPlayer::SelectItemOneFunc);
@@ -508,6 +511,29 @@ void AMPControllerPlayer:: JumpEndFunc(const FInputActionValue& value)
 		}
 	}
 }
+void AMPControllerPlayer::CrouchFunc(const FInputActionValue& value)
+{
+    if (controlledBody)
+    {
+        if (value.Get<bool>())
+		{
+            controlledBody->StartCrouch();
+		}
+    }   
+}
+
+void AMPControllerPlayer::CrouchEndFunc(const FInputActionValue& value)
+{
+    if (controlledBody)
+    {
+        if (value.Get<bool>())
+		{
+            controlledBody->EndCrouch();
+		}
+    }
+    
+}
+
 void AMPControllerPlayer::InteractFunc(const FInputActionValue& value)
 {
     if (controlledBody) 
