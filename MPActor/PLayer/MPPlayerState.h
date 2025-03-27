@@ -40,8 +40,8 @@ public:
     EHumanProfession humanProfession;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Common Properties")
-    bool isReady = false;
+    bool isPlayerReady = false;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Common Properties")
-    bool isDied = false;
+    bool isPlayerDied = false;
 };

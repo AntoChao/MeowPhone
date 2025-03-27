@@ -5,6 +5,7 @@
 #include "../CommonEnum.h"
 
 #include "MPGI.h"
+#include "MPGS.h"
 
 #include "Factory/FactoryHuman.h"
 #include "Factory/FactoryCat.h"
@@ -50,10 +51,6 @@ void AMPGMGameplay::PostLogin(APlayerController* newPlayer)
 		// should attach lobby hud at beginning
 		curPlayer->AttachHUD(EHUDType::ELobby, 0); // hud enum + zorder
 
-		if (isSinglePlayerTesting)
-		{
-			StartGame();
-		}
 	}
 }
 
@@ -77,8 +74,14 @@ void AMPGMGameplay::BeginPlay()
 {
 	Super::BeginPlay();
 
+	InitializeGameState();
 	StartLobby();
 	SetupFactoryInstances();
+
+	if (isSinglePlayerTesting)
+	{
+		StartGame();
+	}
 }
 
 void AMPGMGameplay::RemoveControlledCharacters(AMPControllerPlayer* aPlayer)
@@ -101,6 +104,12 @@ void AMPGMGameplay::RemoveControlledCharacters(AMPControllerPlayer* aPlayer)
 			allPlayerCharacters.Remove(eachToRemoveCharacter);
 		}
 	}
+}
+
+// game state initialize
+void AMPGMGameplay::InitializeGameState() 
+{
+	theGameState = Cast<AMPGS>(GameState);
 }
 
 // factories
@@ -139,7 +148,7 @@ void AMPGMGameplay::SetupFactoryInstances()
 }
 
 	// factory spawn
-AMPEnvActor* AMPGMGameplay::SpawnEnvironment(EEnvActor envTag, FVector spawnLocation, FRotator spawnRotation)
+AMPEnvActorComp* AMPGMGameplay::SpawnEnvironment(EEnvActor envTag, FVector spawnLocation, FRotator spawnRotation)
 {
 	if (environmentFactoryInstance)
 	{
@@ -147,7 +156,7 @@ AMPEnvActor* AMPGMGameplay::SpawnEnvironment(EEnvActor envTag, FVector spawnLoca
 
 		if (spawnActor)
 		{
-			AMPEnvActor* envSpawn = Cast<AMPEnvActor>(spawnActor);
+			AMPEnvActorComp* envSpawn = Cast<AMPEnvActorComp>(spawnActor);
 			if (envSpawn)
 			{
 				return envSpawn;
@@ -195,7 +204,7 @@ UMPAbility* AMPGMGameplay::SpawnAbility(AActor* abilityOwner, EAbility abilityTa
 
 void AMPGMGameplay::StartLobby()
 {
-	curGameplayStatus = EGPStatus::ELobby;
+	theGameState->curGameplayStatus = EGPStatus::ELobby;
 
 	for (AMPControllerPlayer* eachPlayer : allPlayersControllers)
 	{
@@ -210,13 +219,13 @@ void AMPGMGameplay::GotReady(AMPControllerPlayer* aPlayer)
 {
 	if (CheckReadyToStartGame())
 	{
-		isReady = true;
-		curReadyTime = readyTotalTime;
+		theGameState->isMostPlayerReady = true;
+		theGameState->curReadyTime = theGameState->readyTotalTime;
 		CountdownReadyGame();
 	}
 	else 
 	{
-		isReady = false; // represents if a player cancel ready
+		theGameState->isMostPlayerReady = false;
 	}
 }
 bool AMPGMGameplay::CheckReadyToStartGame()
@@ -256,10 +265,10 @@ bool AMPGMGameplay::CheckHalfPlayersAreReady()
 	int numReadyPlayers = 0;
 	for (AMPControllerPlayer* eachPlayer : allPlayersControllers)
 	{
-		AMPPlayerState* eachState = Cast<AMPPlayerState>(eachPlayer->PlayerState);
-		if (eachState)
+		AMPPlayerState* eachPlayerState = Cast<AMPPlayerState>(eachPlayer->PlayerState);
+		if (eachPlayerState)
 		{
-			if (eachState->isReady)
+			if (eachPlayerState->isPlayerReady)
 			{
 				numReadyPlayers ++;
 			}
@@ -270,14 +279,14 @@ bool AMPGMGameplay::CheckHalfPlayersAreReady()
 
 void AMPGMGameplay::CountdownReadyGame()
 {
-	if (isReady)
+	if (theGameState->isMostPlayerReady)
 	{
-		if (curReadyTime > 0)
+		if (theGameState->curReadyTime > 0)
 		{
 			UWorld* serverWorld = GetWorld();
 			if (serverWorld)
 			{
-				curReadyTime -= 1;
+				theGameState->curReadyTime -= 1;
 
 				serverWorld->GetTimerManager().ClearTimer(readyTimerHandle);
 				FTimerDelegate readyTimerDel;
@@ -480,8 +489,8 @@ void AMPGMGameplay::SetupGameplayHUD()
 
 void AMPGMGameplay::StartPrepareTime()
 {
-	curGameplayStatus = EGPStatus::EPrepare;
-	curPrepareTime = prepareTotalTime;
+	theGameState->curGameplayStatus = EGPStatus::EPrepare;
+	theGameState->curPrepareTime = theGameState->prepareTotalTime;
 	CountdownPrepareGame();
 
 	for (AMPControllerPlayer* eachPlayer : allPlayersControllers)
@@ -491,12 +500,12 @@ void AMPGMGameplay::StartPrepareTime()
 }
 void AMPGMGameplay::CountdownPrepareGame()
 {
-	if (curPrepareTime > 0)
+	if (theGameState->curPrepareTime > 0)
 	{
 		UWorld* serverWorld = GetWorld();
 		if (serverWorld)
 		{
-			curPrepareTime -= 1;
+			theGameState->curPrepareTime -= 1;
 
 			serverWorld->GetTimerManager().ClearTimer(prepareTimerHandle);
 			FTimerDelegate prepareTimerDel;
@@ -516,8 +525,8 @@ void AMPGMGameplay::EndPrepareTime()
 
 void AMPGMGameplay::StartGameplayTime()
 {
-	curGameplayStatus = EGPStatus::EGameplay;
-	curGameplayTime = gameplayTotalTime;
+	theGameState->curGameplayStatus = EGPStatus::EGameplay;
+	theGameState->curGameplayTime = theGameState->gameplayTotalTime;
 	CountdownGameplayGame();
 
 	for (AMPControllerPlayer* eachPlayer : allPlayersControllers)
@@ -527,12 +536,12 @@ void AMPGMGameplay::StartGameplayTime()
 }
 void AMPGMGameplay::CountdownGameplayGame()
 {
-	if (curGameplayTime > 0)
+	if (theGameState->curGameplayTime > 0)
 	{
 		UWorld* serverWorld = GetWorld();
 		if (serverWorld)
 		{
-			curGameplayTime -= 1;
+			theGameState->curGameplayTime -= 1;
 
 			serverWorld->GetTimerManager().ClearTimer(gameplayTimerHandle);
 			FTimerDelegate gameplayTimerDel;

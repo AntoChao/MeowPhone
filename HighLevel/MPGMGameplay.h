@@ -5,6 +5,8 @@
 #include "TimerManager.h"
 #include "MPGMGameplay.generated.h"
 
+class AMPGS;
+
 class UFactoryAIController;
 class UFactoryHuman;
 class UFactoryCat;
@@ -14,9 +16,8 @@ class UFactoryAbility;
 
 class AMPControllerPlayer;
 class AMPCharacter;
-class AMPEnvActor;
+class AMPEnvActorComp;
 
-enum class EGPStatus : uint8;
 enum class EMPEnvActor : uint8;
 enum class EMPItem : uint8;
 enum class EAbility : uint8;
@@ -63,6 +64,15 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "Lobby Methods")
 		void RemoveControlledCharacters(AMPControllerPlayer* aPlayer);
 	
+
+// game state initialize
+protected:
+	UPROPERTY(BlueprintReadWrite, Category = "GameState Properties")
+		AMPGS* theGameState;
+
+	UFUNCTION(BlueprintCallable, Category = "GameState Methods")
+		void InitializeGameState();
+	
 // factories
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Factory Properties")
@@ -96,7 +106,7 @@ protected:
 
 public :
 	UFUNCTION(BlueprintCallable, Category = "Factory Methods")
-		AMPEnvActor* SpawnEnvironment(EEnvActor envTag, FVector spawnLocation, FRotator spawnRotation);
+		AMPEnvActorComp* SpawnEnvironment(EEnvActor envTag, FVector spawnLocation, FRotator spawnRotation);
 	UFUNCTION(BlueprintCallable, Category = "Factory Methods")
 		AMPItem* SpawnItem(EItem itemTag, FVector spawnLocation, FRotator spawnRotation);
 	UFUNCTION(BlueprintCallable, Category = "Factory Methods")
@@ -123,24 +133,6 @@ protected:
 
 // game process
 protected:
-	UPROPERTY(BlueprintReadWrite, Category = "GameProgress Properties")
-		EGPStatus curGameplayStatus;
-	
-	UPROPERTY(BlueprintReadWrite, Category = "GameProgress Properties")
-		bool isReady = false;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GameProgress Properties")
-		int readyTotalTime;
-	UPROPERTY(BlueprintReadWrite, Category = "GameProgress Properties")
-		int curReadyTime;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GameProgress Properties")
-		int prepareTotalTime;
-	UPROPERTY(BlueprintReadWrite, Category = "GameProgress Properties")
-		int curPrepareTime;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GameProgress Properties")
-		int gameplayTotalTime;
-	UPROPERTY(BlueprintReadWrite, Category = "GameProgress Properties")
-		int curGameplayTime;
-	
 	FTimerHandle readyTimerHandle;
 	FTimerHandle prepareTimerHandle;
 	FTimerHandle gameplayTimerHandle;

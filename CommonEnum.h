@@ -70,10 +70,30 @@ enum class ECatAction : uint8 {
 };
 
 UENUM(BlueprintType, Blueprintable)
-enum class EEnvActor : uint8 {
+enum class ECatAnimMontage : uint8 {
+	EPush,
+	EUseMeowPhone,
 	ENone
 };
 
+/*
+Pushable means that cat/ human can push the object away
+ECustom means that cat/ human can Interact with them. But they can also allows physics (chairs)
+
+*/
+UENUM(BlueprintType, Blueprintable)
+enum class EEnvActor : uint8 {
+	ENone,
+	EPushable, // small objects to throw
+	ECustom, // window, machine -> all the duration ones
+};
+
+
+/* Declaration
+The difference between direct usage vs duration usage lies on the effect
+	A direct usage means that it only requires one single input and directly effect
+	A duration usage means that the effect is not instant, not a pick up or consumable..
+*/
 UENUM(BlueprintType, Blueprintable)
 enum class EEnvActorType : uint8 {
 	EDirectInteract,

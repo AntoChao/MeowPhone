@@ -64,7 +64,6 @@ void AMPCharacter::BeInteracted(AMPCharacter* player)
 }
 
 // detect 
-
 void AMPCharacter::Detect()
 {
 	if (IsValid(characterCamera)) {
@@ -72,7 +71,20 @@ void AMPCharacter::Detect()
 		detectDirection = characterCamera->GetForwardVector();
 		detectEnd = ((detectDirection * detectDistance) + detectStart);
 		
-		GetWorld()->LineTraceSingleByChannel(detectHit, detectStart, detectEnd, ECC_Visibility, DefaultComponentQueryParams, DefaultResponseParam);
+		bool bHit = GetWorld()->LineTraceSingleByChannel(detectHit, detectStart, detectEnd, ECC_Visibility, DefaultComponentQueryParams, DefaultResponseParam);
+		
+		FColor LineColor = bHit ? FColor::Green : FColor::Red;
+		DrawDebugLine(
+			GetWorld(),
+			detectStart,
+			detectEnd,
+			LineColor,
+			false,       // Persistent lines? False means temporary
+			0.5f,        // Duration in seconds
+			0,           // Depth priority (default)
+			2.0f         // Thickness
+		);
+
 		DetectReaction();
 	}
 }

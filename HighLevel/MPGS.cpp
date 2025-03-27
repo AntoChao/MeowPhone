@@ -4,7 +4,7 @@
 #include "../MPActor/Character/MPCharacterCat.h"
 #include "../MPActor/Character/MPCharacterHuman.h"
 #include "../MPActor/Item/MPItem.h"
-#include "../MPActor/EnvActor/MPEnvActor.h"
+#include "../MPActor/EnvActor/MPEnvActorComp.h"
 #include "Net/UnrealNetwork.h"
 
 AMPGS::AMPGS()
@@ -20,6 +20,15 @@ void AMPGS::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimePro
 	DOREPLIFETIME(AMPGS, allCats);
 	DOREPLIFETIME(AMPGS, allItems);
 	DOREPLIFETIME(AMPGS, allEnvActors);
+
+	DOREPLIFETIME(AMPGS, isMostPlayerReady);
+
+	DOREPLIFETIME(AMPGS, curReadyTime);
+	DOREPLIFETIME(AMPGS, curPrepareTime);
+	DOREPLIFETIME(AMPGS, curGameplayTime);
+	DOREPLIFETIME(AMPGS, curMPProgression);
+	DOREPLIFETIME(AMPGS, curMPProgressionPercentage);
+	
 }
 
 void AMPGS::BeginPlay()

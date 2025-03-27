@@ -319,29 +319,29 @@ void AMPControllerPlayer::RemoveHUD(EHUDType hudType)
 // game progress update
 void AMPControllerPlayer::LobbyStartUpdate()
 {
-    AMPPlayerState* theState = Cast<AMPPlayerState>(PlayerState);
-    if (theState)
+    AMPPlayerState* thePlayerState = Cast<AMPPlayerState>(PlayerState);
+    if (thePlayerState)
     {
-        theState->isReady = false;
-        theState->isDied = false;
+        thePlayerState->isPlayerReady = false;
+        thePlayerState->isPlayerDied = false;
     }
 }
 void AMPControllerPlayer::PrepareStartUpdate()
 {
-    AMPPlayerState* theState = Cast<AMPPlayerState>(PlayerState);
-    if (theState)
+    AMPPlayerState* thePlayerState = Cast<AMPPlayerState>(PlayerState);
+    if (thePlayerState)
     {
-        theState->isReady = false;
-        theState->isDied = false;
+        thePlayerState->isPlayerReady = false;
+        thePlayerState->isPlayerDied = false;
     }
 }
 void AMPControllerPlayer::GameplayStartUpdate()
 {
-    AMPPlayerState* theState = Cast<AMPPlayerState>(PlayerState);
-    if (theState)
+    AMPPlayerState* thePlayerState = Cast<AMPPlayerState>(PlayerState);
+    if (thePlayerState)
     {
-        theState->isReady = false;
-        theState->isDied = false;
+        thePlayerState->isPlayerReady = false;
+        thePlayerState->isPlayerDied = false;
     }
 }
 
@@ -365,10 +365,10 @@ void AMPControllerPlayer::UnPossessEffect()
 */
 void AMPControllerPlayer::ControlledBodyDied()
 {
-    AMPPlayerState* theState = Cast<AMPPlayerState>(PlayerState);
-    if (theState)
+    AMPPlayerState* thePlayerState = Cast<AMPPlayerState>(PlayerState);
+    if (thePlayerState)
     {
-        theState->isDied = true;
+        thePlayerState->isPlayerDied = true;
     }
 
     AGameModeBase* curGameMode = UGameplayStatics::GetGameMode(GetWorld());
@@ -430,6 +430,7 @@ void AMPControllerPlayer::SetupInputComponent()
         enhancedInput->BindAction(selectItemThreeAction, ETriggerEvent::Started, this, &AMPControllerPlayer::SelectItemThreeFunc);
         
         enhancedInput->BindAction(useCurItemAction, ETriggerEvent::Started, this, &AMPControllerPlayer::UseCurItemFunc);
+        enhancedInput->BindAction(useCurItemAction, ETriggerEvent::Ongoing, this, &AMPControllerPlayer::UseCurItemFunc);
         enhancedInput->BindAction(dropCurItemAction, ETriggerEvent::Started, this, &AMPControllerPlayer::DropCurItemFunc);
         
         enhancedInput->BindAction(useAbilityAction, ETriggerEvent::Started, this, &AMPControllerPlayer::UseAbilityFunc);
