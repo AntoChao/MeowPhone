@@ -51,24 +51,18 @@ protected:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cat Movement")
     float DriftRecoveryAlpha = 1.0f;            // Interpolated drift multiplier (0.5 → 1.0 over time)
 
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement|Smoothing")
+    float AccelerationRate = 6.0f;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement|Smoothing")
+    float DecelerationRate = 8.0f;
+
     // For tracking current movement state (for drift direction)
     FVector LastVelocityDir = FVector::ZeroVector;  
     float CurrentSpeed = 0.0f;
 
-    // Momentum after drifting
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Momentum")
-    float DriftSlowdownMultiplier = 0.5f; // move at 50% speed while drifting
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Momentum")
-    float DriftRecoveryTime = 1.5f; // time to recover full speed
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cat Movement")
-    float DriftElapsedTime = 0.0f;
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cat Movement")
-    float DriftRecoveryAlpha = 1.0f; // 0 = slow, 1 = full speed
-
-
     UFUNCTION(BlueprintCallable, Category = "Ability Method")
-    void UpdateDriftStatus();
+    void UpdateDriftStatus(float deltaTime);
 
     virtual void Move(FVector2D direction) override;
     virtual void MoveStop() override;
@@ -154,8 +148,6 @@ public :
     virtual bool CheckIfIsAbleToLook() override;
     virtual bool CheckIfIsAbleToMove() override;
     virtual bool CheckIfIsAbleToInteract() override;
-
-    virtual void Move(FVector2D direction) override;
 
 protected:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability Properties")

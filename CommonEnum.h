@@ -18,24 +18,6 @@ enum class EGPStatus : uint8 {
 };
 
 UENUM(BlueprintType, Blueprintable)
-enum class EMissionTaskType : uint8
-{
-    EStealth      UMETA(DisplayName = "Stealth"),
-    EAssassination UMETA(DisplayName = "Assassination"),
-    ECollection   UMETA(DisplayName = "Collection"),
-};
-
-UENUM(BlueprintType, Blueprintable)
-enum class EMissionTaskStatus : uint8
-{
-    ENoActive,
-	EInProgress,
-	ESuccess,
-	EFail
-};
-
-
-UENUM(BlueprintType, Blueprintable)
 enum class EHUDType : uint8 {
 	EInit,
 	EOption,
@@ -74,7 +56,7 @@ enum class EHumanProfession : uint8 {
 
 // complex movement system
 UENUM(BlueprintType)
-enum class EMovementMode : uint8
+enum class EMPMovementMode : uint8
 {
     EStanding       UMETA(DisplayName = "Standing"),
 	ECrouch         UMETA(DisplayName = "Crouch"),

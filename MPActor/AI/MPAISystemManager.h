@@ -17,7 +17,7 @@ public:
 
     // Initializes the AI system for the mission zone.
     UFUNCTION(BlueprintCallable, Category="AI")
-    void InitializeAI(const FMissionZoneAIInfo& MissionZoneInfo);
+    void InitializeAI();
 
     // Example function to allocate urgent logic across all spawned AI.
     UFUNCTION(BlueprintCallable, Category="AI")

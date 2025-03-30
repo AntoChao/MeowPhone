@@ -15,6 +15,7 @@
 // related
 #include "MPPlayerState.h"
 #include "../Character/MPCharacter.h"
+#include "../Character/MPCharacterCat.h"
 
 // hud
 #include "Widget/HUDCat.h"
@@ -517,7 +518,7 @@ void AMPControllerPlayer::CrouchFunc(const FInputActionValue& value)
     {
         if (value.Get<bool>())
 		{
-            controlledBody->StartCrouch();
+            controlledBody->CrouchStart();
 		}
     }   
 }
@@ -528,7 +529,7 @@ void AMPControllerPlayer::CrouchEndFunc(const FInputActionValue& value)
     {
         if (value.Get<bool>())
 		{
-            controlledBody->EndCrouch();
+            controlledBody->CrouchEnd();
 		}
     }
     

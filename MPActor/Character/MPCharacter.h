@@ -10,7 +10,7 @@
 class USpringArmComponent;
 class UCameraComponent;
 
-enum class EMovementMode : uint8;
+enum class EMPMovementMode : uint8;
 enum class EMovementLocomotion : uint8;
 enum class EMovementAirStatus : uint8;
 
@@ -135,11 +135,11 @@ protected :
     virtual void UpdateMovingControls();
 
     UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
-        EMovementMode curMovementMode = EMovementMode::EStanding;
+        EMPMovementMode curMovementMode;
     UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
-        EMovementLocomotion curLocomotionState = EMovementLocomotion::EIdle;
+        EMovementLocomotion curLocomotionState;
     UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
-        EMovementAirStatus curAirState = EMovementAirStatus::EGround;
+        EMovementAirStatus curAirState;
 
 
     UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
@@ -160,9 +160,9 @@ protected :
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Control Properties")
         float wallDetectionHeightPercentage = 0.8f;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Control Properties")
-        float wallDetectionDownward = -10.0f;
+        float wallDetectDownward = -10.0f;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Control Properties")
-        float wallDetectionRadius = 15.0f;
+        float wallDetectRadius = 15.0f;
         UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Control Properties")
         float wallDetectionAngleTolerance = 0.3f;
 
@@ -202,7 +202,7 @@ public :
         void CrouchEnd();
         
     UFUNCTION(BlueprintCallable, Category = "Control Method")
-        virtual oid JumpStart();
+        virtual void JumpStart();
     UFUNCTION(BlueprintCallable, Category = "Control Method")
         virtual void JumpEnd();
 
@@ -227,7 +227,7 @@ public :
         ETeam GetCharacterTeam();
     
     UFUNCTION(BlueprintCallable, Category = "Setter Method")
-        void SetMovementMode(EMovementMode NewMode);
+        void SetMovementMode(EMPMovementMode NewMode);
     UFUNCTION(BlueprintCallable, Category = "Setter Method")
         void SetLocomotionState(EMovementLocomotion NewLocomotion);
     UFUNCTION(BlueprintCallable, Category = "Setter Method")

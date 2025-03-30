@@ -6,6 +6,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "../PLayer/MPPlayerState.h"
+#include "Components/CapsuleComponent.h"
 
 #include "../../CommonEnum.h"
 #include "../../CommonStruct.h"
@@ -38,11 +39,12 @@ void AMPCharacterCat::BeginPlay()
 
 void AMPCharacterCat::Tick(float deltaTime)
 {
-	Super::Tick(DeltaTime);
+	Super::Tick(deltaTime);
+	UpdateDriftStatus(deltaTime);
 }
 
 // cat move function 
-void AMPCharacterCat::UpdateDriftStatus()
+void AMPCharacterCat::UpdateDriftStatus(float deltaTime)
 {
 	// Update current speed and record last velocity direction (for drift momentum)
 	FVector velocity = GetVelocity();
@@ -69,7 +71,7 @@ void AMPCharacterCat::UpdateDriftStatus()
 	
 	// Choose interpolation rate (accelerate if increasing, decelerate if decreasing).
 	float interpRate = (CurrentMoveInputStrength < targetInputStrength) ? AccelerationRate : DecelerationRate;
-	CurrentMoveInputStrength = FMath::FInterpTo(CurrentMoveInputStrength, targetInputStrength, DeltaTime, interpRate);
+	CurrentMoveInputStrength = FMath::FInterpTo(CurrentMoveInputStrength, targetInputStrength, deltaTime, interpRate);
 	
 	// --- Apply Drift or Normal Movement ---
 	if (bShouldDrift)
@@ -83,7 +85,7 @@ void AMPCharacterCat::UpdateDriftStatus()
 		}
 		
 		// Update drift recovery over time (recovering from slowdown).
-		DriftElapsedTime += DeltaTime;
+		DriftElapsedTime += deltaTime;
 		float t = FMath::Clamp(DriftElapsedTime / DriftRecoveryTime, 0.0f, 1.0f);
 		DriftRecoveryAlpha = FMath::Lerp(DriftSlowdownMultiplier, 1.0f, t);
 		
@@ -93,7 +95,7 @@ void AMPCharacterCat::UpdateDriftStatus()
 		
 		// Rotate slowly toward the desired input direction.
 		FRotator targetRot = DesiredMoveDirection.Rotation();
-		FRotator newRot = FMath::RInterpConstantTo(GetActorRotation(), targetRot, DeltaTime, DriftTurnRate * 100.0f);
+		FRotator newRot = FMath::RInterpConstantTo(GetActorRotation(), targetRot, deltaTime, DriftTurnRate * 100.0f);
 		SetActorRotation(newRot);
 	}
 	else
@@ -119,36 +121,10 @@ void AMPCharacterCat::UpdateDriftStatus()
 		
 		// Rotate quickly toward the desired direction.
 		FRotator targetRot = DesiredMoveDirection.Rotation();
-		SetActorRotation(FMath::RInterpTo(GetActorRotation(), targetRot, DeltaTime, 8.0f));
+		SetActorRotation(FMath::RInterpTo(GetActorRotation(), targetRot, deltaTime, 8.0f));
 	}
 	
 	// (Optional) Update other states or trigger animations based on bIsDrifting, CurrentSpeed, etc.
-}
-
-void AMPCharacterCat::Move(FVector2D direction)
-{
-	if (!CheckIfIsAbleToMove()) return;
-	
-	// If no input, mark as no input and exit early.
-	if (direction.IsNearlyZero())
-	{
-		bHasMoveInput = false;
-		return;
-	}
-	
-	// Mark that we have move input.
-	bHasMoveInput = true;
-	
-	// Convert 2D input into a normalized 3D world direction.
-	FVector inputDir = (direction.X * GetActorRightVector()) + (direction.Y * GetActorForwardVector());
-	inputDir.Z = 0.0f;
-	inputDir.Normalize();
-	
-	// Store desired movement direction for use in Tick().
-	DesiredMoveDirection = inputDir;
-	
-	// (Optional) Set locomotion state to walking or running.
-	SetLocomotionState(EMovementLocomotion::EWalk); // or ERun if shift is held
 }
 
 void AMPCharacterCat::MoveStop()
@@ -162,7 +138,7 @@ void AMPCharacterCat::MoveStop()
 bool AMPCharacterCat::IsFootNearWall()
 {
 	const float capsuleHalfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
-    const FVector start = GetActorLocation() - FVector(0, 0, capsuleHalfHeight wallDetectionHeightPercentage); // near the feet
+    const FVector start = GetActorLocation() - FVector(0, 0, capsuleHalfHeight * wallDetectionHeightPercentage); // near the feet
 
     const FVector forward = GetActorForwardVector();
     const FVector end = start + forward * 60.0f + FVector(0, 0, wallDetectDownward); // slight downward slope
@@ -345,13 +321,32 @@ bool AMPCharacterCat::CheckIfIsAbleToInteract()
 
 void AMPCharacterCat::Move(FVector2D direction)
 {
-	if (!CheckIfIsAbleToMove() || direction.IsNearlyZero())
+	// normally move
+	if (direction.IsNearlyZero())
+	{
+		bHasMoveInput = false;
+		return;
+	}
+	if (!CheckIfIsAbleToMove())
 	{
 		return;
 	}
 
+
+	// Mark that we have move input.
+	bHasMoveInput = true;
+
+	// Convert 2D input into a normalized 3D world direction.
+	FVector inputDir = (direction.X * GetActorRightVector()) + (direction.Y * GetActorForwardVector());
+	inputDir.Z = 0.0f;
+	inputDir.Normalize();
+
+	// Store desired movement direction for use in Tick().
+	DesiredMoveDirection = inputDir;
+
+
 	GEngine->AddOnScreenDebugMessage(1, 5.0f, FColor::Yellow, TEXT("Character: Move"));
-	isMoving = true;
+	SetLocomotionState(EMovementLocomotion::EWalk);
 
 	FRotator ControlRotation = GetControlRotation();
 	ControlRotation.Pitch = 0;

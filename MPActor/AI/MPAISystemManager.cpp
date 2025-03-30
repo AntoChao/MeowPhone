@@ -7,7 +7,7 @@ AMPAISystemManager::AMPAISystemManager()
     PrimaryActorTick.bCanEverTick = false;
 }
 
-void AMPAISystemManager::InitializeAI(const FMissionZoneAIInfo& MissionZoneInfo)
+void AMPAISystemManager::InitializeAI()
 {
     if (!GetWorld())
     {
@@ -15,13 +15,7 @@ void AMPAISystemManager::InitializeAI(const FMissionZoneAIInfo& MissionZoneInfo)
         return;
     }
 
-    // Ensure we have valid AI classes and spawn locations.
-    if (MissionZoneInfo.AICharacterClasses.Num() == 0 || MissionZoneInfo.SpawnLocations.Num() == 0)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("MPAISystemManager::InitializeAI - Missing AI classes or spawn locations"));
-        return;
-    }
-
+    /* ai controller generate through game mode 
     // Loop through the number of AI to spawn.
     for (int32 i = 0; i < MissionZoneInfo.AINums; i++)
     {
@@ -55,7 +49,7 @@ void AMPAISystemManager::InitializeAI(const FMissionZoneAIInfo& MissionZoneInfo)
         {
             UE_LOG(LogTemp, Warning, TEXT("MPAISystemManager::InitializeAI - Failed to spawn AI character"));
         }
-    }
+    }*/
 }
 
 void AMPAISystemManager::AllocateUrgentLogic()

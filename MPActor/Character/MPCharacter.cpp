@@ -22,6 +22,10 @@ AMPCharacter::AMPCharacter()
 	bReplicates = true;
 
 	GetCapsuleComponent()->InitCapsuleSize(55.f, 96.0f);
+
+	curMovementMode = EMPMovementMode::EStanding;
+	curLocomotionState = EMovementLocomotion::EIdle;
+	curAirState = EMovementAirStatus::EGround;
 }
 
 // common class methods
@@ -245,11 +249,11 @@ bool AMPCharacter::CheckIfIsAbleToMove()
 }
 bool AMPCharacter::CheckIfIsAbleToRun()
 {
-	return curMovementMode == EMovementMode::EStanding;
+	return curMovementMode == EMPMovementMode::EStanding;
 }
 bool AMPCharacter::CheckIfIsAbleToCrouch()
 {
-	return curMovementMode == EStanding && curAirState == EGround;
+	return curMovementMode == EMPMovementMode::EStanding && curAirState == EMovementAirStatus::EGround;
 }
 bool AMPCharacter::CheckIfIsAbleToJump()
 {
@@ -325,7 +329,7 @@ void AMPCharacter::CrouchStart()
 	{
 		GEngine->AddOnScreenDebugMessage(3, 5.0f, FColor::Yellow, TEXT("Character: Crouch"));
 		Crouch(); // Uses built-in UE crouch
-		SetMovementMode(EMovementMode::ECrouch);
+		SetMovementMode(EMPMovementMode::ECrouch);
 		curSpeed = crouchSpeed + extraSpeed;
 		UpdateSpeed();
 	}
@@ -335,7 +339,7 @@ void AMPCharacter::CrouchEnd()
 {
 	GEngine->AddOnScreenDebugMessage(3, 5.0f, FColor::Yellow, TEXT("Character: Crouch End"));
 	UnCrouch(); // Uses built-in UE uncrouch
-	SetMovementMode(EMovementMode::EStanding);
+	SetMovementMode(EMPMovementMode::EStanding);
 	curSpeed = moveSpeed + extraSpeed;
 	UpdateSpeed();
 }
@@ -437,7 +441,7 @@ ETeam AMPCharacter::GetCharacterTeam()
 	return ETeam::ECat;
 }
 
-void AMPCharacter::SetMovementMode(EMovementMode newMode)
+void AMPCharacter::SetMovementMode(EMPMovementMode newMode)
 {
     if (curMovementMode != newMode)
     {

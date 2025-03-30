@@ -173,7 +173,7 @@ void AMPEnvActorComp::EndCooldown()
 	isInCooldown = false;
 }
 
-bool CheckIfIsRandomizable()
+bool AMPEnvActorComp::CheckIfIsRandomizable()
 {
 	return isAbleToBeRandomlized;
 }

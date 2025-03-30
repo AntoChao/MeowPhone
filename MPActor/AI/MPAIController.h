@@ -44,7 +44,7 @@ protected:
     /* AI internal state variables */
 protected :
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="AI Controller Internal Variable")
-    AMPCharacterHuman* OwnedCharacter;
+    AMPCharacter* OwnedCharacter;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="AI Controller Internal Variable")
     float CurrentSuspicionLevel = 0.0f;

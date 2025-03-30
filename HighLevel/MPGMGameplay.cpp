@@ -18,7 +18,7 @@
 #include "../MPActor/Player/MPPlayerState.h"
 #include "../MPActor/Character/MPCharacter.h"
 #include "../MPActor/Item/MPItem.h"
-#include "../MPActor/AI/MPControllerAI.h"
+#include "../MPActor/AI/MPAIController.h"
 #include "../MPActor/Ability/MPAbility.h"
 
 AMPGMGameplay::AMPGMGameplay()
@@ -447,7 +447,7 @@ void AMPGMGameplay::SetupAICats()
 				if (catBody && aiController)
 				{
 					AMPCharacter* catAIMPBody = Cast<AMPCharacter>(catBody);
-					AMPControllerAI* aiMPController = Cast<AMPControllerAI>(aiController);
+					AMPAIController* aiMPController = Cast<AMPAIController>(aiController);
 					if (catAIMPBody && aiMPController)
 					{
 						aiMPController->Possess(catAIMPBody);
