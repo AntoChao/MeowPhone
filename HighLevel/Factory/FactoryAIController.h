@@ -4,6 +4,8 @@
 #include "MPFactory.h"
 #include "FactoryAIController.generated.h"
 
+class AMPAIController;
+
 UCLASS(Blueprintable)
 class UFactoryAIController : public UMPFactory
 {

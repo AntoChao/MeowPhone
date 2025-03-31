@@ -70,7 +70,7 @@ protected:
 	UPROPERTY(BlueprintReadWrite, Category = "Setup Properties")
 		TArray<AMPCharacter*> allAIHumans;
 	UPROPERTY(BlueprintReadWrite, Category = "Setup Properties")
-		AMPAISystemManager* theAIManager = nullptr;
+		AMPAISystemManager* theHumanAIManager = nullptr;
 
 	UPROPERTY(BlueprintReadWrite, Category = "Setup Properties")
 		int numberAICats = 0;

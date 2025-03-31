@@ -12,6 +12,7 @@ AMPAIController::AMPAIController()
 {
     BlackboardComp = CreateDefaultSubobject<UBlackboardComponent>(TEXT("BlackboardComp"));
     AIPerceptionComp = CreateDefaultSubobject<UAIPerceptionComponent>(TEXT("AIPerceptionComp"));
+    BehaviorComp = CreateDefaultSubobject<UAIPerceptionComponent>(TEXT("BehaviourTreeComp"));
 }
 
 void AMPAIController::BeginPlay()
@@ -31,7 +32,7 @@ void AMPAIController::SetupPerceptionSystem()
 {
     if (AIPerceptionComp)
     {
-        AIPerceptionComp->OnPerceptionUpdated.AddDynamic(this, &AMPAIController::OnPerceptionUpdated);
+        // AIPerceptionComp->OnPerceptionUpdated.AddDynamic(this, &AMPAIController::OnPerceptionUpdated);
     }
 }
 void AMPAIController::LoadBehaviorTree()

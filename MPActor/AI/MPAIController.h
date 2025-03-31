@@ -34,8 +34,11 @@ protected:
     UPROPERTY(BlueprintReadOnly, Category="AI")
     UBlackboardComponent* BlackboardComp;
 
+    UPROPERTY(BlueprintReadOnly, Category = "AI")
+    UBehaviourTreeComp* BehaviorComp;
+
 // perception
 protected :
     UPROPERTY(BlueprintReadOnly, Category="AI")
-    UAIPerceptionComponent* AIPerception;
+    UAIPerceptionComponent* AIPerceptionComp;
 };

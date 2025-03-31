@@ -33,11 +33,11 @@ void AMPAISystemManager::LocateAIHumans()
 void AMPAISystemManager::LocateUrgentEnvActors()
 {
     TArray<AActor*> allActors;
-    UGameplayStatics::GetAllActorsOfClass(GetWorld(), AEnvActorComp::StaticClass(), allActors);
+    UGameplayStatics::GetAllActorsOfClass(GetWorld(), AMPEnvActorComp::StaticClass(), allActors);
 
     for (AActor* eachActor : allActors)
     {
-        AEnvActorComp* eachEnvActorComp = Cast<AEnvActorComp>(eachActor);
+        AMPEnvActorComp* eachEnvActorComp = Cast<AMPEnvActorComp>(eachActor);
         if (eachEnvActorComp)
         {
             if (eachEnvActorComp->CheckCanCauseUrgentEvent())
@@ -49,9 +49,9 @@ void AMPAISystemManager::LocateUrgentEnvActors()
 }
 
 // urgent event
-void AMPAISystemManager::ReceiveUrgentNotification(AEnvActorComp* eventActor)
+void AMPAISystemManager::ReceiveUrgentNotification(AMPEnvActorComp* eventActor)
 {
-    if (!allUrgentEnvActor.Contains(AEnvActorComp))
+    if (!allUrgentEnvActor.Contains(eventActor))
     {
         allUrgentEnvActor.Add(eventActor);
         AllocateUrgent();
@@ -61,11 +61,11 @@ void AMPAISystemManager::ReceiveUrgentNotification(AEnvActorComp* eventActor)
 void AMPAISystemManager::AllocateUrgent()
 {
     // Example: Iterate over all spawned AI characters and trigger an urgent behavior.
-    for (AMPCharacter* AICharacter : SpawnedAICharacters)
+    for (AMPCharacter* eachHumanController : allAIHumanControllers)
     {
-        if (human && !human->IsBusyWithGlobalTask())
+        if (eachHumanController && !eachHumanController->IsBusyWithGlobalTask())
         {
-            human->AssignGlobalTask(allUrgentEnvActor.Last());
+            eachHumanController->AssignGlobalTask(allUrgentEnvActor.Last());
             break;
         }
     }

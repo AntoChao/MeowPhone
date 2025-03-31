@@ -6,6 +6,7 @@
 #include "Components/AudioComponent.h"
 
 #include "../../CommonStruct.h"
+#include "../AI/MPAISystemManager.h"
 
 AMPEnvActorComp::AMPEnvActorComp()
 {

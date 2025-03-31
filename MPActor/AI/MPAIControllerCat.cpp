@@ -32,6 +32,7 @@ void AMPAIControllerCat::Tick(float DeltaSeconds)
 // Uses the navigation system to find a random reachable point and sets it to the Blackboard.
 void AMPAIControllerCat::UpdateWanderLocation()
 {
+    ACharacter* ControlledCharacter = Cast<Character*>(GetPawn());
     if (BlackboardComp && ControlledCharacter)
     {
         UNavigationSystemV1* NavSys = UNavigationSystemV1::GetCurrent(GetWorld());
@@ -50,6 +51,7 @@ void AMPAIControllerCat::UpdateWanderLocation()
 // If one is found, updates the Blackboard to indicate an interaction should occur.
 void AMPAIControllerCat::CheckForEnvActorInteraction()
 {
+    ACharacter* ControlledCharacter = Cast<Character*>(GetPawn());
     if (!ControlledCharacter || !BlackboardComp) return;
 
     TArray<AActor*> OverlappingActors;
@@ -60,13 +62,13 @@ void AMPAIControllerCat::CheckForEnvActorInteraction()
         ControlledCharacter->GetActorLocation(),
         DetectionRadius,
         TArray<TEnumAsByte<EObjectTypeQuery>>(), // specify object types if needed
-        AEnvActorComp::StaticClass(),
+        AMEnvActorComp::StaticClass(),
         TArray<AActor*>(), // actors to ignore
         OverlappingActors);
 
     for (AActor* Actor : OverlappingActors)
     {
-        AEnvActorComp* EnvActor = Cast<AEnvActorComp>(Actor);
+        AMPEnvActorComp* EnvActor = Cast<AMPEnvActorComp>(Actor);
         if (EnvActor && EnvActor->IsInteractableByCat())
         {
             // Found an interactable env actor—update blackboard.

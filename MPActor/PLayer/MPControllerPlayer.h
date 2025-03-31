@@ -63,7 +63,7 @@ protected :
     UPROPERTY(BlueprintReadWrite, Category = "HUD Properties")
         UHUDCustomHuman* customHumanHUD;
         UPROPERTY(BlueprintReadWrite, Category = "HUD Properties")
-        UHUDCustomHuman* customCatHUD;
+        UHUDCustomCat* customCatHUD;
     UPROPERTY(BlueprintReadWrite, Category = "HUD Properties")
         UHUDHuman* humanHUD;
     UPROPERTY(BlueprintReadWrite, Category = "HUD Properties")

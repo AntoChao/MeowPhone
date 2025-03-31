@@ -20,6 +20,7 @@
 #include "../MPActor/Item/MPItem.h"
 #include "../MPActor/AI/MPAIController.h"
 #include "../MPActor/Ability/MPAbility.h"
+#include "../MPActor/EnvActor/MPEnvActorComp.h"
 
 AMPGMGameplay::AMPGMGameplay()
 {
@@ -512,7 +513,7 @@ void AMPGMGameplay::SetupPlayers()
 						{
 							eachPlayer->Possess(catMPBody);
 							allPlayerCharacters.Add(catMPBody);
-							catIndex++
+							catIndex++;
 
 							UE_LOG(LogTemp, Warning, TEXT("GM: One cat player created sucessfully"));
 							GEngine->AddOnScreenDebugMessage(1, 5.0f, FColor::Yellow, TEXT("GM: One cat player created sucessfully"));

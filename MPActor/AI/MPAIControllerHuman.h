@@ -2,18 +2,19 @@
 
 #include "CoreMinimal.h"
 #include "MPAIController.h"
-#include "MPAIControllerCat.generated.h"
+#include "MPAIControllerHuman.generated.h"
 
 class AMPAISystemManager;
+class AEnvActorComp;
 
 UCLASS(BlueprintType, Blueprintable)
-class AMPAIControllerCat : public AMPAIController
+class AMPAIControllerHuman : public AMPAIController
 {
     GENERATED_BODY()
 
     // common functions
 public:
-    AMPAIControllerCat();
+    AMPAIControllerHuman();
 
     virtual void BeginPlay() override;
     virtual void Tick(float DeltaSeconds) override;
@@ -29,7 +30,7 @@ protected:
         bool bIsOnGlobalTask = false;
 
     UFUNCTION(BlueprintCallable)
-        void AssignGlobalTask(AEnvActorComp* Target);
+        void AssignGlobalTask(AMPEnvActorComp* Target);
 
     // setter and getter
 public :

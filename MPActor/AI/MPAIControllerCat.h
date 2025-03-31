@@ -4,7 +4,7 @@
 #include "MPAIController.h"
 #include "MPAIControllerCat.generated.h"
 
-class AEnvActorComp;
+class AMPEnvActorComp;
 
 UCLASS(BlueprintType, Blueprintable)
 class AMPAIControllerCat : public AMPAIController
@@ -40,7 +40,7 @@ protected:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cat AI")
     float InteractionInterval = 5.0f; // e.g., every 5 seconds
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cat AI")
-    AEnvActorComp* ActorToInteract = nullptr;
+    AMPEnvActorComp* ActorToInteract = nullptr;
 
     UFUNCTION(BlueprintCallable, Category = "Cat AI")
     void CheckForEnvActorInteraction();

@@ -5,7 +5,7 @@
 #include "MPAISystemManager.generated.h"
 
 class AMPAIControllerHuman;
-class AEnvActorComp;
+class AMPEnvActorComp;
 
 UCLASS(Blueprintable)
 class AMPAISystemManager : public AActor
@@ -30,12 +30,12 @@ protected:
         TArray<AMPAIControllerHuman*> allAIHumanControllers;
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="AI Manager")
-        TArray<AEnvActorComp*> allUrgentEnvActor;
+        TArray<AMPEnvActorComp*> allUrgentEnvActor;
     
     // urgent event
 public :
     UFUNCTION(BlueprintCallable, Category="AI Manager")
-        void ReceiveUrgentNotification(AEnvActorComp* eventActor);
+        void ReceiveUrgentNotification(AMPEnvActorComp* eventActor);
 
 protected :
     UFUNCTION(BlueprintCallable, Category="AI Manager")

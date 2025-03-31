@@ -27,7 +27,7 @@ AMPCharacterCat::AMPCharacterCat()
     characterCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("Character Camera"));
     characterCamera->SetupAttachment(cameraSpringArm, USpringArmComponent::SocketName);
 
-	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
+	// GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
 }
 
 void AMPCharacterCat::BeginPlay()
@@ -238,8 +238,6 @@ void AMPCharacterCat::Move(FVector2D direction)
 	inputDir.Normalize();
 
 	// Store desired movement direction for use in Tick().
-	DesiredMoveDirection = inputDir;
-
 
 	GEngine->AddOnScreenDebugMessage(1, 5.0f, FColor::Yellow, TEXT("Character: Move"));
 	SetLocomotionState(EMovementLocomotion::EWalk);

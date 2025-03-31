@@ -1,7 +1,7 @@
 #include "MPAIControllerHuman.h"
 #include "MPAISystemManager.h"
 
-AMPAIControllerHumanHuman::AMPAIControllerHumanHuman()
+AMPAIControllerHuman::AMPAIControllerHuman()
 {
     
 }
