@@ -78,7 +78,7 @@ void AMPGMGameplay::BeginPlay()
 	StartLobby();
 	SetupFactoryInstances();
 
-	if (isSinglePlayerTesting)
+	if (onlyTestStartGame)
 	{
 		StartGame();
 	}
@@ -201,20 +201,22 @@ UMPAbility* AMPGMGameplay::SpawnAbility(AActor* abilityOwner, EAbility abilityTa
 }
 
 // game process
-
+	// lobby
 void AMPGMGameplay::StartLobby()
 {
+	if (!testingLobby) {return;}
+
 	theGameState->curGameplayStatus = EGPStatus::ELobby;
 
 	for (AMPControllerPlayer* eachPlayer : allPlayersControllers)
 	{
-		eachPlayer->AttachHUD(EHUDType::ELobby, 0);
-		eachPlayer->LobbyStartUpdate();
+		if (eachPlayer)
+		{
+			eachPlayer->AttachHUD(EHUDType::ELobby, 0);
+			eachPlayer->LobbyStartUpdate();
+		}
 	}
 }
-/* Got ready
-* called by when a player is ready
-*/
 void AMPGMGameplay::GotReady(AMPControllerPlayer* aPlayer)
 {
 	if (CheckReadyToStartGame())
@@ -311,9 +313,96 @@ void AMPGMGameplay::EndReadyTime()
 		}
 	}
 
+	StartCustomizeCharacter();
+}
+
+	// character custom
+void AMPGMGameplay::StartCustomizeCharacter()
+{
+	theGameState->curGameplayStatus = EGPStatus::ECustomCharacter;
+	theGameState->curCustomCharacterTime = theGameState->customCharacterTotalTime;
+
+	for (AMPControllerPlayer* eachPlayer : allPlayersControllers)
+	{
+		if (eachPlayer)
+		{
+			AMPPlayerState* eachState = Cast<AMPPlayerState>(eachPlayer->PlayerState);
+			if (eachState)
+			{
+				switch (eachState->playerTeam)
+				{
+				case ETeam::EHuman:
+				{
+					eachPlayer->AttachHUD(EHUDType::ECustomHuman, 0);
+					break;
+				}
+				case ETeam::ECat:
+				{
+					eachPlayer->AttachHUD(EHUDType::ECustomCat, 0);
+					break;
+				}
+				default:
+					break;
+				}
+			}
+		}
+	}
+
+	CountdownCustomizeCharacter();
+}
+void AMPGMGameplay::CountdownCustomizeCharacter()
+{
+	if (theGameState->curCustomCharacterTime > 0)
+		{
+			UWorld* serverWorld = GetWorld();
+			if (serverWorld)
+			{
+				theGameState->curCustomCharacterTime -= 1;
+
+				serverWorld->GetTimerManager().ClearTimer(customCharacterTimerHandle);
+				FTimerDelegate customCharacterTimerDel;
+				customCharacterTimerDel.BindUFunction(this, FName("CountdownCustomizeCharacter"));
+				serverWorld->GetTimerManager().SetTimer(customCharacterTimerHandle, customCharacterTimerDel, 1, false);
+			}
+		}
+	else 
+	{
+		EndCustomizeCharacter();
+	}
+}
+void AMPGMGameplay::EndCustomizeCharacter()
+{
+	// remove all lobby hud
+	for (AMPControllerPlayer* eachPlayer : allPlayersControllers)
+	{
+		if (eachPlayer)
+		{
+			AMPPlayerState* eachState = Cast<AMPPlayerState>(eachPlayer->PlayerState);
+			if (eachState)
+			{
+				switch (eachState->playerTeam)
+				{
+				case ETeam::EHuman:
+				{
+					eachPlayer->RemoveHUD(EHUDType::ECustomHuman);
+					break;
+				}
+				case ETeam::ECat:
+				{
+					eachPlayer->RemoveHUD(EHUDType::ECustomCat);
+					break;
+				}
+				default:
+					break;
+				}
+			}
+		}
+	}
+
 	StartGame();
 }
 
+	// start game
 void AMPGMGameplay::StartGame()
 {
 	UE_LOG(LogTemp, Warning, TEXT("GM: Starting Game"));
@@ -326,9 +415,8 @@ void AMPGMGameplay::StartGame()
 void AMPGMGameplay::SetupGame()
 {
 	SetupMap();
-	SetupHumans();
-	SetupAllCats();
-	SetupGameplayHUD();
+	SetupPlayers();
+	SetupAIs();
 }
 
 /* SetupMap()
@@ -336,6 +424,11 @@ void AMPGMGameplay::SetupGame()
 * but eliminate some of them to be randomness
 */
 void AMPGMGameplay::SetupMap()
+{
+	SetupMapItems();
+	SetupMapEnvActors();
+}
+void AMPGMGameplay::SetupMapItems()
 {
 	TArray<AActor*> allActors;
     UGameplayStatics::GetAllActorsOfClass(GetWorld(), AMPItem::StaticClass(), allActors);
@@ -353,9 +446,29 @@ void AMPGMGameplay::SetupMap()
         }
     }
 }
-void AMPGMGameplay::SetupHumans()
+void AMPGMGameplay::SetupMapEnvActors()
 {
-	int i = 0;
+	TArray<AActor*> allActors;
+    UGameplayStatics::GetAllActorsOfClass(GetWorld(), AMPEnvActorComp::StaticClass(), allActors);
+
+    for (AActor* eachActor : allActors)
+    {
+        AMPEnvActorComp* eachEnvActor = Cast<AMPEnvActorComp>(eachActor);
+        if (eachEnvActor)
+        {
+			int32 randomNumber = FMath::RandRange(1, 100);
+			if (randomNumber > envActorRandomnessPercentage)
+			{
+				eachEnvActor->BeRandomized();
+			}
+        }
+    }
+}
+
+void AMPGMGameplay::SetupPlayers()
+{
+	int humanIndex = 0;
+	int catIndex = 0;
 	for (AMPControllerPlayer* eachPlayer : allPlayersControllers)
 	{
 		AMPPlayerState* eachState = Cast<AMPPlayerState>(eachPlayer->PlayerState);
@@ -366,7 +479,7 @@ void AMPGMGameplay::SetupHumans()
 				if (humanFactoryInstance)
 				{
 					int professionInt = static_cast<int>(eachState->humanProfession);
-					AActor* humanBody = humanFactoryInstance->SpawnMPActor(professionInt, allHumanSpawnLocations[i], allHumanSpawnRotations[i]);
+					AActor* humanBody = humanFactoryInstance->SpawnMPActor(professionInt, allHumanSpawnLocations[humanIndex], allHumanSpawnRotations[humanIndex]);
 
 					if (humanBody)
 					{
@@ -375,7 +488,7 @@ void AMPGMGameplay::SetupHumans()
 						{
 							eachPlayer->Possess(humanMPBody);
 							allPlayerCharacters.Add(humanMPBody);
-							i ++;
+							humanIndex ++;
 
 							UE_LOG(LogTemp, Warning, TEXT("GM: One human player created sucessfully"));
 							GEngine->AddOnScreenDebugMessage(1, 5.0f, FColor::Yellow, TEXT("GM: One human player created sucessfully"));
@@ -383,35 +496,14 @@ void AMPGMGameplay::SetupHumans()
 						}
 					}
 				}
+				eachPlayer->AttachHUD(EHUDType::EGameplayHuman, 0);
 			}
-		}
-	}
-}
-void AMPGMGameplay::SetupAllCats()
-{
-	playerCatIndeces.Empty();
-	SetupPlayerCats();
-	// SetupAICats();
-}
-void AMPGMGameplay::SetupPlayerCats()
-{
-	for (AMPControllerPlayer* eachPlayer : allPlayersControllers)
-	{
-		int i = -1;
-		AMPPlayerState* eachState = Cast<AMPPlayerState>(eachPlayer->PlayerState);
-		if (eachState)
-		{
-			if (eachState->playerTeam == ETeam::ECat)
+			else if (eachState->playerTeam == ETeam::ECat) 
 			{
 				if (catFactoryInstance)
 				{
-					while (i < 0 || i >= numOfCats || playerCatIndeces.Contains(i))
-					{
-						i = FMath::RandRange(0, numOfCats);
-					}
-
 					int catInt = static_cast<int>(eachState->catRace);
-					AActor* catBody = catFactoryInstance->SpawnMPActor(catInt, allCatSpawnLocations[i], allCatSpawnRotations[i]);
+					AActor* catBody = catFactoryInstance->SpawnMPActor(catInt, allCatSpawnLocations[catIndex], allCatSpawnRotations[catIndex]);
 
 					if (catBody)
 					{
@@ -420,73 +512,90 @@ void AMPGMGameplay::SetupPlayerCats()
 						{
 							eachPlayer->Possess(catMPBody);
 							allPlayerCharacters.Add(catMPBody);
+							catIndex++
 
 							UE_LOG(LogTemp, Warning, TEXT("GM: One cat player created sucessfully"));
 							GEngine->AddOnScreenDebugMessage(1, 5.0f, FColor::Yellow, TEXT("GM: One cat player created sucessfully"));
 						}
 					}
 				}
+				eachPlayer->AttachHUD(EHUDType::EGameplayCat, 0);
 			}
 		}
 	}
 }
+
+void AMPGMGameplay::SetupAIs() 
+{
+	SetupAICats();
+	SetupAIHumans();
+	SetupAIManager();
+}
+
 void AMPGMGameplay::SetupAICats()
 {
-	for (int i = 0; i < numOfCats; i++)
+	for (int i = 0; i < numberAICats; i++)
 	{
-		if (!playerCatIndeces.Contains(i))
+		if (catFactoryInstance && aiControllerFactoryInstance)
 		{
-			if (catFactoryInstance && aiControllerFactoryInstance)
-			{
-				int catInt = FMath::RandRange(0, totalCatRacesNum);
-				AActor* catBody = catFactoryInstance->SpawnMPActor(catInt, allHumanSpawnLocations[i], allHumanSpawnRotations[i]);
+			int maxCatRace = static_cast<int>(ECatRace::EDiedCat);
+			int randomCatRace = FMath::RandRange(0, maxCatRace - 1);
+			AActor* catBody = catFactoryInstance->SpawnMPActor(randomCatRace, allHumanSpawnLocations[i], allHumanSpawnRotations[i]);
 
-				int aiInt = FMath::RandRange(0, totalAITypesNum);
-				AActor* aiController = aiControllerFactoryInstance->SpawnMPActor(aiInt, FVector(0.0f, 0.0f, 0.0f), FRotator(0.0f, 0.0f, 0.0f));
-				
-				if (catBody && aiController)
+			AActor* aiController = aiControllerFactoryInstance->SpawnMPActor(catAIIndex, allHumanSpawnLocations[i], allHumanSpawnRotations[i]);
+			
+			if (catBody && aiController)
+			{
+				AMPCharacter* catAIMPBody = Cast<AMPCharacter>(catBody);
+				AMPAIController* aiMPController = Cast<AMPAIController>(aiController);
+				if (catAIMPBody && aiMPController)
 				{
-					AMPCharacter* catAIMPBody = Cast<AMPCharacter>(catBody);
-					AMPAIController* aiMPController = Cast<AMPAIController>(aiController);
-					if (catAIMPBody && aiMPController)
-					{
-						aiMPController->Possess(catAIMPBody);
-						allAICharactersCats.Add(catAIMPBody);
-					}
+					aiMPController->Possess(catAIMPBody);
+					allAICharactersCats.Add(catAIMPBody);
 				}
 			}
 		}
 	}
 }
-void AMPGMGameplay::SetupGameplayHUD()
+void AMPGMGameplay::SetupAIHumans()
 {
-	for (AMPControllerPlayer* eachPlayer : allPlayersControllers)
+	for (int i = 0; i < numberAIHumans; i++)
 	{
-		if (eachPlayer)
+		if (humanFactoryInstance && aiControllerFactoryInstance)
 		{
-			AMPPlayerState* eachState = Cast<AMPPlayerState>(eachPlayer->PlayerState);
-			if (eachState)
+			int maxHumanRace = static_cast<int>(EHumanProfession::EDiedHuman);
+			int randomHumanRace = FMath::RandRange(0, maxHumanRace - 1);
+			AActor* humanBody = humanFactoryInstance->SpawnMPActor(randomHumanRace, allHumanSpawnLocations[i], allHumanSpawnRotations[i]);
+
+			AActor* aiController = aiControllerFactoryInstance->SpawnMPActor(humanAIIndex, allHumanSpawnLocations[i], allHumanSpawnRotations[i]);
+			
+			if (humanBody && aiController)
 			{
-				switch (eachState->playerTeam)
+				AMPCharacter* humanAIMPBody = Cast<AMPCharacter>(humanBody);
+				AMPAIController* aiMPController = Cast<AMPAIController>(aiController);
+				if (humanAIMPBody && aiMPController)
 				{
-				case ETeam::EHuman:
-				{
-					eachPlayer->AttachHUD(EHUDType::EGameplayHuman, 0);
-					break;
-				}
-				case ETeam::ECat:
-				{
-					eachPlayer->AttachHUD(EHUDType::EGameplayCat, 0);
-					break;
-				}
-				default:
-					break;
+					aiMPController->Possess(humanAIMPBody);
+					allAICharactersCats.Add(humanAIMPBody);
 				}
 			}
 		}
 	}
 }
+void AMPGMGameplay::SetupAIManager()
+{
+	if (aiControllerFactoryInstance)
+	{
+		theHumanAIManager = aiControllerFactoryInstance->SpawnMPActor(aiManagerIndex, FVector(0.0f, 0.0f, 0.0f), FRotation(0.0f, 0.0f, 0.0f));
+		
+		if (theHumanAIManager)
+		{
+			theHumanAIManager->Initialize();
+		}
+	}
+}
 
+	// prepare time
 void AMPGMGameplay::StartPrepareTime()
 {
 	theGameState->curGameplayStatus = EGPStatus::EPrepare;
@@ -642,4 +751,14 @@ void AMPGMGameplay::RegisterPlayerDeath(AMPControllerPlayer* diedPlayer,
 			}
 		}
 	}
+}
+
+// setters and getters
+void AMPGMGameplay::SetNumAICats(int aiCatNum)
+{
+	numberAICats = aiCatNum;
+}
+void AMPGMGameplay::SetNumAIHumans(int aiHumanNum)
+{
+	numberAIHumans = aiHumanNum;
 }

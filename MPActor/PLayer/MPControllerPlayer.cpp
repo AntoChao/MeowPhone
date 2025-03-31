@@ -25,6 +25,8 @@
 #include "Widget/HUDHuman.h"
 #include "Widget/HUDInit.h"
 #include "Widget/HUDLobby.h"
+#include "Widget/HUDCustomHuman.h"
+#include "Widget/HUDCustomCat.h"
 #include "Widget/HUDMenu.h"
 #include "Widget/HUDOption.h"
 #include "Widget/HUDSearchSession.h"
@@ -152,6 +154,34 @@ void AMPControllerPlayer::AttachHUD(EHUDType hudType, int zOrder)
             }
             break;
         }
+        case EHUDType::ECustomHuman :
+        {
+            if (!customHumanHUD && customHumanHUDClass)
+            {
+                customHumanHUD = CreateWidget<UHUDCustomHuman>(this, customHumanHUDClass);
+                if (customHumanHUD != nullptr)
+                {
+                    TurnUIInputOn();
+                    customHumanHUD->AddToViewport(zOrder);
+                    customHumanHUD->SetOwner(this);
+                }
+            }
+            break;
+        }
+        case EHUDType::ECustomCat :
+        {
+            if (!customCatHUD && customCatHUDClass)
+            {
+                customCatHUD = CreateWidget<UHUDCustomCat>(this, customCatHUDClass);
+                if (customCatHUD != nullptr)
+                {
+                    TurnUIInputOn();
+                    customCatHUD->AddToViewport(zOrder);
+                    customCatHUD->SetOwner(this);
+                }
+            }
+            break;
+        }
         case EHUDType::EGameplayHuman :
         {
             if (!humanHUD && humanHUDClass)
@@ -268,9 +298,29 @@ void AMPControllerPlayer::RemoveHUD(EHUDType hudType)
         {
             if (lobbyHUD)
             {
-                TurnGameplayInputOn();
+                TurnUIInputOn();
                 lobbyHUD->RemoveFromParent();
                 lobbyHUD = nullptr;
+            }
+            break;
+        }
+        case EHUDType::ECustomHuman :
+        {
+            if (customHumanHUD)
+            {
+                TurnUIInputOn();
+                customHumanHUD->RemoveFromParent();
+                customHumanHUD = nullptr;
+            }
+            break;
+        }
+        case EHUDType::ECustomCat :
+        {
+            if (customCatHUD)
+            {
+                TurnUIInputOn();
+                customCatHUD->RemoveFromParent();
+                customCatHUD = nullptr;
             }
             break;
         }
@@ -319,6 +369,15 @@ void AMPControllerPlayer::RemoveHUD(EHUDType hudType)
 
 // game progress update
 void AMPControllerPlayer::LobbyStartUpdate()
+{
+    AMPPlayerState* thePlayerState = Cast<AMPPlayerState>(PlayerState);
+    if (thePlayerState)
+    {
+        thePlayerState->isPlayerReady = false;
+        thePlayerState->isPlayerDied = false;
+    }
+}
+void AMPControllerPlayer::CharacterCustomStartUpdate()
 {
     AMPPlayerState* thePlayerState = Cast<AMPPlayerState>(PlayerState);
     if (thePlayerState)

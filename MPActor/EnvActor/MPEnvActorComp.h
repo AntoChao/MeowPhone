@@ -16,6 +16,8 @@ class UStaticMeshComponent;
 class UBoxComponent;
 class UAudioComponent;
 
+class AMPAISystemManager;
+
 UCLASS(BlueprintType, Blueprintable)
 class AMPEnvActorComp : public AActor, public IMPInteractable
 {
@@ -46,17 +48,26 @@ protected:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Common Properties")
     UAudioComponent* envActorAudioComp;
 
-    // zone related logic
+    // randomness
 protected:
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zone Properties")
-    int zoneCode = false;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zone  Properties")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "EnvActor Random Properties")
     bool isAbleToBeRandomlized = false;
-    
 public:
-    UFUNCTION(BlueprintCallable, Category = "Zone")
+    UFUNCTION(BlueprintCallable, Category = "EnvActor Random Method")
     virtual void BeRandomized();
+
+    // envactor urgent
+protected:
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Urgent Properties")
+    bool isAbleToCauseUrgentEvent = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Urgent Properties")
+    AMPAISystemManager* theAISystem = nullptr;
+
+    // cat interaction
+protected:
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Urgent Properties")
+        bool isAbleToBeInteractedByCat = false;
 
     // interactable interface
 public:
@@ -119,7 +130,16 @@ protected:
 
     // setter && getter
 public:
-    UFUNCTION(BlueprintCallable, Category = "Interface Method")
-    bool CheckIfIsRandomizable();
+    UFUNCTION(BlueprintCallable, Category = "Setter && Getter")
+        bool CheckIfIsRandomizable();
+
+    UFUNCTION(BlueprintCallable, Category = "Setter && Getter")
+        bool CheckCanCauseUrgentEvent();
+
+    UFUNCTION(BlueprintCallable, Category = "Setter && Getter")
+        void SetAISystem(AMPAISystemManager* aAIManager);
+
+    UFUNCTION(BlueprintCallable, Category = "Setter && Getter")
+        bool CheckIfIsInteractableByCat();
 
 };

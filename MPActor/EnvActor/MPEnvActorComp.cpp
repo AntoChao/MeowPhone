@@ -41,7 +41,6 @@ FText AMPEnvActorComp::GetInteractHintText(AMPCharacter* targetActor)
 
 void AMPEnvActorComp::BeInteracted(AMPCharacter* targetActor)
 {
-
 	GEngine->AddOnScreenDebugMessage(6, 5.0f, FColor::Yellow, TEXT("EnvActor Be Interacted"));
 
 	if (IsInteractable(targetActor))
@@ -65,6 +64,11 @@ void AMPEnvActorComp::BeInteracted(AMPCharacter* targetActor)
 			}	
 			default:
 				break;
+		}
+
+		if (isAbleToCauseUrgentEvent && theAISystem)
+		{
+			theAISystem->ReceiveUrgentNotification(this);
 		}
 	}
 }
@@ -103,7 +107,6 @@ void AMPEnvActorComp::ApplyInteractEffectDuration()
 void AMPEnvActorComp::ApplyInteractEffectDurationEffect()
 {
 	// override to apply effect
-	
 }
 void AMPEnvActorComp::ApplyInteractEffectDurationCountdown()
 {
@@ -173,7 +176,23 @@ void AMPEnvActorComp::EndCooldown()
 	isInCooldown = false;
 }
 
+// setter and getter
 bool AMPEnvActorComp::CheckIfIsRandomizable()
 {
 	return isAbleToBeRandomlized;
+}
+
+bool AMPEnvActorComp::CheckCanCauseUrgentEvent()
+{
+	return isAbleToCauseUrgentEvent;
+}
+
+void AMPEnvActorComp::SetAISystem(AMPAISystemManager* aAIManager)
+{
+    theAIManager = aAIManager;
+}
+
+bool AMPEnvActorComp::CheckIfIsInteractableByCat()
+{
+	return isAbleToBeInteractedByCat;
 }

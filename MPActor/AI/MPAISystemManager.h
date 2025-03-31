@@ -4,8 +4,8 @@
 #include "GameFramework/Actor.h"
 #include "MPAISystemManager.generated.h"
 
-class AMPCharacter;
-class AMissionZone;
+class AMPAIControllerHuman;
+class AEnvActorComp;
 
 UCLASS(Blueprintable)
 class AMPAISystemManager : public AActor
@@ -15,16 +15,29 @@ class AMPAISystemManager : public AActor
 public:
     AMPAISystemManager();
 
-    // Initializes the AI system for the mission zone.
-    UFUNCTION(BlueprintCallable, Category="AI")
-    void InitializeAI();
+public:
+    UFUNCTION(BlueprintCallable, Category="AI Manager")
+    void Initialize();
 
-    // Example function to allocate urgent logic across all spawned AI.
-    UFUNCTION(BlueprintCallable, Category="AI")
-    void AllocateUrgentLogic();
+    UFUNCTION(BlueprintCallable, Category="AI Manager")
+    void LocateAIHumans();
+
+    UFUNCTION(BlueprintCallable, Category="AI Manager")
+    void LocateUrgentEnvActors();
 
 protected:
-    // Array to store references to spawned AI characters.
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="AI")
-    TArray<AMPCharacter*> SpawnedAICharacters;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="AI Manager")
+        TArray<AMPAIControllerHuman*> allAIHumanControllers;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="AI Manager")
+        TArray<AEnvActorComp*> allUrgentEnvActor;
+    
+    // urgent event
+public :
+    UFUNCTION(BlueprintCallable, Category="AI Manager")
+        void ReceiveUrgentNotification(AEnvActorComp* eventActor);
+
+protected :
+    UFUNCTION(BlueprintCallable, Category="AI Manager")
+        void AllocateUrgent();
 };

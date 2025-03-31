@@ -22,51 +22,10 @@ public :
 
     virtual void Tick(float deltaTime) override;
 
-// cat move function 
-protected:
-    // --- Movement Smoothing & Drift Variables ---
-    float CurrentMoveInputStrength = 0.0f;    // Smoothed input (0.0 = stopped, 1.0 = full)
-    FVector DesiredMoveDirection = FVector::ZeroVector;  // Latest input direction (world space)
-    bool bHasMoveInput = false;                 // True if input is currently active
-
-    // Drift settings
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cat Movement")
-    float DriftStartAngle = 45.0f;              // Minimum angle (degrees) to trigger drift
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cat Movement")
-    float MinSpeedForDrift = 600.0f;            // Minimum speed to enable drift
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cat Movement")
-    float DriftTurnRate = 2.0f;                 // Base turn rate while drifting
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cat Movement")
-    float DriftSlowdownMultiplier = 0.5f;       // Initial multiplier (speed reduced while starting to drift)
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cat Movement")
-    float DriftRecoveryTime = 1.5f;             // Time (seconds) to fully recover drift momentum
-
-    bool bIsDrifting = false;                   // True if currently in a drift state
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cat Movement")
-    float DriftElapsedTime = 0.0f;              // How long we've been drifting (for momentum recovery)
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cat Movement")
-    float DriftRecoveryAlpha = 1.0f;            // Interpolated drift multiplier (0.5 → 1.0 over time)
-
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement|Smoothing")
-    float AccelerationRate = 6.0f;
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement|Smoothing")
-    float DecelerationRate = 8.0f;
-
-    // For tracking current movement state (for drift direction)
-    FVector LastVelocityDir = FVector::ZeroVector;  
-    float CurrentSpeed = 0.0f;
-
-    UFUNCTION(BlueprintCallable, Category = "Ability Method")
-    void UpdateDriftStatus(float deltaTime);
-
-    virtual void Move(FVector2D direction) override;
-    virtual void MoveStop() override;
 // double jump
+protected:
+    virtual void Move(FVector2D direction) override;
+
     UFUNCTION(BlueprintCallable, Category = "Control Method")
         bool IsFootNearWall();
 
@@ -124,7 +83,7 @@ public:
 // controller direct relation
 protected:
     UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
-        ECatAction curCatAction;
+        ECatAction curCatInteractionAction;
 
     UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
     bool isBeingHolded = false;

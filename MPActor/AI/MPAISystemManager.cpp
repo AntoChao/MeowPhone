@@ -1,65 +1,72 @@
 #include "MPAISystemManager.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
+#include "MPAIControllerHuman.h"
+#include "../EnvActor/MPEnvActorComp.h"
 
 AMPAISystemManager::AMPAISystemManager()
 {
     PrimaryActorTick.bCanEverTick = false;
 }
 
-void AMPAISystemManager::InitializeAI()
+// initialize
+void AMPAISystemManager::Initialize()
 {
-    if (!GetWorld())
+    LocateAIHumans();
+    LocateUrgentEnvActors();
+}
+void AMPAISystemManager::LocateAIHumans()
+{
+    TArray<AActor*> allActors;
+    UGameplayStatics::GetAllActorsOfClass(GetWorld(), AMPAIControllerHuman::StaticClass(), allActors);
+
+    for (AActor* eachActor : allActors)
     {
-        UE_LOG(LogTemp, Warning, TEXT("MPAISystemManager::InitializeAI - World is null"));
-        return;
+        AMPAIControllerHuman* eachHumanController = Cast<AMPAIControllerHuman>(eachActor);
+        if (eachHumanController)
+        {
+            eachHumanController->SetAISystem(this);
+            allAIHumanControllers.Add(eachHumanController);
+        }
     }
+}
+void AMPAISystemManager::LocateUrgentEnvActors()
+{
+    TArray<AActor*> allActors;
+    UGameplayStatics::GetAllActorsOfClass(GetWorld(), AEnvActorComp::StaticClass(), allActors);
 
-    /* ai controller generate through game mode 
-    // Loop through the number of AI to spawn.
-    for (int32 i = 0; i < MissionZoneInfo.AINums; i++)
+    for (AActor* eachActor : allActors)
     {
-        // Choose an AI class using modulo in case there are multiple classes.
-        int32 ClassIndex = i % MissionZoneInfo.AICharacterClasses.Num();
-        TSubclassOf<AMPCharacter> AIClassToSpawn = MissionZoneInfo.AICharacterClasses[ClassIndex];
-        if (!*AIClassToSpawn)
+        AEnvActorComp* eachEnvActorComp = Cast<AEnvActorComp>(eachActor);
+        if (eachEnvActorComp)
         {
-            UE_LOG(LogTemp, Warning, TEXT("MPAISystemManager::InitializeAI - Invalid AI class at index %d"), ClassIndex);
-            continue;
+            if (eachEnvActorComp->CheckCanCauseUrgentEvent())
+            {
+                eachEnvActorComp->SetAISystem(this);
+            }
         }
-
-        // Choose a spawn location (cycle through the provided locations).
-        int32 SpawnLocationIndex = i % MissionZoneInfo.SpawnLocations.Num();
-        FVector SpawnLocation = MissionZoneInfo.SpawnLocations[SpawnLocationIndex];
-
-        // Set a default rotation (can be adjusted as needed).
-        FRotator SpawnRotation = FRotator::ZeroRotator;
-
-        // Spawn the AI character.
-        AMPCharacter* SpawnedCharacter = GetWorld()->SpawnActor<AMPCharacter>(AIClassToSpawn, SpawnLocation, SpawnRotation);
-        if (SpawnedCharacter)
-        {
-            // Optionally assign patrol points if your AI character supports it.
-            // e.g., SpawnedCharacter->SetPatrolPoints(MissionZoneInfo.PatrolPoints);
-            
-            SpawnedAICharacters.Add(SpawnedCharacter);
-            UE_LOG(LogTemp, Log, TEXT("MPAISystemManager::InitializeAI - Spawned AI at %s"), *SpawnLocation.ToString());
-        }
-        else
-        {
-            UE_LOG(LogTemp, Warning, TEXT("MPAISystemManager::InitializeAI - Failed to spawn AI character"));
-        }
-    }*/
+    }
 }
 
-void AMPAISystemManager::AllocateUrgentLogic()
+// urgent event
+void AMPAISystemManager::ReceiveUrgentNotification(AEnvActorComp* eventActor)
+{
+    if (!allUrgentEnvActor.Contains(AEnvActorComp))
+    {
+        allUrgentEnvActor.Add(eventActor);
+        AllocateUrgent();
+    }
+}
+
+void AMPAISystemManager::AllocateUrgent()
 {
     // Example: Iterate over all spawned AI characters and trigger an urgent behavior.
     for (AMPCharacter* AICharacter : SpawnedAICharacters)
     {
-        if (AICharacter)
+        if (human && !human->IsBusyWithGlobalTask())
         {
-            UE_LOG(LogTemp, Log, TEXT("MPAISystemManager::AllocateUrgentLogic - Allocating urgent logic to AI: %s"), *AICharacter->GetName());
+            human->AssignGlobalTask(allUrgentEnvActor.Last());
+            break;
         }
     }
 }

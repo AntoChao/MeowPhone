@@ -40,98 +40,6 @@ void AMPCharacterCat::BeginPlay()
 void AMPCharacterCat::Tick(float deltaTime)
 {
 	Super::Tick(deltaTime);
-	UpdateDriftStatus(deltaTime);
-}
-
-// cat move function 
-void AMPCharacterCat::UpdateDriftStatus(float deltaTime)
-{
-	// Update current speed and record last velocity direction (for drift momentum)
-	FVector velocity = GetVelocity();
-	CurrentSpeed = velocity.Size();
-	if (CurrentSpeed > KINDA_SMALL_NUMBER)
-	{
-		LastVelocityDir = velocity.GetSafeNormal();
-	}
-
-	// --- Drift Detection: Compare LastVelocityDir with DesiredMoveDirection ---
-	float angleBetween = 0.0f;
-	if (!LastVelocityDir.IsNearlyZero() && !DesiredMoveDirection.IsNearlyZero())
-	{
-		float dot = FVector::DotProduct(LastVelocityDir, DesiredMoveDirection);
-		dot = FMath::Clamp(dot, -1.0f, 1.0f);
-		angleBetween = FMath::RadiansToDegrees(FMath::Acos(dot));
-	}
-	
-	bool bShouldDrift = (CurrentSpeed > MinSpeedForDrift && angleBetween > DriftStartAngle);
-	
-	// --- Movement Input Smoothing ---
-	// Determine target strength: 1.0 if input exists, else 0.0.
-	float targetInputStrength = bHasMoveInput ? 1.0f : 0.0f;
-	
-	// Choose interpolation rate (accelerate if increasing, decelerate if decreasing).
-	float interpRate = (CurrentMoveInputStrength < targetInputStrength) ? AccelerationRate : DecelerationRate;
-	CurrentMoveInputStrength = FMath::FInterpTo(CurrentMoveInputStrength, targetInputStrength, deltaTime, interpRate);
-	
-	// --- Apply Drift or Normal Movement ---
-	if (bShouldDrift)
-	{
-		// Initialize drift on the first frame of drifting.
-		if (!bIsDrifting)
-		{
-			DriftElapsedTime = 0.0f;
-			DriftRecoveryAlpha = DriftSlowdownMultiplier;
-			bIsDrifting = true;
-		}
-		
-		// Update drift recovery over time (recovering from slowdown).
-		DriftElapsedTime += deltaTime;
-		float t = FMath::Clamp(DriftElapsedTime / DriftRecoveryTime, 0.0f, 1.0f);
-		DriftRecoveryAlpha = FMath::Lerp(DriftSlowdownMultiplier, 1.0f, t);
-		
-		// Apply movement input using the momentum direction (LastVelocityDir)
-		// multiplied by the smoothed input strength and drift recovery factor.
-		AddMovementInput(LastVelocityDir, DriftRecoveryAlpha * CurrentMoveInputStrength);
-		
-		// Rotate slowly toward the desired input direction.
-		FRotator targetRot = DesiredMoveDirection.Rotation();
-		FRotator newRot = FMath::RInterpConstantTo(GetActorRotation(), targetRot, deltaTime, DriftTurnRate * 100.0f);
-		SetActorRotation(newRot);
-	}
-	else
-	{
-		// If we were drifting but now conditions are cleared, reset drift state.
-		if (bIsDrifting)
-		{
-			DriftElapsedTime = 0.0f;
-			DriftRecoveryAlpha = 1.0f;
-			bIsDrifting = false;
-		}
-		
-		// Normal movement: apply input in the desired direction.
-		if (CurrentMoveInputStrength > KINDA_SMALL_NUMBER)
-		{
-			AddMovementInput(DesiredMoveDirection, CurrentMoveInputStrength);
-		}
-		else
-		{
-			// If fully decelerated, set locomotion state to idle.
-			SetLocomotionState(EMovementLocomotion::EIdle);
-		}
-		
-		// Rotate quickly toward the desired direction.
-		FRotator targetRot = DesiredMoveDirection.Rotation();
-		SetActorRotation(FMath::RInterpTo(GetActorRotation(), targetRot, deltaTime, 8.0f));
-	}
-	
-	// (Optional) Update other states or trigger animations based on bIsDrifting, CurrentSpeed, etc.
-}
-
-void AMPCharacterCat::MoveStop()
-{
-	GEngine->AddOnScreenDebugMessage(1, 5.0f, FColor::Yellow, TEXT("Character: Move Stop"));
-	bHasMoveInput = false;
-	// SetLocomotionState(EMovementLocomotion::EIdle);
 }
 
 // double jump
@@ -177,7 +85,9 @@ bool AMPCharacterCat::IsFootNearWall()
 
 bool AMPCharacterCat::CheckIfIsAbleToDoubleJump()
 {
-	return curAirState == EMovementAirStatus::EJump && IsFootNearWall();
+	return (curAirState == EMovementAirStatus::EJump 
+		|| curAirState == EMovementAirStatus::EFalling) 
+		&& IsFootNearWall();
 }
 
 // ability
@@ -321,20 +231,6 @@ bool AMPCharacterCat::CheckIfIsAbleToInteract()
 
 void AMPCharacterCat::Move(FVector2D direction)
 {
-	// normally move
-	if (direction.IsNearlyZero())
-	{
-		bHasMoveInput = false;
-		return;
-	}
-	if (!CheckIfIsAbleToMove())
-	{
-		return;
-	}
-
-
-	// Mark that we have move input.
-	bHasMoveInput = true;
 
 	// Convert 2D input into a normalized 3D world direction.
 	FVector inputDir = (direction.X * GetActorRightVector()) + (direction.Y * GetActorForwardVector());
@@ -414,7 +310,7 @@ void AMPCharacterCat::StopToRub()
 }
 
 // controller/ input reaction
-/*	Interact() -> curCatAction
+/*	Interact() -> curCatInteractionAction
 *		beingHold -> straggle
 *		detectActor -> human -> interactHuman
 * 		detectActor -> cat -> interactCat

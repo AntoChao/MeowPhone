@@ -13,6 +13,7 @@ enum class ELanguage : uint8 {
 UENUM(BlueprintType, Blueprintable)
 enum class EGPStatus : uint8 {
 	ELobby,
+	ECustomCharacter,
 	EPrepare,
 	EGameplay
 };
@@ -26,6 +27,8 @@ enum class EHUDType : uint8 {
 	ECreateSession,
 	ESearchSession,
 	ELobby,
+	ECustomHuman,
+	ECustomCat,
 	EGameplayHuman,
 	EGameplayCat,
 	EMenu,

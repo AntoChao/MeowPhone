@@ -44,6 +44,7 @@ public:
 	UPROPERTY(BlueprintReadWrite, Category = "GameProgress Properties")
 		EGPStatus curGameplayStatus;
 	
+		// lobby
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "GameProgress Properties")
 		bool isMostPlayerReady = false;
 
@@ -51,6 +52,14 @@ public:
 		int readyTotalTime;
 	UPROPERTY(Replicated, BlueprintReadWrite, Category = "GameProgress Properties")
 		int curReadyTime;
+	
+		// custom character
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GameProgress Properties")
+		int customCharacterTotalTime;
+	UPROPERTY(Replicated, BlueprintReadWrite, Category = "GameProgress Properties")
+		int curCustomCharacterTime;
+
+		// gameplay -> MP Progression
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GameProgress Properties")
 		int prepareTotalTime;
 	UPROPERTY(Replicated, BlueprintReadWrite, Category = "GameProgress Properties")
@@ -59,9 +68,8 @@ public:
 		int gameplayTotalTime;
 	UPROPERTY(Replicated, BlueprintReadWrite, Category = "GameProgress Properties")
 		int curGameplayTime;
-	
-	// MP Progression
-	UPROPERTY(BlueprintReadWrite, Category = "Common Properties")
+
+		UPROPERTY(BlueprintReadWrite, Category = "Common Properties")
 		float totalMPProgression;
 	UPROPERTY(Replicated, BlueprintReadWrite, Category = "Common Properties")
 		float curMPProgression;
