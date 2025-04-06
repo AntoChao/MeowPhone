@@ -1,6 +1,7 @@
 #include "MPAIControllerCat.h"
 #include "NavigationSystem.h"
 #include "BehaviorTree/BlackboardComponent.h"
+#include "GameFramework/Character.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "../EnvActor/MPEnvActorComp.h"
 
@@ -51,6 +52,7 @@ void AMPAIControllerCat::UpdateWanderLocation()
 // If one is found, updates the Blackboard to indicate an interaction should occur.
 void AMPAIControllerCat::CheckForEnvActorInteraction()
 {
+    /*
     ACharacter* ControlledCharacter = Cast<Character*>(GetPawn());
     if (!ControlledCharacter || !BlackboardComp) return;
 
@@ -69,7 +71,7 @@ void AMPAIControllerCat::CheckForEnvActorInteraction()
     for (AActor* Actor : OverlappingActors)
     {
         AMPEnvActorComp* EnvActor = Cast<AMPEnvActorComp>(Actor);
-        if (EnvActor && EnvActor->IsInteractableByCat())
+        if (EnvActor && EnvActor->IsInteractable(ControlledCharacter))
         {
             // Found an interactable env actor—update blackboard.
             BlackboardComp->SetValueAsBool(BB_WantToInteract, true);
@@ -79,5 +81,5 @@ void AMPAIControllerCat::CheckForEnvActorInteraction()
     }
     // If no valid actor was found, clear the keys.
     BlackboardComp->SetValueAsBool(BB_WantToInteract, false);
-    BlackboardComp->ClearValue(BB_EnvActorToInteract);
+    BlackboardComp->ClearValue(BB_EnvActorToInteract);*/
 }

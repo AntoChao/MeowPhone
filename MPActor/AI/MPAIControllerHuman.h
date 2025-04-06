@@ -29,14 +29,8 @@ protected:
     UPROPERTY(BlueprintReadWrite, Category="Human AI")
         bool bIsOnGlobalTask = false;
 
-    UFUNCTION(BlueprintCallable)
-        void AssignGlobalTask(AMPEnvActorComp* Target);
-
     // setter and getter
 public :
     UFUNCTION(BlueprintCallable, Category="Setter && Getter")
         void SetAISystem(AMPAISystemManager* aAIManager);
-
-    UFUNCTION(BlueprintCallable)
-        bool IsBusyWithGlobalTask() const { return bIsOnGlobalTask; }
 };

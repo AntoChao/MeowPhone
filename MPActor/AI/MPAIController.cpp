@@ -1,6 +1,7 @@
 #include "MPAIController.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "BehaviorTree/BehaviorTree.h"
+#include "BehaviorTree/BehaviorTreeComponent.h"
 
 #include "Perception/AIPerceptionComponent.h"
 #include "Perception/AISenseConfig_Sight.h"
@@ -8,11 +9,13 @@
 #include "Perception/AISense_Sight.h"
 #include "Perception/AISense_Hearing.h"
 
+#include "../EnvActor/AMPEnvActorComp.h"
+
 AMPAIController::AMPAIController()
 {
     BlackboardComp = CreateDefaultSubobject<UBlackboardComponent>(TEXT("BlackboardComp"));
     AIPerceptionComp = CreateDefaultSubobject<UAIPerceptionComponent>(TEXT("AIPerceptionComp"));
-    BehaviorComp = CreateDefaultSubobject<UAIPerceptionComponent>(TEXT("BehaviourTreeComp"));
+    BehaviorComp = CreateDefaultSubobject<UBehaviorTreeComponent>(TEXT("BehaviourTreeComp"));
 }
 
 void AMPAIController::BeginPlay()
@@ -32,13 +35,28 @@ void AMPAIController::SetupPerceptionSystem()
 {
     if (AIPerceptionComp)
     {
-        // AIPerceptionComp->OnPerceptionUpdated.AddDynamic(this, &AMPAIController::OnPerceptionUpdated);
+        AIPerceptionComp->OnPerceptionUpdated.AddDynamic(this, &AMPAIController::OnPerceptionUpdated);
     }
 }
+void AMPAIController::OnPerceptionUpdated(const TArray<AActor*>& UpdatedActors)
+{
+    return;
+}
+
 void AMPAIController::LoadBehaviorTree()
 {
     if (BehaviorTreeAsset && BehaviorTreeAsset->BlackboardAsset)
     {
         BehaviorComp->StartTree(*BehaviorTreeAsset);
     }
+}
+
+bool AMPAIController::IsBusyWithGlobalTask()
+{
+    return isDoingGlobalTask;
+}
+
+void AMPAIController::AssignGlobalTask(AMPEnvActorComp* envActorAssigend)
+{
+    return;
 }

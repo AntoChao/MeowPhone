@@ -19,6 +19,7 @@ class AMPCharacter;
 class AMPEnvActorComp;
 
 class AMPAISystemManager;
+class AMPAIController;
 
 enum class EMPEnvActor : uint8;
 enum class EMPItem : uint8;
@@ -66,9 +67,9 @@ protected:
 	UPROPERTY(BlueprintReadWrite, Category = "Setup Properties")
 		TArray<AMPCharacter*> allPlayerCharacters;
 	UPROPERTY(BlueprintReadWrite, Category = "Setup Properties")
-		TArray<AMPCharacter*> allAICats;
+		TArray<AMPAIController*> allAICats;
 	UPROPERTY(BlueprintReadWrite, Category = "Setup Properties")
-		TArray<AMPCharacter*> allAIHumans;
+		TArray<AMPAIController*> allAIHumans;
 	UPROPERTY(BlueprintReadWrite, Category = "Setup Properties")
 		AMPAISystemManager* theHumanAIManager = nullptr;
 

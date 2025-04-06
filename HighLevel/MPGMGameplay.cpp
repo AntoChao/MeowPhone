@@ -19,6 +19,7 @@
 #include "../MPActor/Character/MPCharacter.h"
 #include "../MPActor/Item/MPItem.h"
 #include "../MPActor/AI/MPAIController.h"
+#include "../MPActor/AI/MPAISystemManager"
 #include "../MPActor/Ability/MPAbility.h"
 #include "../MPActor/EnvActor/MPEnvActorComp.h"
 
@@ -552,7 +553,7 @@ void AMPGMGameplay::SetupAICats()
 				if (catAIMPBody && aiMPController)
 				{
 					aiMPController->Possess(catAIMPBody);
-					allAICharactersCats.Add(catAIMPBody);
+					allAICats.Add(catAIMPBody);
 				}
 			}
 		}
@@ -587,7 +588,7 @@ void AMPGMGameplay::SetupAIManager()
 {
 	if (aiControllerFactoryInstance)
 	{
-		theHumanAIManager = aiControllerFactoryInstance->SpawnMPActor(aiManagerIndex, FVector(0.0f, 0.0f, 0.0f), FRotation(0.0f, 0.0f, 0.0f));
+		theHumanAIManager = aiControllerFactoryInstance->SpawnMPActor(aiManagerIndex, FVector(0.0f, 0.0f, 0.0f), FRotator(0.0f, 0.0f, 0.0f));
 		
 		if (theHumanAIManager)
 		{

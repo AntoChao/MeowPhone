@@ -142,4 +142,7 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Setter && Getter")
         bool CheckIfIsInteractableByCat();
 
+protected :
+    UPROPERTY(BlueprintReadWrite, Category = "Interface Properties")
+        AMPAISystemManager* theAIManager;
 };

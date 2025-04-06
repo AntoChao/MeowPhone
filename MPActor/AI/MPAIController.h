@@ -4,12 +4,12 @@
 #include "AIController.h"
 #include "MPAIController.generated.h"
 
+class UBehaviorTree;
 class UBehaviorTreeComponent;
 class UBlackboardComponent;
 class UAIPerceptionComponent;
 class UAISenseConfig_Sight;
 class UAISenseConfig_Hearing;
-class UBehaviorTree;
 
 UCLASS(BlueprintType, Blueprintable)
 class AMPAIController : public AAIController
@@ -35,10 +35,25 @@ protected:
     UBlackboardComponent* BlackboardComp;
 
     UPROPERTY(BlueprintReadOnly, Category = "AI")
-    UBehaviourTreeComp* BehaviorComp;
+    UBehaviorTreeComponent* BehaviorComp;
+    
+// tree assets
+protected:
+    UPROPERTY(BlueprintReadOnly, Category = "AI")
+    bool isDoingGlobalTask = false;
 
 // perception
 protected :
     UPROPERTY(BlueprintReadOnly, Category="AI")
     UAIPerceptionComponent* AIPerceptionComp;
+
+    UFUNCTION(BlueprintCallable, Category = "AI")
+    void OnPerceptionUpdated(const TArray<AActor*>& UpdatedActors);
+
+public:
+    UFUNCTION(BlueprintCallable, Category = "AI")
+    bool IsBusyWithGlobalTask();
+
+    UFUNCTION(BlueprintCallable, Category = "AI")
+    void AssignGlobalTask(AMPEnvActorComp* envActorAssigend);
 };

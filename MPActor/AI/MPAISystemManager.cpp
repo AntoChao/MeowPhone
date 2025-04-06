@@ -61,7 +61,7 @@ void AMPAISystemManager::ReceiveUrgentNotification(AMPEnvActorComp* eventActor)
 void AMPAISystemManager::AllocateUrgent()
 {
     // Example: Iterate over all spawned AI characters and trigger an urgent behavior.
-    for (AMPCharacter* eachHumanController : allAIHumanControllers)
+    for (AMPAIController* eachHumanController : allAIHumanControllers)
     {
         if (eachHumanController && !eachHumanController->IsBusyWithGlobalTask())
         {
