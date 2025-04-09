@@ -9,7 +9,9 @@
 #include "Perception/AISense_Sight.h"
 #include "Perception/AISense_Hearing.h"
 
-#include "../EnvActor/AMPEnvActorComp.h"
+#include "../EnvActor/MPEnvActorComp.h"
+
+#include "NavigationSystem.h"
 
 AMPAIController::AMPAIController()
 {

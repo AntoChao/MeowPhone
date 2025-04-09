@@ -33,7 +33,7 @@ void AMPAIControllerCat::Tick(float DeltaSeconds)
 // Uses the navigation system to find a random reachable point and sets it to the Blackboard.
 void AMPAIControllerCat::UpdateWanderLocation()
 {
-    ACharacter* ControlledCharacter = Cast<Character*>(GetPawn());
+    ACharacter* ControlledCharacter = Cast<ACharacter>(GetPawn());
     if (BlackboardComp && ControlledCharacter)
     {
         UNavigationSystemV1* NavSys = UNavigationSystemV1::GetCurrent(GetWorld());
