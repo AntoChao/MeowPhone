@@ -22,6 +22,16 @@ public :
 
     virtual void Tick(float deltaTime) override;
 
+// double jump
+protected:
+    virtual void Move(FVector2D direction) override;
+
+    UFUNCTION(BlueprintCallable, Category = "Control Method")
+        bool IsFootNearWall();
+
+    virtual bool CheckIfIsAbleToDoubleJump() override;
+
+
 // ability
 protected:    
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability Properties")
@@ -73,7 +83,7 @@ public:
 // controller direct relation
 protected:
     UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
-        ECatAction curCatAction;
+        ECatAction curCatInteractionAction;
 
     UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
     bool isBeingHolded = false;
@@ -97,8 +107,6 @@ public :
     virtual bool CheckIfIsAbleToLook() override;
     virtual bool CheckIfIsAbleToMove() override;
     virtual bool CheckIfIsAbleToInteract() override;
-
-    virtual void Move(FVector2D direction) override;
 
 protected:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability Properties")

@@ -18,6 +18,9 @@ class AMPControllerPlayer;
 class AMPCharacter;
 class AMPEnvActorComp;
 
+class AMPAISystemManager;
+class AMPAIController;
+
 enum class EMPEnvActor : uint8;
 enum class EMPItem : uint8;
 enum class EAbility : uint8;
@@ -30,11 +33,6 @@ class AMPGMGameplay : public AMPGM
 public:
 	AMPGMGameplay();
 
-// testing 
-protected:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Testing Properties")
-		bool isSinglePlayerTesting = true;
-
 // gameplay common
 public:
 	virtual void PostLogin(APlayerController* newPlayer) override;
@@ -43,36 +41,71 @@ public:
 	
 	virtual void BeginPlay() override;
 
-// gameplay lobby manager
-protected:
-	UPROPERTY(BlueprintReadWrite, Category = "Lobby Properties")
-		TArray<int> playerCatIndeces;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Lobby Properties")
-		int numOfCats; // include AI
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Lobby Properties")
-		int totalCatRacesNum;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Lobby Properties")
-		int totalAITypesNum;
-
-	UPROPERTY(BlueprintReadWrite, Category = "Lobby Properties")
-		TArray<AMPControllerPlayer*> allPlayersControllers;
-	UPROPERTY(BlueprintReadWrite, Category = "Lobby Properties")
-		TArray<AMPCharacter*> allPlayerCharacters;
-	UPROPERTY(BlueprintReadWrite, Category = "Lobby Properties")
-		TArray<AMPCharacter*> allAICharactersCats;
-
-	UFUNCTION(BlueprintCallable, Category = "Lobby Methods")
-		void RemoveControlledCharacters(AMPControllerPlayer* aPlayer);
-	
-
 // game state initialize
 protected:
 	UPROPERTY(BlueprintReadWrite, Category = "GameState Properties")
 		AMPGS* theGameState;
-
 	UFUNCTION(BlueprintCallable, Category = "GameState Methods")
 		void InitializeGameState();
+
+// gameplay lobby manager
+protected:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Lobby Properties")
+		int numOfPlayers;
+	UPROPERTY(BlueprintReadWrite, Category = "Lobby Properties")
+		TArray<AMPControllerPlayer*> allPlayersControllers;
+
+	UFUNCTION(BlueprintCallable, Category = "Lobby Methods")
+		void RemoveControlledCharacters(AMPControllerPlayer* aPlayer);
 	
+// gameplay custom character 
+protected:
+
+// gameplay
+	// gameplay Setup
+protected:
+	UPROPERTY(BlueprintReadWrite, Category = "Setup Properties")
+		TArray<AMPCharacter*> allPlayerCharacters;
+	UPROPERTY(BlueprintReadWrite, Category = "Setup Properties")
+		TArray<AMPAIController*> allAICats;
+	UPROPERTY(BlueprintReadWrite, Category = "Setup Properties")
+		TArray<AMPAIController*> allAIHumans;
+	UPROPERTY(BlueprintReadWrite, Category = "Setup Properties")
+		AMPAISystemManager* theHumanAIManager = nullptr;
+
+	UPROPERTY(BlueprintReadWrite, Category = "Setup Properties")
+		int numberAICats = 0;
+	UPROPERTY(BlueprintReadWrite, Category = "Setup Properties")
+		int numberAIHumans = 0;
+	UPROPERTY(BlueprintReadWrite, Category = "Setup Properties")
+		int aiManagerIndex = 0; 
+	UPROPERTY(BlueprintReadWrite, Category = "Setup Properties")
+		int catAIIndex = 1; 
+		// it would be good for passing as string isntead of integers
+	UPROPERTY(BlueprintReadWrite, Category = "Setup Properties")
+		int humanAIIndex = 2;
+
+	// spawn location
+	protected:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawn Properties")
+		int itemRemainPercentage = 75;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawn Properties")
+		int envActorRandomnessPercentage = 80;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawn Properties")
+		TArray<FVector> allHumanSpawnLocations;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawn Properties")
+		TArray<FRotator> allHumanSpawnRotations;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawn Properties")
+		TArray<FVector> allCatSpawnLocations;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawn Properties")
+		TArray<FRotator> allCatSpawnRotations;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawn Properties")
+		FVector spectatorSpawnLocation;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawn Properties")
+		FRotator spectatorSpawnRotation;
+		
 // factories
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Factory Properties")
@@ -111,33 +144,16 @@ public :
 		AMPItem* SpawnItem(EItem itemTag, FVector spawnLocation, FRotator spawnRotation);
 	UFUNCTION(BlueprintCallable, Category = "Factory Methods")
 		UMPAbility* SpawnAbility(AActor* abilityOwner, EAbility abilityTag);
-	
-// spawn location
-protected:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawn Properties")
-		int itemRemainPercentage = 75;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawn Properties")
-		TArray<FVector> allHumanSpawnLocations;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawn Properties")
-		TArray<FRotator> allHumanSpawnRotations;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawn Properties")
-		TArray<FVector> allCatSpawnLocations;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawn Properties")
-		TArray<FRotator> allCatSpawnRotations;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawn Properties")
-		FVector spectatorSpawnLocation;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawn Properties")
-		FRotator spectatorSpawnRotation;
 
 // game process
 protected:
 	FTimerHandle readyTimerHandle;
+	FTimerHandle customCharacterTimerHandle;
 	FTimerHandle prepareTimerHandle;
 	FTimerHandle gameplayTimerHandle;
 
 public:
+	// lobby
 	UFUNCTION(BlueprintCallable, Category = "GameProgress Methods")
 		void StartLobby();
 	UFUNCTION(BlueprintCallable, Category = "GameProgress Methods")
@@ -154,6 +170,15 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "GameProgress Methods")
 		void EndReadyTime();
 
+	// character custom
+	UFUNCTION(BlueprintCallable, Category = "GameProgress Methods")
+		void StartCustomizeCharacter();
+	UFUNCTION(BlueprintCallable, Category = "GameProgress Methods")
+		void CountdownCustomizeCharacter();
+	UFUNCTION(BlueprintCallable, Category = "GameProgress Methods")
+		void EndCustomizeCharacter();
+	
+		// start game
 	UFUNCTION(BlueprintCallable, Category = "GameProgress Methods")
 		void StartGame();
 
@@ -163,15 +188,21 @@ protected :
 	UFUNCTION(BlueprintCallable, Category = "GameProgress Methods")
 		void SetupMap();
 	UFUNCTION(BlueprintCallable, Category = "GameProgress Methods")
-		void SetupHumans();
+		void SetupMapItems();
 	UFUNCTION(BlueprintCallable, Category = "GameProgress Methods")
-		void SetupAllCats();
+		void SetupMapEnvActors();
+
 	UFUNCTION(BlueprintCallable, Category = "GameProgress Methods")
-		void SetupPlayerCats();
+		void SetupPlayers();
+
+	UFUNCTION(BlueprintCallable, Category = "GameProgress Methods")
+		void SetupAIs();
 	UFUNCTION(BlueprintCallable, Category = "GameProgress Methods")
 		void SetupAICats();
 	UFUNCTION(BlueprintCallable, Category = "GameProgress Methods")
-		void SetupGameplayHUD();
+		void SetupAIHumans();
+	UFUNCTION(BlueprintCallable, Category = "GameProgress Methods")
+		void SetupAIManager();
 
 	UFUNCTION(BlueprintCallable, Category = "GameProgress Methods")
 		void StartPrepareTime();
@@ -196,4 +227,18 @@ public :
 		void RegisterPlayerDeath(AMPControllerPlayer* diedPlayer,
 			FVector diedPlayerLocation, FRotator diedPlayerRotation);
 	
+// setters and getters
+public :
+	UFUNCTION(BlueprintCallable, Category = "Setter && Getter")
+		void SetNumAICats(int aiCatNum);
+	UFUNCTION(BlueprintCallable, Category = "Setter && Getter")
+		void SetNumAIHumans(int aiHumanNum);
+
+// testing
+protected:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Testing Properties")
+		bool testingLobby = false;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Testing Properties")
+		bool onlyTestStartGame = true;
 };

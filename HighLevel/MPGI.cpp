@@ -85,7 +85,27 @@ void UMPGI::LoadGame()
         CreateSaveFile();
     }
 }
-/*
+
+// getter && setter
+ELanguage UMPGI::getGameLanguage()
+{
+    return gameLanguage;
+}
+
+void UMPGI::setGameLanguage(ELanguage newLanguage)
+{
+	gameLanguage = newLanguage;
+}
+
+FString UMPGI::getCurPlayerName()
+{
+    return curPlayerName;
+}
+
+
+
+/* abandon logic, gonna use plugin online sybsystem instead
+	
 // session section
 void UMPGI::HostSession(FName sessionName, int numPlayers)
 {
@@ -336,16 +356,6 @@ void UMPGI::DestroySessionCompleted(FName sessionName, bool destroyCompleted)
 			onlineSessionInterface->ClearOnDestroySessionCompleteDelegate_Handle(destroySessionCompletedHandle);
 		}
 	}
-}*/
-
-
-// getter && setter
-ELanguage UMPGI::getGameLanguage()
-{
-    return gameLanguage;
 }
 
-FString UMPGI::getCurPlayerName()
-{
-    return curPlayerName;
-}
+*/

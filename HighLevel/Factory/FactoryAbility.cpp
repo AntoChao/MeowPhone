@@ -8,6 +8,7 @@ UFactoryAbility::UFactoryAbility()
 AActor* UFactoryAbility::SpawnMPActor(int actorCode,
     FVector actorLocation, FRotator actorRotation)
 {
+    
     return nullptr;
 }
 

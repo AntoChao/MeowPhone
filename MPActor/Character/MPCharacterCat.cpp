@@ -6,6 +6,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "../PLayer/MPPlayerState.h"
+#include "Components/CapsuleComponent.h"
 
 #include "../../CommonEnum.h"
 #include "../../CommonStruct.h"
@@ -25,6 +26,8 @@ AMPCharacterCat::AMPCharacterCat()
 		
     characterCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("Character Camera"));
     characterCamera->SetupAttachment(cameraSpringArm, USpringArmComponent::SocketName);
+
+	// GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
 }
 
 void AMPCharacterCat::BeginPlay()
@@ -37,6 +40,54 @@ void AMPCharacterCat::BeginPlay()
 void AMPCharacterCat::Tick(float deltaTime)
 {
 	Super::Tick(deltaTime);
+}
+
+// double jump
+bool AMPCharacterCat::IsFootNearWall()
+{
+	const float capsuleHalfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+    const FVector start = GetActorLocation() - FVector(0, 0, capsuleHalfHeight * wallDetectionHeightPercentage); // near the feet
+
+    const FVector forward = GetActorForwardVector();
+    const FVector end = start + forward * 60.0f + FVector(0, 0, wallDetectDownward); // slight downward slope
+
+    const float sphereRadius = wallDetectRadius;
+    FHitResult hit;
+    FCollisionQueryParams params;
+    params.AddIgnoredActor(this);
+
+    const bool bHit = GetWorld()->SweepSingleByChannel(
+        hit,
+        start,
+        end,
+        FQuat::Identity,
+        ECC_Visibility,
+        FCollisionShape::MakeSphere(sphereRadius),
+        params
+    );
+
+		// Optional: visual debug
+	#if WITH_EDITOR
+		DrawDebugLine(GetWorld(), start, end, FColor::Blue, false, 1.0f);
+		DrawDebugSphere(GetWorld(), end, sphereRadius, 12, bHit ? FColor::Green : FColor::Red, false, 1.0f);
+	#endif
+
+    // If we hit, check the surface normal to ensure it's a mostly vertical wall
+    if (bHit)
+    {
+        const FVector wallNormal = hit.ImpactNormal;
+        const float verticalDot = FVector::DotProduct(wallNormal, FVector::UpVector);
+        return verticalDot < wallDetectionAngleTolerance; // Surface is mostly vertical
+    }
+
+    return false;
+}
+
+bool AMPCharacterCat::CheckIfIsAbleToDoubleJump()
+{
+	return (curAirState == EMovementAirStatus::EJump 
+		|| curAirState == EMovementAirStatus::EFalling) 
+		&& IsFootNearWall();
 }
 
 // ability
@@ -180,13 +231,16 @@ bool AMPCharacterCat::CheckIfIsAbleToInteract()
 
 void AMPCharacterCat::Move(FVector2D direction)
 {
-	if (!CheckIfIsAbleToMove() || direction.IsNearlyZero())
-	{
-		return;
-	}
+
+	// Convert 2D input into a normalized 3D world direction.
+	FVector inputDir = (direction.X * GetActorRightVector()) + (direction.Y * GetActorForwardVector());
+	inputDir.Z = 0.0f;
+	inputDir.Normalize();
+
+	// Store desired movement direction for use in Tick().
 
 	GEngine->AddOnScreenDebugMessage(1, 5.0f, FColor::Yellow, TEXT("Character: Move"));
-	isMoving = true;
+	SetLocomotionState(EMovementLocomotion::EWalk);
 
 	FRotator ControlRotation = GetControlRotation();
 	ControlRotation.Pitch = 0;
@@ -254,7 +308,7 @@ void AMPCharacterCat::StopToRub()
 }
 
 // controller/ input reaction
-/*	Interact() -> curCatAction
+/*	Interact() -> curCatInteractionAction
 *		beingHold -> straggle
 *		detectActor -> human -> interactHuman
 * 		detectActor -> cat -> interactCat

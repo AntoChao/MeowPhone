@@ -13,6 +13,8 @@ class UHUDCredit;
 class UHUDCreateSession;
 class UHUDSearchSession;
 class UHUDLobby;
+class UHUDCustomHuman;
+class UHUDCustomCat;
 class UHUDHuman;
 class UHUDCat;
 class UHUDMenu;
@@ -59,6 +61,10 @@ protected :
     UPROPERTY(BlueprintReadWrite, Category = "HUD Properties")
         UHUDLobby* lobbyHUD;
     UPROPERTY(BlueprintReadWrite, Category = "HUD Properties")
+        UHUDCustomHuman* customHumanHUD;
+        UPROPERTY(BlueprintReadWrite, Category = "HUD Properties")
+        UHUDCustomCat* customCatHUD;
+    UPROPERTY(BlueprintReadWrite, Category = "HUD Properties")
         UHUDHuman* humanHUD;
     UPROPERTY(BlueprintReadWrite, Category = "HUD Properties")
         UHUDCat* catHUD;
@@ -79,6 +85,10 @@ protected :
         TSubclassOf<UHUDSearchSession> searchSessionHUDClass;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HUD Properties")
         TSubclassOf<UHUDLobby> lobbyHUDClass;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HUD Properties")
+        TSubclassOf<UHUDCustomHuman> customHumanHUDClass;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HUD Properties")
+        TSubclassOf<UHUDCustomCat> customCatHUDClass;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HUD Properties")
         TSubclassOf<UHUDHuman> humanHUDClass;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HUD Properties")
@@ -103,6 +113,8 @@ public :
 public :
     UFUNCTION(BlueprintCallable, Category = "GameProgress Method")
         void LobbyStartUpdate();
+    UFUNCTION(BlueprintCallable, Category = "GameProgress Method")
+        void CharacterCustomStartUpdate();
     UFUNCTION(BlueprintCallable, Category = "GameProgress Method")
         void PrepareStartUpdate();
     UFUNCTION(BlueprintCallable, Category = "GameProgress Method")
@@ -145,6 +157,10 @@ protected :
         UInputAction* runAction;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input Properties")
         UInputAction* jumpAction;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input Properties")
+        UInputAction* crouchAction;
+    
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input Properties")
         UInputAction* interactAction;
     
@@ -183,6 +199,11 @@ public :
         void JumpFunc(const FInputActionValue& value);
     UFUNCTION(BlueprintCallable, Category = "Input Method")
         void JumpEndFunc(const FInputActionValue& value);
+    UFUNCTION(BlueprintCallable, Category = "Input Method")
+        void CrouchFunc(const FInputActionValue& value);
+    UFUNCTION(BlueprintCallable, Category = "Input Method")
+        void CrouchEndFunc(const FInputActionValue& value);
+        
     UFUNCTION(BlueprintCallable, Category = "Input Method")
         void InteractFunc(const FInputActionValue& value);
     UFUNCTION(BlueprintCallable, Category = "Input Method")

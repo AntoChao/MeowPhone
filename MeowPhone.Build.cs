@@ -11,10 +11,10 @@ public class MeowPhone : ModuleRules
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", 
 			"EnhancedInput", "UMG", "MediaAssets", "AIModule", "GeometryCollectionEngine", "Chaos"});
 
-		// Uncomment if you are using Slate UI
-		PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
+        PublicDependencyModuleNames.AddRange(new string[] { "NavigationSystem"});
 
-        // Uncomment if you are using online features
+        PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
+
         PrivateDependencyModuleNames.AddRange(new string[] { "OnlineSubsystem", "OnlineSubsystemNull", "OnlineSubsystemSteam" });
 
     }

@@ -3,6 +3,9 @@
 #include "CoreMinimal.h"
 #include "CommonStruct.generated.h"
 
+class AMissionZone;
+class MPCharacter;
+
 USTRUCT(BlueprintType)
 struct FSessionInfo
 {

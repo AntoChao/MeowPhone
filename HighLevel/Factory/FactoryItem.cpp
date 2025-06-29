@@ -6,7 +6,7 @@ UFactoryItem::UFactoryItem()
 }
 
 AActor* UFactoryItem::SpawnMPActor(int actorCode,
-    FVector actorLoItemion, FRotator actorRotation)
+    FVector actorLocation, FRotator actorRotation)
 {
     return nullptr;
 }

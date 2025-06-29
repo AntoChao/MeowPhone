@@ -6,7 +6,7 @@ UFactoryEnvironment::UFactoryEnvironment()
 }
 
 AActor* UFactoryEnvironment::SpawnMPActor(int actorCode,
-    FVector actorLoEnvironmention, FRotator actorRotation)
+    FVector actorLocation, FRotator actorRotation)
 {
     return nullptr;
 }
