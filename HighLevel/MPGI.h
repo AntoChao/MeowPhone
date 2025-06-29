@@ -51,10 +51,25 @@ public:
 	
 	UFUNCTION(BlueprintCallable, Category = "SaveFile Methods")
 		void LoadGame();
-		
+
+// getter && setter
+public:
+	UFUNCTION(BlueprintCallable, Category = " getter && setter")
+		ELanguage getGameLanguage();
+
+	UFUNCTION(BlueprintCallable, Category = " getter && setter")
+		void setGameLanguage(ELanguage newLanguage);
+
+	UFUNCTION(BlueprintCallable, Category = " getter && setter")
+		FString getCurPlayerName();
+};
+
+/* abandon logic, gonna use plugin online sybsystem instead
+
+			
 // session section
 protected:
-	/*
+	
 	UPROPERTY(BlueprintReadWrite, Category = "Session Properties")
 		TSharedPtr<FOnlineSessionSearch> searchSettings;
 
@@ -117,13 +132,6 @@ protected:
 
 	UFUNCTION(BlueprintCallable, Category = "Session Complete Methods")
 		void DestroySessionCompleted(FName sessionName, bool destroyCompleted);
-	*/
+	
 
-// getter && setter
-public:
-	UFUNCTION(BlueprintCallable, Category = " getter && setter")
-		ELanguage getGameLanguage();
-
-	UFUNCTION(BlueprintCallable, Category = " getter && setter")
-		FString getCurPlayerName();
-};
+*/

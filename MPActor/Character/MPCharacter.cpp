@@ -15,6 +15,8 @@
 
 #include "../Item/MPItem.h"
 
+#include "Sound/SoundCue.h"
+
 AMPCharacter::AMPCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -65,6 +67,29 @@ FText AMPCharacter::GetInteractHintText(AMPCharacter* player)
 void AMPCharacter::BeInteracted(AMPCharacter* player)
 {
 	return;
+}
+
+void AMPCharacter::PlaySoundLocally(USoundCue* aSound) 
+{
+	if (aSound)
+    {
+        UGameplayStatics::PlaySoundAtLocation(this, aSound, GetActorLocation());
+    }
+}
+void AMPCharacter::PlaySoundBroadcast(USoundCue* aSound)
+{
+	PlaySoundServer(aSound);
+}
+void AMPCharacter::PlaySoundServer_Implementation(USoundCue* aSound)
+{
+	if (HasAuthority())
+    {
+		PlaySoundMulticast(aSound);
+	}
+}
+void AMPCharacter::PlaySoundMulticast_Implementation(USoundCue* aSound)
+{
+	PlaySoundLocally(aSound);
 }
 
 // detect 

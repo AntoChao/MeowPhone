@@ -3,12 +3,14 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "../MPInteractable.h"
+#include "../MPPlaySoundInterface.h"
 #include "UObject/ScriptInterface.h"
 
 #include "MPCharacter.generated.h"
 
 class USpringArmComponent;
 class UCameraComponent;
+class SoundCue;
 
 enum class EMPMovementMode : uint8;
 enum class EMovementLocomotion : uint8;
@@ -19,7 +21,7 @@ class AMPItem;
 enum class ETeam : uint8;
 
 UCLASS(BlueprintType, Blueprintable)
-class AMPCharacter : public ACharacter, public IMPInteractable
+class AMPCharacter : public ACharacter, public IMPInteractable, public IMPPlaySoundInterface
 {
     GENERATED_BODY()
 
@@ -41,6 +43,17 @@ public :
     virtual FText GetInteractHintText(AMPCharacter* player) override;
 
     virtual void BeInteracted(AMPCharacter* player) override;
+
+public:
+    virtual void PlaySoundLocally(USoundCue* aSound) override;
+    virtual void PlaySoundBroadcast(USoundCue* aSound) override;
+
+protected:
+    UFUNCTION(Server, Reliable)
+        void PlaySoundServer(USoundCue* aSound);
+            
+    UFUNCTION(NetMulticast, Reliable)
+        void PlaySoundMulticast(USoundCue* aSound);
 
 // camera component
 protected :
