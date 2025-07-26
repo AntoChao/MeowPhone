@@ -6,6 +6,7 @@
 
 #include "MPGI.h"
 #include "MPGS.h"
+#include "HighLevel/MPLogManager.h"
 
 #include "Factory/FactoryHuman.h"
 #include "Factory/FactoryCat.h"
@@ -22,10 +23,47 @@
 #include "../MPActor/AI/MPAISystemManager.h"
 #include "../MPActor/Ability/MPAbility.h"
 #include "../MPActor/EnvActor/MPEnvActorComp.h"
+#include "../MPActor/EnvActor/MPEnvActorCompPushable.h"
+#include "MPActor/Character/MPCharacterHuman.h"
+#include "MPActor/Character/MPCharacterCat.h"
+#include "Camera/CameraComponent.h"
+#include "Managers/LobbyManager.h"
+#include "Managers/PreviewManager.h"
+#include "Managers/AIControllerManager.h"
+#include "Managers/MatchManager.h"
 
 AMPGMGameplay::AMPGMGameplay()
 {
-	return;
+	LobbyManager = NewObject<ULobbyManager>(this);
+	if (LobbyManager)
+	{
+		LobbyManager->Initialize(this);
+	}
+	PreviewManager = NewObject<UPreviewManager>(this);
+	if (PreviewManager)
+	{
+		PreviewManager->Initialize(this);
+	}
+	MatchManager = NewObject<UMatchManager>(this);
+    if (MatchManager)
+    {
+        MatchManager->Initialize(this);
+	}
+	AIControllerManager = NewObject<UAIControllerManager>(this);
+	if (AIControllerManager)
+	{
+		AIControllerManager->Initialize(this);
+	}
+}
+
+AMPGMGameplay::~AMPGMGameplay()
+{
+	// Clean up all timers to prevent memory leaks
+	if (GetWorld())
+	{
+		GetWorld()->GetTimerManager().ClearTimer(readyTimerHandle);
+		GetWorld()->GetTimerManager().ClearTimer(restartLobbyTimerHandle);
+	}
 }
 
 // gameplay common
@@ -38,8 +76,7 @@ void AMPGMGameplay::PostLogin(APlayerController* newPlayer)
 {
 	Super::PostLogin(newPlayer);
 
-	UE_LOG(LogTemp, Warning, TEXT("GM: One player log in"));
-	GEngine->AddOnScreenDebugMessage(1, 5.0f, FColor::Yellow, TEXT("GM: One player log in"));
+	UMPLogManager::LogInfo(TEXT("One player log in"), TEXT("MPGMGameplay"));
 	
 	SetupFactoryInstances();
 	AMPControllerPlayer* curPlayer = Cast<AMPControllerPlayer>(newPlayer);
@@ -48,11 +85,71 @@ void AMPGMGameplay::PostLogin(APlayerController* newPlayer)
 	{
 		curPlayer->InitializePS(allPlayersControllers.Num());
 
-		allPlayersControllers.Add(curPlayer);
-		
-		// should attach lobby hud at beginning
-		curPlayer->AttachHUD(EHUDType::ELobby, 0); // hud enum + zorder
+		// Assign preview slot and spawn preview character
+		PreviewManager->AssignPreviewSlot(curPlayer);
+		int32 slot = curPlayer->PreviewSlotIndex;
+		ETeam team = ETeam::ENone;
+		AMPPlayerState* curState = Cast<AMPPlayerState>(curPlayer->PlayerState);
+		if (curState) {
+			team = curState->playerTeam;
+		}
+		// Default to human preview if no team yet
+		if (team == ETeam::ENone) team = ETeam::EHuman;
+		PreviewManager->SpawnOrReplacePreviewCharacter(curPlayer, team, slot, 0, 0, 0);
 
+		if (singlePlayerDebugMode)
+		{
+			// Single player debug mode: Force team assignment and start game immediately
+			AMPPlayerState* curState = Cast<AMPPlayerState>(curPlayer->PlayerState);
+			if (curState)
+			{
+				curState->playerTeam = debugPlayer;
+				curState->isPlayerReady = true;
+			}
+
+			// Instantly start gameplay once the first (and only) player joins
+			if (allPlayersControllers.Num() == 0)
+			{
+				allPlayersControllers.Add(curPlayer);
+				StartGame();
+			}
+		}
+		else if (multiplayerDebugMode)
+		{
+			// Multiplayer debug mode: Allow lobby but with relaxed requirements
+			allPlayersControllers.Add(curPlayer);
+			
+			// If lobby is already active, assign team immediately
+			if (theGameState && theGameState->curGameplayStatus == EGPStatus::ELobby)
+			{
+				LobbyManager->AutoAssignTeams();
+				curPlayer->AttachHUD(EHUDType::ELobby, 0);
+				curPlayer->LobbyStartUpdate();
+			}
+			else
+			{
+				// Lobby not started yet, just attach HUD
+				curPlayer->AttachHUD(EHUDType::ELobby, 0);
+			}
+		}
+		else
+		{
+			// Normal flow: add to lobby and handle team assignment
+			allPlayersControllers.Add(curPlayer);
+			
+			// If lobby is already active, assign team immediately
+			if (theGameState && theGameState->curGameplayStatus == EGPStatus::ELobby)
+			{
+				LobbyManager->AutoAssignTeams();
+				curPlayer->AttachHUD(EHUDType::ELobby, 0);
+				curPlayer->LobbyStartUpdate();
+			}
+			else
+			{
+				// Lobby not started yet, just attach HUD
+				curPlayer->AttachHUD(EHUDType::ELobby, 0);
+			}
+		}
 	}
 }
 
@@ -60,16 +157,60 @@ void AMPGMGameplay::Logout(AController* exiting)
 {
 	Super::Logout(exiting);
 
-	UE_LOG(LogTemp, Warning, TEXT("GM: One player log out"));
+	UMPLogManager::LogInfo(TEXT("One player log out"), TEXT("MPGMGameplay"));
 
 	AMPControllerPlayer* curPlayer = Cast<AMPControllerPlayer>(exiting);
 	if (curPlayer)
 	{
+		PreviewManager->FreePreviewSlot(curPlayer);
+		// Check if the exiting player was a cat player
+		AMPPlayerState* playerState = Cast<AMPPlayerState>(curPlayer->PlayerState);
+		if (playerState && playerState->playerTeam == ETeam::ECat)
+		{
+			// Check if this cat was being held by any human
+			AMPCharacterCat* catCharacter = Cast<AMPCharacterCat>(curPlayer->GetPawn());
+			if (catCharacter)
+			{
+				// Find any human holding this cat and release them
+				for (AMPControllerPlayer* eachPlayer : allPlayersControllers)
+				{
+					AMPPlayerState* eachState = Cast<AMPPlayerState>(eachPlayer->PlayerState);
+					if (eachState && eachState->playerTeam == ETeam::EHuman)
+					{
+						AMPCharacterHuman* humanChar = Cast<AMPCharacterHuman>(eachPlayer->GetPawn());
+						if (humanChar && humanChar->IsHoldingCat() && humanChar->GetHeldCat() == catCharacter)
+						{
+							humanChar->ForceReleaseCat();
+							UMPLogManager::LogWarning(TEXT("Cat player disconnected while being held! Human released."), TEXT("MPGMGameplay"));
+							break;
+						}
+					}
+				}
+			}
+			
+			// Update human team objective - reduce total cat players
+			if (theGameState && theGameState->totalCatPlayers > 0)
+			{
+				theGameState->totalCatPlayers--;
+				UMPLogManager::LogInfo(FString::Printf(TEXT("Cat player disconnected! Human objective updated: %d cat players remaining"), theGameState->totalCatPlayers), TEXT("MPGMGameplay"));
+				
+				// Recalculate percentage
+				if (theGameState->totalCatPlayers > 0)
+				{
+					theGameState->caughtCatsPercentage = (float)theGameState->caughtCats / (float)theGameState->totalCatPlayers;
+				}
+				else
+				{
+					theGameState->caughtCatsPercentage = 1.0f; // All cats disconnected, human team wins
+				}
+			}
+		}
+		
 		allPlayersControllers.Remove(curPlayer);
 		RemoveControlledCharacters(curPlayer);
 	}
 
-	bool isGameEnd = CheckIfGameEnd();
+	bool isGameEnd = MatchManager->CheckIfGameEnd();
 }
 
 void AMPGMGameplay::BeginPlay()
@@ -77,13 +218,23 @@ void AMPGMGameplay::BeginPlay()
 	Super::BeginPlay();
 
 	InitializeGameState();
-	StartLobby();
-	SetupFactoryInstances();
-
-	if (onlyTestStartGame)
+	
+	if (PreviewManager)
 	{
-		StartGame();
+		PreviewManager->SetPreviewTransforms(characterPreviewLocations, characterPreviewRotations);
 	}
+
+	// Single player debug mode skips lobby entirely
+	if (singlePlayerDebugMode)
+	{
+		UMPLogManager::LogInfo(TEXT("Single Player Debug Mode - Skipping lobby"), TEXT("MPGMGameplay"));
+	}
+	else
+	{
+		LobbyManager->StartLobby();
+	}
+	
+	SetupFactoryInstances();
 }
 
 void AMPGMGameplay::RemoveControlledCharacters(AMPControllerPlayer* aPlayer)
@@ -186,13 +337,13 @@ AMPItem* AMPGMGameplay::SpawnItem(EItem itemTag, FVector spawnLocation, FRotator
 }
 UMPAbility* AMPGMGameplay::SpawnAbility(AActor* abilityOwner, EAbility abilityTag)
 {
-	if (abilityFactoryInstance)
-	{
-		UObject* spawnObject = itemFactoryInstance->SpawnMPObject(abilityOwner, static_cast<int>(abilityTag));
+    if (abilityFactoryInstance)
+    {
+		AActor* spawnActor = abilityFactoryInstance->SpawnMPActor(static_cast<int>(abilityTag), abilityOwner->GetActorLocation(), abilityOwner->GetActorRotation());
 
-		if (spawnObject)
+		if (spawnActor)
 		{
-			UMPAbility* abilitySpawn = Cast<UMPAbility>(spawnObject);
+			UMPAbility* abilitySpawn = Cast<UMPAbility>(spawnActor);
 			if (abilitySpawn)
 			{
 				return abilitySpawn;
@@ -204,563 +355,223 @@ UMPAbility* AMPGMGameplay::SpawnAbility(AActor* abilityOwner, EAbility abilityTa
 
 // game process
 	// lobby
-void AMPGMGameplay::StartLobby()
-{
-	if (!testingLobby) {return;}
-
-	theGameState->curGameplayStatus = EGPStatus::ELobby;
-
-	for (AMPControllerPlayer* eachPlayer : allPlayersControllers)
-	{
-		if (eachPlayer)
-		{
-			eachPlayer->AttachHUD(EHUDType::ELobby, 0);
-			eachPlayer->LobbyStartUpdate();
-		}
-	}
-}
-void AMPGMGameplay::GotReady(AMPControllerPlayer* aPlayer)
-{
-	if (CheckReadyToStartGame())
-	{
-		theGameState->isMostPlayerReady = true;
-		theGameState->curReadyTime = theGameState->readyTotalTime;
-		CountdownReadyGame();
-	}
-	else 
-	{
-		theGameState->isMostPlayerReady = false;
-	}
-}
-bool AMPGMGameplay::CheckReadyToStartGame()
-{
-	return CheckBothTeamHasPlayers() && CheckHalfPlayersAreReady();
-}
-
-bool AMPGMGameplay::CheckBothTeamHasPlayers()
-{
-	int humanPlayers = 0;
-	int catPlayers = 0;
-	for (AMPControllerPlayer* eachPlayer : allPlayersControllers)
-	{
-		AMPPlayerState* eachState = Cast<AMPPlayerState>(eachPlayer->PlayerState);
-		if (eachState)
-		{
-			switch(eachState->playerTeam)
-			{
-				case ETeam::EHuman:
-				{
-					humanPlayers ++;
-					break;
-				}
-				case ETeam::ECat:
-				{
-					catPlayers ++;
-					break;
-				}
-			}
-		}
-	}
-
-	return humanPlayers > 0 && catPlayers > 0;
-}
-bool AMPGMGameplay::CheckHalfPlayersAreReady()
-{
-	int numReadyPlayers = 0;
-	for (AMPControllerPlayer* eachPlayer : allPlayersControllers)
-	{
-		AMPPlayerState* eachPlayerState = Cast<AMPPlayerState>(eachPlayer->PlayerState);
-		if (eachPlayerState)
-		{
-			if (eachPlayerState->isPlayerReady)
-			{
-				numReadyPlayers ++;
-			}
-		}
-	}
-	return numReadyPlayers >= allPlayersControllers.Num();
-}
-
-void AMPGMGameplay::CountdownReadyGame()
-{
-	if (theGameState->isMostPlayerReady)
-	{
-		if (theGameState->curReadyTime > 0)
-		{
-			UWorld* serverWorld = GetWorld();
-			if (serverWorld)
-			{
-				theGameState->curReadyTime -= 1;
-
-				serverWorld->GetTimerManager().ClearTimer(readyTimerHandle);
-				FTimerDelegate readyTimerDel;
-				readyTimerDel.BindUFunction(this, FName("CountdownReadyGame"));
-				serverWorld->GetTimerManager().SetTimer(readyTimerHandle, readyTimerDel, 1, false);
-			}
-		}
-		else 
-		{
-			EndReadyTime();
-		}
-	}
-}
-void AMPGMGameplay::EndReadyTime()
-{
-	// remove all lobby hud
-	for (AMPControllerPlayer* eachPlayer : allPlayersControllers)
-	{
-		if (eachPlayer)
-		{
-			eachPlayer->RemoveHUD(EHUDType::ELobby);
-		}
-	}
-
-	StartCustomizeCharacter();
-}
+// All lobby logic is now in ULobbyManager
 
 	// character custom
 void AMPGMGameplay::StartCustomizeCharacter()
 {
-	theGameState->curGameplayStatus = EGPStatus::ECustomCharacter;
-	theGameState->curCustomCharacterTime = theGameState->customCharacterTotalTime;
-
-	for (AMPControllerPlayer* eachPlayer : allPlayersControllers)
-	{
-		if (eachPlayer)
-		{
-			AMPPlayerState* eachState = Cast<AMPPlayerState>(eachPlayer->PlayerState);
-			if (eachState)
-			{
-				switch (eachState->playerTeam)
-				{
-				case ETeam::EHuman:
-				{
-					eachPlayer->AttachHUD(EHUDType::ECustomHuman, 0);
-					break;
-				}
-				case ETeam::ECat:
-				{
-					eachPlayer->AttachHUD(EHUDType::ECustomCat, 0);
-					break;
-				}
-				default:
-					break;
-				}
-			}
-		}
-	}
-
-	CountdownCustomizeCharacter();
+	if(MatchManager) MatchManager->StartCustomizeCharacter();
 }
 void AMPGMGameplay::CountdownCustomizeCharacter()
 {
-	if (theGameState->curCustomCharacterTime > 0)
-		{
-			UWorld* serverWorld = GetWorld();
-			if (serverWorld)
-			{
-				theGameState->curCustomCharacterTime -= 1;
-
-				serverWorld->GetTimerManager().ClearTimer(customCharacterTimerHandle);
-				FTimerDelegate customCharacterTimerDel;
-				customCharacterTimerDel.BindUFunction(this, FName("CountdownCustomizeCharacter"));
-				serverWorld->GetTimerManager().SetTimer(customCharacterTimerHandle, customCharacterTimerDel, 1, false);
-			}
-		}
-	else 
-	{
-		EndCustomizeCharacter();
-	}
+	if(MatchManager) MatchManager->CountdownCustomizeCharacter();
 }
 void AMPGMGameplay::EndCustomizeCharacter()
 {
-	// remove all lobby hud
-	for (AMPControllerPlayer* eachPlayer : allPlayersControllers)
-	{
-		if (eachPlayer)
-		{
-			AMPPlayerState* eachState = Cast<AMPPlayerState>(eachPlayer->PlayerState);
-			if (eachState)
-			{
-				switch (eachState->playerTeam)
-				{
-				case ETeam::EHuman:
-				{
-					eachPlayer->RemoveHUD(EHUDType::ECustomHuman);
-					break;
-				}
-				case ETeam::ECat:
-				{
-					eachPlayer->RemoveHUD(EHUDType::ECustomCat);
-					break;
-				}
-				default:
-					break;
-				}
-			}
-		}
-	}
-
-	StartGame();
+	if(MatchManager) MatchManager->EndCustomizeCharacter();
 }
 
 	// start game
 void AMPGMGameplay::StartGame()
 {
-	UE_LOG(LogTemp, Warning, TEXT("GM: Starting Game"));
-	GEngine->AddOnScreenDebugMessage(1, 5.0f, FColor::Yellow, TEXT("GM: Starting Game"));
-
-	SetupGame();
-	StartPrepareTime();
-}
-
-void AMPGMGameplay::SetupGame()
-{
-	SetupMap();
-	SetupPlayers();
-	SetupAIs();
-}
-
-/* SetupMap()
-* Manage all items, it get all actors in the world, 
-* but eliminate some of them to be randomness
-*/
-void AMPGMGameplay::SetupMap()
-{
-	SetupMapItems();
-	SetupMapEnvActors();
-}
-void AMPGMGameplay::SetupMapItems()
-{
-	TArray<AActor*> allActors;
-    UGameplayStatics::GetAllActorsOfClass(GetWorld(), AMPItem::StaticClass(), allActors);
-
-    for (AActor* eachActor : allActors)
-    {
-        AMPItem* eachItem = Cast<AMPItem>(eachActor);
-        if (eachItem)
-        {
-			int32 randomNumber = FMath::RandRange(1, 100);
-			if (randomNumber > itemRemainPercentage)
-			{
-				eachItem->GetEliminated();
-			}
-        }
-    }
-}
-void AMPGMGameplay::SetupMapEnvActors()
-{
-	TArray<AActor*> allActors;
-    UGameplayStatics::GetAllActorsOfClass(GetWorld(), AMPEnvActorComp::StaticClass(), allActors);
-
-    for (AActor* eachActor : allActors)
-    {
-        AMPEnvActorComp* eachEnvActor = Cast<AMPEnvActorComp>(eachActor);
-        if (eachEnvActor)
-        {
-			int32 randomNumber = FMath::RandRange(1, 100);
-			if (randomNumber > envActorRandomnessPercentage)
-			{
-				eachEnvActor->BeRandomized();
-			}
-        }
-    }
-}
-
-void AMPGMGameplay::SetupPlayers()
-{
-	int humanIndex = 0;
-	int catIndex = 0;
-	for (AMPControllerPlayer* eachPlayer : allPlayersControllers)
-	{
-		AMPPlayerState* eachState = Cast<AMPPlayerState>(eachPlayer->PlayerState);
-		if (eachState)
-		{
-			if (eachState->playerTeam == ETeam::EHuman)
-			{
-				if (humanFactoryInstance)
-				{
-					int professionInt = static_cast<int>(eachState->humanProfession);
-					AActor* humanBody = humanFactoryInstance->SpawnMPActor(professionInt, allHumanSpawnLocations[humanIndex], allHumanSpawnRotations[humanIndex]);
-
-					if (humanBody)
-					{
-						AMPCharacter* humanMPBody = Cast<AMPCharacter>(humanBody);
-						if (humanMPBody)
-						{
-							eachPlayer->Possess(humanMPBody);
-							allPlayerCharacters.Add(humanMPBody);
-							humanIndex ++;
-
-							UE_LOG(LogTemp, Warning, TEXT("GM: One human player created sucessfully"));
-							GEngine->AddOnScreenDebugMessage(1, 5.0f, FColor::Yellow, TEXT("GM: One human player created sucessfully"));
-
-						}
-					}
-				}
-				eachPlayer->AttachHUD(EHUDType::EGameplayHuman, 0);
-			}
-			else if (eachState->playerTeam == ETeam::ECat) 
-			{
-				if (catFactoryInstance)
-				{
-					int catInt = static_cast<int>(eachState->catRace);
-					AActor* catBody = catFactoryInstance->SpawnMPActor(catInt, allCatSpawnLocations[catIndex], allCatSpawnRotations[catIndex]);
-
-					if (catBody)
-					{
-						AMPCharacter* catMPBody = Cast<AMPCharacter>(catBody);
-						if (catMPBody)
-						{
-							eachPlayer->Possess(catMPBody);
-							allPlayerCharacters.Add(catMPBody);
-							catIndex++;
-
-							UE_LOG(LogTemp, Warning, TEXT("GM: One cat player created sucessfully"));
-							GEngine->AddOnScreenDebugMessage(1, 5.0f, FColor::Yellow, TEXT("GM: One cat player created sucessfully"));
-						}
-					}
-				}
-				eachPlayer->AttachHUD(EHUDType::EGameplayCat, 0);
-			}
-		}
-	}
-}
-
-void AMPGMGameplay::SetupAIs() 
-{
-	SetupAICats();
-	SetupAIHumans();
-	SetupAIManager();
-}
-
-void AMPGMGameplay::SetupAICats()
-{
-	for (int i = 0; i < numberAICats; i++)
-	{
-		if (catFactoryInstance && aiControllerFactoryInstance)
-		{
-			int maxCatRace = static_cast<int>(ECatRace::EDiedCat);
-			int randomCatRace = FMath::RandRange(0, maxCatRace - 1);
-			AActor* catBody = catFactoryInstance->SpawnMPActor(randomCatRace, allHumanSpawnLocations[i], allHumanSpawnRotations[i]);
-
-			AActor* aiController = aiControllerFactoryInstance->SpawnMPActor(catAIIndex, allHumanSpawnLocations[i], allHumanSpawnRotations[i]);
-			
-			if (catBody && aiController)
-			{
-				AMPCharacter* catAIMPBody = Cast<AMPCharacter>(catBody);
-				AMPAIController* aiMPController = Cast<AMPAIController>(aiController);
-				if (catAIMPBody && aiMPController)
-				{
-					aiMPController->Possess(catAIMPBody);
-					allAICats.Add(aiMPController);
-				}
-			}
-		}
-	}
-}
-void AMPGMGameplay::SetupAIHumans()
-{
-	for (int i = 0; i < numberAIHumans; i++)
-	{
-		if (humanFactoryInstance && aiControllerFactoryInstance)
-		{
-			int maxHumanRace = static_cast<int>(EHumanProfession::EDiedHuman);
-			int randomHumanRace = FMath::RandRange(0, maxHumanRace - 1);
-			AActor* humanBody = humanFactoryInstance->SpawnMPActor(randomHumanRace, allHumanSpawnLocations[i], allHumanSpawnRotations[i]);
-
-			AActor* aiController = aiControllerFactoryInstance->SpawnMPActor(humanAIIndex, allHumanSpawnLocations[i], allHumanSpawnRotations[i]);
-			
-			if (humanBody && aiController)
-			{
-				AMPCharacter* humanAIMPBody = Cast<AMPCharacter>(humanBody);
-				AMPAIController* aiMPController = Cast<AMPAIController>(aiController);
-				if (humanAIMPBody && aiMPController)
-				{
-					aiMPController->Possess(humanAIMPBody);
-					allAIHumans.Add(aiMPController);
-				}
-			}
-		}
-	}
-}
-void AMPGMGameplay::SetupAIManager()
-{
-	if (aiControllerFactoryInstance)
-	{
-		theHumanAIManager = Cast<AMPAISystemManager>(aiControllerFactoryInstance->SpawnMPActor(aiManagerIndex, FVector(0.0f, 0.0f, 0.0f), FRotator(0.0f, 0.0f, 0.0f)));
-		
-		if (theHumanAIManager)
-		{
-			theHumanAIManager->Initialize();
-		}
-	}
-}
-
-	// prepare time
-void AMPGMGameplay::StartPrepareTime()
-{
-	theGameState->curGameplayStatus = EGPStatus::EPrepare;
-	theGameState->curPrepareTime = theGameState->prepareTotalTime;
-	CountdownPrepareGame();
-
-	for (AMPControllerPlayer* eachPlayer : allPlayersControllers)
-	{
-		eachPlayer->PrepareStartUpdate();
-	}
-}
-void AMPGMGameplay::CountdownPrepareGame()
-{
-	if (theGameState->curPrepareTime > 0)
-	{
-		UWorld* serverWorld = GetWorld();
-		if (serverWorld)
-		{
-			theGameState->curPrepareTime -= 1;
-
-			serverWorld->GetTimerManager().ClearTimer(prepareTimerHandle);
-			FTimerDelegate prepareTimerDel;
-			prepareTimerDel.BindUFunction(this, FName("CountdownPrepareGame"));
-			serverWorld->GetTimerManager().SetTimer(prepareTimerHandle, prepareTimerDel, 1, false);
-		}
-	}
-	else 
-	{
-		EndPrepareTime();
-	}
-}
-void AMPGMGameplay::EndPrepareTime()
-{
-	StartGameplayTime();
-}
-
-void AMPGMGameplay::StartGameplayTime()
-{
-	theGameState->curGameplayStatus = EGPStatus::EGameplay;
-	theGameState->curGameplayTime = theGameState->gameplayTotalTime;
-	CountdownGameplayGame();
-
-	for (AMPControllerPlayer* eachPlayer : allPlayersControllers)
-	{
-		eachPlayer->GameplayStartUpdate();
-	}
-}
-void AMPGMGameplay::CountdownGameplayGame()
-{
-	if (theGameState->curGameplayTime > 0)
-	{
-		UWorld* serverWorld = GetWorld();
-		if (serverWorld)
-		{
-			theGameState->curGameplayTime -= 1;
-
-			serverWorld->GetTimerManager().ClearTimer(gameplayTimerHandle);
-			FTimerDelegate gameplayTimerDel;
-			gameplayTimerDel.BindUFunction(this, FName("CountdownGameplayGame"));
-			serverWorld->GetTimerManager().SetTimer(gameplayTimerHandle, gameplayTimerDel, 1, false);
-		}
-	}
-	else 
-	{
-		EndGameplayTime();
-	}
+	if(MatchManager) MatchManager->StartGame();
 }
 
 bool AMPGMGameplay::CheckIfGameEnd()
 {
-	bool isGameEnd = false;
-	// check if game is ended
-	if (isGameEnd)
-	{
-		EndGameplayTime();
-		return true;
-	}
-	else
-	{
+	if (MatchManager) return MatchManager->CheckIfGameEnd();
 		return false;
-	}
 }
 void AMPGMGameplay::EndGameplayTime()
 {
-	RemoveGameplayHUD();
-	StartLobby();
+    if(MatchManager) MatchManager->EndGameplayTime();
 }
 
 void AMPGMGameplay::RemoveGameplayHUD()
 {
-	for (AMPControllerPlayer* eachPlayer : allPlayersControllers)
-	{
-		if (eachPlayer) 
-		{
-			AMPPlayerState* eachState = Cast<AMPPlayerState>(eachPlayer->PlayerState);
-			if (eachState)
-			{
-				switch (eachState->playerTeam)
-				{
-				case ETeam::EHuman:
-				{
-					eachPlayer->RemoveHUD(EHUDType::EGameplayHuman);
-					break;
-				}
-				case ETeam::ECat:
-				{
-					eachPlayer->RemoveHUD(EHUDType::EGameplayCat);
-					break;
-				}
-				default:
-					break;
-				}
-			}
-		}
-	}
+	// This functionality is now in MatchManager
 }
 
 void AMPGMGameplay::RegisterPlayerDeath(AMPControllerPlayer* diedPlayer,
 	FVector diedPlayerLocation, FRotator diedPlayerRotation)
 {
-	if (!CheckIfGameEnd() && diedPlayer)
+	if(MatchManager) MatchManager->RegisterPlayerDeath(diedPlayer, diedPlayerLocation, diedPlayerRotation);
+}
+
+void AMPGMGameplay::DisplayProgressionStatus()
+{
+	if(MatchManager) MatchManager->DisplayProgressionStatus();
+}
+
+// setters and getters
+FString AMPGMGameplay::GetDebugModeStatus() const
+{
+	if (singlePlayerDebugMode)
 	{
-		RemoveControlledCharacters(diedPlayer);
+		return FString::Printf(TEXT("Single Player Debug Mode - Team: %s"), 
+			debugPlayer == ETeam::EHuman ? TEXT("Human") : TEXT("Cat"));
+	}
+	else if (multiplayerDebugMode)
+	{
+		return TEXT("Multiplayer Debug Mode - Relaxed Requirements");
+	}
+	else
+	{
+		return TEXT("Normal Mode - Full Requirements");
+	}
+}
 
-		// let the player possess the spectator body
-		AMPPlayerState* diedPlayerState = Cast<AMPPlayerState>(diedPlayer->PlayerState);
-		if (diedPlayerState)
+void AMPGMGameplay::RestartLobby()
+{
+	// Reset game state
+	if (theGameState)
+	{
+		theGameState->curGameplayStatus = EGPStatus::ELobby;
+		theGameState->isMostPlayerReady = false;
+		theGameState->curReadyTime = 0;
+		theGameState->curCustomCharacterTime = 0;
+		theGameState->curPrepareTime = 0;
+		theGameState->curGameplayTime = 0;
+	}
+	
+	// Clear all timers
+	if (GetWorld())
+	{
+		GetWorld()->GetTimerManager().ClearTimer(readyTimerHandle);
+		GetWorld()->GetTimerManager().ClearTimer(restartLobbyTimerHandle);
+	}
+	
+	// Reset all players
+	for (AMPControllerPlayer* eachPlayer : allPlayersControllers)
+	{
+		if (eachPlayer)
 		{
-			AActor* diedBody = nullptr;
-			if (diedPlayerState->playerTeam == ETeam::EHuman)
+			AMPPlayerState* eachState = Cast<AMPPlayerState>(eachPlayer->PlayerState);
+			if (eachState)
 			{
-				if (humanFactoryInstance)
-				{
-					diedBody = humanFactoryInstance->SpawnMPActor(static_cast<int>(EHumanProfession::EDiedHuman), diedPlayerLocation, diedPlayerRotation);
-				}
+				eachState->isPlayerReady = false;
+				eachState->isPlayerDied = false;
 			}
-			else if (diedPlayerState->playerTeam == ETeam::ECat)
-			{
-				if (catFactoryInstance)
-				{
-					diedBody = catFactoryInstance->SpawnMPActor(static_cast<int>(ECatRace::EDiedCat), diedPlayerLocation, diedPlayerRotation);
-				}
-			}
+		}
+	}
+	
+	// Start fresh lobby
+	LobbyManager->StartLobby();
+	
+	UMPLogManager::LogInfo(TEXT("Lobby restarted successfully"), TEXT("MPGMGameplay"));
+}
 
-			if (diedBody)
+// =====================
+// Bot Management Methods
+// =====================
+
+bool AMPGMGameplay::AddBot(ETeam team)
+{
+    if (AIControllerManager)
+    {
+        bool Result = AIControllerManager->AddBot(team);
+        if (Result && LobbyManager)
+        {
+            LobbyManager->BroadcastPlayerListUpdate();
+        }
+        return Result;
+    }
+    return false;
+}
+
+bool AMPGMGameplay::RemoveBot(int32 playerIndex)
+{
+    if (AIControllerManager)
+    {
+        bool Result = AIControllerManager->RemoveBot(playerIndex);
+        if (Result && LobbyManager)
+        {
+            LobbyManager->BroadcastPlayerListUpdate();
+        }
+        return Result;
+    }
+    return false;
+}
+
+// =====================
+// Ready State Management
+// =====================
+
+// Team-specific player lists
+TArray<AMPControllerPlayer*> AMPGMGameplay::GetHumanPlayers() const
+{
+	TArray<AMPControllerPlayer*> humanPlayers;
+	
+	for (AMPControllerPlayer* player : allPlayersControllers)
+	{
+		if (player)
+		{
+			AMPPlayerState* playerState = Cast<AMPPlayerState>(player->PlayerState);
+			if (playerState && playerState->playerTeam == ETeam::EHuman)
 			{
-				AMPCharacter* mpDiedBody = Cast<AMPCharacter>(diedBody);
-				if (mpDiedBody)
-				{
-					diedPlayer->Possess(mpDiedBody);
-					allPlayerCharacters.Add(mpDiedBody);
-				}
+				humanPlayers.Add(player);
 			}
+		}
+	}
+	
+	return humanPlayers;
+}
+
+TArray<AMPControllerPlayer*> AMPGMGameplay::GetCatPlayers() const
+{
+	TArray<AMPControllerPlayer*> catPlayers;
+	
+	for (AMPControllerPlayer* player : allPlayersControllers)
+	{
+		if (player)
+		{
+			AMPPlayerState* playerState = Cast<AMPPlayerState>(player->PlayerState);
+			if (playerState && playerState->playerTeam == ETeam::ECat)
+			{
+				catPlayers.Add(player);
+			}
+		}
+	}
+	
+	return catPlayers;
+}
+
+// Countdown update RPCs
+void AMPGMGameplay::ClientUpdateReadyCountdown_Implementation(int32 secondsRemaining)
+{
+	if (LobbyManager)
+	{
+		LobbyManager->ClientUpdateReadyCountdown(secondsRemaining);
+	}
+}
+
+void AMPGMGameplay::ClientUpdateCustomizationCountdown_Implementation(int32 secondsRemaining)
+{
+	UMPLogManager::LogDebug(FString::Printf(TEXT("Client received customization countdown update: %d"), secondsRemaining), TEXT("MPGMGameplay"));
+	
+	// Update countdown on all player HUDs on this client
+	for (AMPControllerPlayer* eachPlayer : allPlayersControllers)
+	{
+		if (eachPlayer && eachPlayer->lobbyManagerHUD)
+		{
+			eachPlayer->lobbyManagerHUD->UpdateCountdownText(secondsRemaining);
 		}
 	}
 }
 
-// setters and getters
-void AMPGMGameplay::SetNumAICats(int aiCatNum)
+int32 AMPGMGameplay::GetPlayerPreviewSlot(AMPControllerPlayer* Player) const
 {
-	numberAICats = aiCatNum;
+    if (PreviewManager)
+    {
+        return PreviewManager->GetPlayerPreviewSlot(Player);
+    }
+	return -1;
 }
-void AMPGMGameplay::SetNumAIHumans(int aiHumanNum)
+
+void AMPGMGameplay::RequestPreviewCharacterUpdate(AMPControllerPlayer* Player, ETeam Team, int CatRace, int HumanProfession, int Hat)
 {
-	numberAIHumans = aiHumanNum;
+    if (PreviewManager)
+{
+        PreviewManager->RequestPreviewCharacterUpdate(Player, Team, CatRace, HumanProfession, Hat);
+	}
 }

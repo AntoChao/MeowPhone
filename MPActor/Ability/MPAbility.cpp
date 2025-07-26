@@ -1,4 +1,5 @@
 #include "MPAbility.h"
+#include "Net/UnrealNetwork.h"
 #include "../../CommonEnum.h"
 #include "../../CommonStruct.h"
 #include "../Character/MPCharacterCat.h"
@@ -6,8 +7,19 @@
 
 UMPAbility::UMPAbility()
 {
-	
+	bReplicates = true;
 }
+
+void UMPAbility::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+    DOREPLIFETIME(UMPAbility, isBeingUse);
+    DOREPLIFETIME(UMPAbility, isInCooldown);
+}
+
+void UMPAbility::OnRep_BeingUse() {}
+void UMPAbility::OnRep_InCooldown() {}
 
 // common Ability methods
 void UMPAbility::BeInitialized(AMPCharacterCat* player)
@@ -107,12 +119,14 @@ void UMPAbility::ExpireUsageEffectDuration()
 
 	StartCooldown();
 }
+
 void UMPAbility::StartCooldown()
 {
 	isInCooldown = true;
 	curCooldownCountDown = totalCooldown;
 	CooldownCountDown();
 }
+
 void UMPAbility::CooldownCountDown()
 {
 	if (curCooldownCountDown > 0)

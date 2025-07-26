@@ -7,6 +7,7 @@
 
 class UButton;
 class UTextBlock;
+class UCanvasPanel;
 struct FLocalizedText;
 
 /* Init widget
@@ -24,20 +25,28 @@ class UHUDInit : public UMPHUD
 
 // common Init HUD 
 protected:
-    // local Text
+    // Root widget (required for all UserWidgets)
+    UPROPERTY(meta = (BindWidget))
+    UCanvasPanel* rootCanvas;
+    
+    // Text keys for localization
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HUD Properties")
-    FText startGameTXT;
+    FString startGameTextKey = TEXT("HUD_INIT_START_GAME");
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HUD Properties")
-    FText optionTXT;
+    FString optionTextKey = TEXT("HUD_INIT_OPTIONS");
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HUD Properties")
-    FText creditTXT;
+    FString creditTextKey = TEXT("HUD_INIT_CREDITS");
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HUD Properties")
-    FText quitTXT;
+    FString quitTextKey = TEXT("HUD_INIT_QUIT");
 
     // text components
+    UPROPERTY(meta = (BindWidget))
     UTextBlock* startGameTXTBlock;
+    UPROPERTY(meta = (BindWidget))
     UTextBlock* optionTXTBlock;
+    UPROPERTY(meta = (BindWidget))
     UTextBlock* creditTXTBlock;
+    UPROPERTY(meta = (BindWidget))
     UTextBlock* quitTXTBlock;
 
     // buttons
@@ -59,4 +68,9 @@ protected:
     void GoCreditWidget();
     UFUNCTION(BlueprintCallable, Category = "HUD Methods")
     void QuitGame();
+    
+    // Override parent functions
+    virtual void UpdateTexts() override;
+    virtual bool ValidateRootWidget() override;
+    virtual void NativeDestruct() override;
 };

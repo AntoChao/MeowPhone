@@ -1,69 +1,136 @@
 #include "MPControllerPlayer.h"
-
-#include "Engine/LocalPlayer.h"
+#include "Net/UnrealNetwork.h"
 #include "Kismet/GameplayStatics.h"
-#include "GameFramework/CharacterMovementComponent.h"
-
-// high level
-#include "../../HighLevel/MPGMGameplay.h"
-
-// input
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "InputMappingContext.h"
+#include "InputAction.h"
 #include "InputActionValue.h"
+#include "HighLevel/MPLogManager.h"
+#include "MPActor/Player/MPPlayerState.h"
+#include "MPActor/Character/MPCharacter.h"
+#include "MPActor/Character/MPCharacterHuman.h"
+#include "MPActor/Character/MPCharacterCat.h"
+#include "MPActor/Item/MPItem.h"
+#include "MPActor/EnvActor/MPEnvActorHolder.h"
+#include "MPActor/Ability/MPAbility.h"
+#include "HighLevel/MPGMGameplay.h"
+#include "HighLevel/MPGS.h"
+#include "Camera/CameraComponent.h"
 
-// related
-#include "MPPlayerState.h"
-#include "../Character/MPCharacter.h"
-#include "../Character/MPCharacterCat.h"
-
-// hud
-#include "Widget/HUDCat.h"
-#include "Widget/HUDCreateSession.h"
-#include "Widget/HUDCredit.h"
-#include "Widget/HUDEnd.h"
-#include "Widget/HUDHuman.h"
-#include "Widget/HUDInit.h"
-#include "Widget/HUDLobby.h"
-#include "Widget/HUDCustomHuman.h"
-#include "Widget/HUDCustomCat.h"
-#include "Widget/HUDMenu.h"
-#include "Widget/HUDOption.h"
-#include "Widget/HUDSearchSession.h"
-#include "Widget/HUDSessionGeneral.h"
+// HUD includes
+#include "MPActor/Player/Widget/HUDInit.h"
+#include "MPActor/Player/Widget/HUDOption.h"
+#include "MPActor/Player/Widget/HUDSessionGeneral.h"
+#include "MPActor/Player/Widget/HUDCreateSession.h"
+#include "MPActor/Player/Widget/HUDSearchSession.h"
+#include "MPActor/Player/Widget/HUDLobby.h"
+#include "MPActor/Player/Widget/HUDLobbyManager.h"
+#include "MPActor/Player/Widget/HUDCharacterHuman.h"
+#include "MPActor/Player/Widget/HUDCharacterCat.h"
+#include "MPActor/Player/Widget/HUDMenu.h"
+#include "MPActor/Player/Widget/HUDEnd.h"
 
 AMPControllerPlayer::AMPControllerPlayer()
 {
-
+	PrimaryActorTick.bCanEverTick = true;
+	
+	// Set default values
+	lookXSensitive = 1.0f;
+	lookYSensitive = 1.0f;
 }
 
-// common player controller properties
-void AMPControllerPlayer::BeginPlay() 
+void AMPControllerPlayer::BeginPlay()
 {
-    Super::BeginPlay();
+	Super::BeginPlay();
 }
 
 void AMPControllerPlayer::InitializePS(int aPlayerIndex)
 {
-    AMPPlayerState* curPlayerState = Cast<AMPPlayerState>(PlayerState);
-    if (curPlayerState)
-    {
-        curPlayerState->playerIndex = aPlayerIndex;
-        curPlayerState->playerTeam = ETeam::ECat;
-        curPlayerState->catRace = ECatRace::ECatExp;
-    }
+	AMPPlayerState* thePlayerState = Cast<AMPPlayerState>(PlayerState);
+	if (thePlayerState)
+	{
+		thePlayerState->playerIndex = aPlayerIndex;
+	}
+}
+
+// Team assignment methods
+void AMPControllerPlayer::RequestTeamSwitch(ETeam newTeam)
+{
+	ServerRequestTeamSwitch(newTeam);
+}
+
+ETeam AMPControllerPlayer::GetCurrentTeam() const
+{
+	AMPPlayerState* thePlayerState = Cast<AMPPlayerState>(PlayerState);
+	if (thePlayerState)
+	{
+		return thePlayerState->playerTeam;
+	}
+	return ETeam::ENone;
+}
+
+bool AMPControllerPlayer::IsTeamAssigned() const
+{
+	return GetCurrentTeam() != ETeam::ENone;
+}
+
+// Server RPCs for team assignment
+void AMPControllerPlayer::ServerRequestTeamSwitch_Implementation(ETeam newTeam)
+{
+	// Validate authority
+	if (!HasAuthority())
+	{
+		UMPLogManager::LogWarning(TEXT("ServerRequestTeamSwitch called without authority"), TEXT("MPControllerPlayer"));
+		return;
+	}
+	
+	// Call GameMode to handle team switch
+	AMPGMGameplay* gameMode = Cast<AMPGMGameplay>(GetWorld()->GetAuthGameMode());
+	if (gameMode)
+	{
+		bool success = gameMode->SwitchPlayerTeam(this, newTeam);
+		ClientTeamSwitchResult(newTeam, success);
+		// Team change will trigger OnRep_PlayerTeam callback to update HUD
+	}
+	else
+	{
+		UMPLogManager::LogError(TEXT("Could not get GameMode for team switch"), TEXT("MPControllerPlayer"));
+		ClientTeamSwitchResult(newTeam, false);
+	}
+}
+
+// Client RPCs for team assignment results
+void AMPControllerPlayer::ClientTeamSwitchResult_Implementation(ETeam newTeam, bool success)
+{
+	if (success)
+	{
+		UMPLogManager::LogInfo(FString::Printf(TEXT("Successfully switched to %s team"), 
+			newTeam == ETeam::EHuman ? TEXT("Human") : TEXT("Cat")), TEXT("MPControllerPlayer"));
+		
+		// Update HUD team button visibility
+		if (lobbyManagerHUD && lobbyManagerHUD->lobbyHUD)
+		{
+			lobbyManagerHUD->lobbyHUD->UpdateTeamButtonVisibility();
+		}
+	}
+	else
+	{
+		UMPLogManager::LogWarning(FString::Printf(TEXT("Failed to switch to %s team"), 
+			newTeam == ETeam::EHuman ? TEXT("Human") : TEXT("Cat")), TEXT("MPControllerPlayer"));
+	}
 }
 
 // hud manager
 void AMPControllerPlayer::TurnUIInputOn()
 {
-    bShowMouseCursor = true;
-    SetInputMode(FInputModeUIOnly());
+	bShowMouseCursor = true;
+	SetInputMode(FInputModeUIOnly());
 }
 void AMPControllerPlayer::TurnGameplayInputOn()
 {
-    bShowMouseCursor = false;
-    SetInputMode(FInputModeGameOnly());
+	bShowMouseCursor = false;
+	SetInputMode(FInputModeGameOnly());
 }
 
 void AMPControllerPlayer::AttachHUD(EHUDType hudType, int zOrder)
@@ -142,51 +209,37 @@ void AMPControllerPlayer::AttachHUD(EHUDType hudType, int zOrder)
         }
         case EHUDType::ELobby :
         {
-            if (!lobbyHUD && lobbyHUDClass)
+            if (!lobbyManagerHUD && lobbyManagerHUDClass)
             {
-                lobbyHUD = CreateWidget<UHUDLobby>(this, lobbyHUDClass);
-                if (lobbyHUD != nullptr)
+                lobbyManagerHUD = CreateWidget<UHUDLobbyManager>(this, lobbyManagerHUDClass);
+                if (lobbyManagerHUD != nullptr)
                 {
                     TurnUIInputOn();
-                    lobbyHUD->AddToViewport(zOrder);
-                    lobbyHUD->SetOwner(this);
+                    lobbyManagerHUD->AddToViewport(zOrder);
+                    lobbyManagerHUD->SetOwner(this);
                 }
             }
             break;
         }
         case EHUDType::ECustomHuman :
         {
-            if (!customHumanHUD && customHumanHUDClass)
-            {
-                customHumanHUD = CreateWidget<UHUDCustomHuman>(this, customHumanHUDClass);
-                if (customHumanHUD != nullptr)
-                {
-                    TurnUIInputOn();
-                    customHumanHUD->AddToViewport(zOrder);
-                    customHumanHUD->SetOwner(this);
-                }
-            }
+            // Customization is now handled by the lobby manager
+            // This case is kept for backward compatibility but should not be used
+            UMPLogManager::LogWarning(TEXT("ECustomHuman HUD type is deprecated. Use ELobby instead."), TEXT("MPControllerPlayer"));
             break;
         }
         case EHUDType::ECustomCat :
         {
-            if (!customCatHUD && customCatHUDClass)
-            {
-                customCatHUD = CreateWidget<UHUDCustomCat>(this, customCatHUDClass);
-                if (customCatHUD != nullptr)
-                {
-                    TurnUIInputOn();
-                    customCatHUD->AddToViewport(zOrder);
-                    customCatHUD->SetOwner(this);
-                }
-            }
+            // Customization is now handled by the lobby manager
+            // This case is kept for backward compatibility but should not be used
+            UMPLogManager::LogWarning(TEXT("ECustomCat HUD type is deprecated. Use ELobby instead."), TEXT("MPControllerPlayer"));
             break;
         }
         case EHUDType::EGameplayHuman :
         {
             if (!humanHUD && humanHUDClass)
             {
-                humanHUD = CreateWidget<UHUDHuman>(this, humanHUDClass);
+                humanHUD = CreateWidget<UHUDCharacterHuman>(this, humanHUDClass);
                 if (humanHUD != nullptr)
                 {
                     TurnGameplayInputOn();
@@ -200,7 +253,7 @@ void AMPControllerPlayer::AttachHUD(EHUDType hudType, int zOrder)
         {
             if (!catHUD && catHUDClass)
             {
-                catHUD = CreateWidget<UHUDCat>(this, catHUDClass);
+                catHUD = CreateWidget<UHUDCharacterCat>(this, catHUDClass);
                 if (catHUD != nullptr)
                 {
                     TurnGameplayInputOn();
@@ -296,32 +349,24 @@ void AMPControllerPlayer::RemoveHUD(EHUDType hudType)
         }
         case EHUDType::ELobby :
         {
-            if (lobbyHUD)
+            if (lobbyManagerHUD)
             {
                 TurnUIInputOn();
-                lobbyHUD->RemoveFromParent();
-                lobbyHUD = nullptr;
+                lobbyManagerHUD->RemoveFromParent();
+                lobbyManagerHUD = nullptr;
             }
             break;
         }
         case EHUDType::ECustomHuman :
         {
-            if (customHumanHUD)
-            {
-                TurnUIInputOn();
-                customHumanHUD->RemoveFromParent();
-                customHumanHUD = nullptr;
-            }
+            // Customization is now handled by the lobby manager
+            UMPLogManager::LogWarning(TEXT("ECustomHuman HUD removal is deprecated. Use ELobby instead."), TEXT("MPControllerPlayer"));
             break;
         }
         case EHUDType::ECustomCat :
         {
-            if (customCatHUD)
-            {
-                TurnUIInputOn();
-                customCatHUD->RemoveFromParent();
-                customCatHUD = nullptr;
-            }
+            // Customization is now handled by the lobby manager
+            UMPLogManager::LogWarning(TEXT("ECustomCat HUD removal is deprecated. Use ELobby instead."), TEXT("MPControllerPlayer"));
             break;
         }
         case EHUDType::EGameplayHuman :
@@ -502,9 +547,16 @@ void AMPControllerPlayer::SetupInputComponent()
 
 void AMPControllerPlayer::OpenMenuFunc(const FInputActionValue& value)
 {
-    if (value.Get<bool>()) 
+    // Toggle menu: if open, close it; if closed, open it
+    if (menuHUD)
     {
-        AttachHUD(EHUDType::EMenu, 1);
+        RemoveHUD(EHUDType::EMenu);
+        TurnGameplayInputOn();
+    }
+    else if (controlledBody)
+    {
+        AttachHUD(EHUDType::EMenu, 0);
+        TurnUIInputOn();
     }
 }
 void AMPControllerPlayer::LookFunc(const FInputActionValue& value)
@@ -600,7 +652,14 @@ void AMPControllerPlayer::InteractFunc(const FInputActionValue& value)
     {
 		if (value.Get<bool>())
 		{
-			controlledBody->Interact();
+			if (HasAuthority())
+			{
+				controlledBody->Interact();
+			}
+			else
+			{
+				Server_RequestInteract();
+			}
 		}
 	}
 }
@@ -610,8 +669,9 @@ void AMPControllerPlayer::SelectItemOneFunc(const FInputActionValue& value)
     {
 		if (value.Get<bool>())
 		{
-			controlledBody->SelectItem(1);
-		}
+			if (HasAuthority()) { controlledBody->SelectItem(1); }
+			else { Server_RequestSelectItem(1); }
+		}	
 	}
 }
 void AMPControllerPlayer::SelectItemTwoFunc(const FInputActionValue& value)
@@ -620,7 +680,8 @@ void AMPControllerPlayer::SelectItemTwoFunc(const FInputActionValue& value)
     {
 		if (value.Get<bool>())
 		{
-			controlledBody->SelectItem(2);
+			if (HasAuthority()) { controlledBody->SelectItem(2); }
+			else { Server_RequestSelectItem(2); }
 		}
 	}
 }
@@ -630,7 +691,8 @@ void AMPControllerPlayer::SelectItemThreeFunc(const FInputActionValue& value)
     {
 		if (value.Get<bool>())
 		{
-			controlledBody->SelectItem(3);
+			if (HasAuthority()) { controlledBody->SelectItem(3); }
+			else { Server_RequestSelectItem(3); }
 		}
 	}
 }
@@ -640,7 +702,8 @@ void AMPControllerPlayer::UseCurItemFunc(const FInputActionValue& value)
     {
 		if (value.Get<bool>())
 		{
-			controlledBody->UseCurItem();
+			if (HasAuthority()) { controlledBody->UseCurItem(); }
+			else { Server_RequestUseCurItem(); }
 		}
 	}
 }
@@ -650,7 +713,8 @@ void AMPControllerPlayer::DropCurItemFunc(const FInputActionValue& value)
     {
 		if (value.Get<bool>())
 		{
-			controlledBody->DropCurItem();
+			if (HasAuthority()) { controlledBody->DropCurItem(); }
+			else { Server_RequestDropCurItem(); }
 		}
 	}
 }
@@ -661,7 +725,283 @@ void AMPControllerPlayer::UseAbilityFunc(const FInputActionValue& value)
         AMPCharacterCat* catBody = Cast<AMPCharacterCat>(controlledBody);
         if (catBody)
         {
+			if (value.Get<bool>())
+			{
+				if (HasAuthority())
+				{
+					catBody->UseActiveAbility();
+				}
+				else
+				{
+					Server_RequestUseAbility();
+				}
+			}
+        }
+    }
+}
+
+void AMPControllerPlayer::Server_RequestSpawnItem_Implementation(EItem ItemTag, const FVector& Location, const FRotator& Rotation)
+{
+    AMPGMGameplay* GM = Cast<AMPGMGameplay>(GetWorld()->GetAuthGameMode());
+    if (GM && HasAuthority())
+    {
+        GM->SpawnItem(ItemTag, Location, Rotation);
+    }
+}
+
+void AMPControllerPlayer::Server_RequestSpawnEnvironment_Implementation(EEnvActor EnvTag, const FVector& Location, const FRotator& Rotation)
+{
+    AMPGMGameplay* GM = Cast<AMPGMGameplay>(GetWorld()->GetAuthGameMode());
+    if (GM && HasAuthority())
+    {
+        GM->SpawnEnvironment(EnvTag, Location, Rotation);
+    }
+}
+
+void AMPControllerPlayer::Server_RequestSpawnAbility_Implementation(EAbility AbilityTag, AActor* AbilityOwner)
+{
+    AMPGMGameplay* GM = Cast<AMPGMGameplay>(GetWorld()->GetAuthGameMode());
+    if (GM && HasAuthority())
+    {
+        GM->SpawnAbility(AbilityOwner, AbilityTag);
+    }
+}
+
+// =====================
+// Gameplay action RPCs
+// =====================
+
+void AMPControllerPlayer::Server_RequestInteract_Implementation()
+{
+    if (controlledBody)
+    {
+        controlledBody->Interact();
+    }
+}
+
+void AMPControllerPlayer::Server_RequestSelectItem_Implementation(int ItemIndex)
+{
+    if (controlledBody)
+    {
+        controlledBody->SelectItem(ItemIndex);
+    }
+}
+
+void AMPControllerPlayer::Server_RequestUseCurItem_Implementation()
+{
+    if (controlledBody)
+    {
+        controlledBody->UseCurItem();
+    }
+}
+
+void AMPControllerPlayer::Server_RequestDropCurItem_Implementation()
+{
+    if (controlledBody)
+    {
+        controlledBody->DropCurItem();
+    }
+}
+
+void AMPControllerPlayer::Server_RequestUseAbility_Implementation()
+{
+    if (controlledBody)
+    {
+        AMPCharacterCat* catBody = Cast<AMPCharacterCat>(controlledBody);
+        if (catBody)
+        {
             catBody->UseActiveAbility();
+        }
+    }
+}
+
+// =====================
+// Lobby Methods
+// =====================
+
+void AMPControllerPlayer::SetReadyState(bool inIsReady)
+{
+	ServerSetReadyState(inIsReady);
+}
+
+bool AMPControllerPlayer::GetReadyState() const
+{
+	AMPPlayerState* thePlayerState = Cast<AMPPlayerState>(PlayerState);
+	if (thePlayerState)
+	{
+		return thePlayerState->isPlayerReady;
+	}
+	return false;
+}
+
+void AMPControllerPlayer::RequestAddBot(ETeam team)
+{
+	ServerRequestAddBot(team);
+}
+
+void AMPControllerPlayer::RequestRemoveBot(int32 playerIndex)
+{
+	ServerRequestRemoveBot(playerIndex);
+}
+
+// Server RPCs for lobby functionality
+void AMPControllerPlayer::ServerSetReadyState_Implementation(bool inIsReady)
+{
+	// Validate authority
+	if (!HasAuthority())
+	{
+		UMPLogManager::LogWarning(TEXT("ServerSetReadyState called without authority"), TEXT("MPControllerPlayer"));
+		return;
+	}
+	
+	// Call GameMode to handle ready state
+	AMPGMGameplay* gameMode = Cast<AMPGMGameplay>(GetWorld()->GetAuthGameMode());
+	if (gameMode)
+	{
+		bool success = gameMode->SetPlayerReadyState(this, inIsReady);
+		ClientReadyStateResult(inIsReady, success);
+	}
+	else
+	{
+		UMPLogManager::LogError(TEXT("Could not get GameMode for ready state update"), TEXT("MPControllerPlayer"));
+		ClientReadyStateResult(inIsReady, false);
+	}
+}
+
+void AMPControllerPlayer::ServerRequestAddBot_Implementation(ETeam team)
+{
+	// Validate authority
+	if (!HasAuthority())
+	{
+		UMPLogManager::LogWarning(TEXT("ServerRequestAddBot called without authority"), TEXT("MPControllerPlayer"));
+		return;
+	}
+	
+	// Check if this player is the host
+	UMPGI* gameInstance = Cast<UMPGI>(GetWorld()->GetGameInstance());
+	if (!gameInstance || !gameInstance->IsHost())
+	{
+		UMPLogManager::LogWarning(TEXT("Non-host player attempted to add bot"), TEXT("MPControllerPlayer"));
+		ClientAddBotResult(team, false);
+		return;
+	}
+	
+	// Call GameMode to handle bot addition
+	AMPGMGameplay* gameMode = Cast<AMPGMGameplay>(GetWorld()->GetAuthGameMode());
+	if (gameMode)
+	{
+		bool success = gameMode->AddBot(team);
+		ClientAddBotResult(team, success);
+	}
+	else
+	{
+		UMPLogManager::LogError(TEXT("Could not get GameMode for bot addition"), TEXT("MPControllerPlayer"));
+		ClientAddBotResult(team, false);
+	}
+}
+
+void AMPControllerPlayer::ServerRequestRemoveBot_Implementation(int32 playerIndex)
+{
+	// Validate authority
+	if (!HasAuthority())
+	{
+		UMPLogManager::LogWarning(TEXT("ServerRequestRemoveBot called without authority"), TEXT("MPControllerPlayer"));
+		return;
+	}
+	
+	// Check if this player is the host
+	UMPGI* gameInstance = Cast<UMPGI>(GetWorld()->GetGameInstance());
+	if (!gameInstance || !gameInstance->IsHost())
+	{
+		UMPLogManager::LogWarning(TEXT("Non-host player attempted to remove bot"), TEXT("MPControllerPlayer"));
+		ClientRemoveBotResult(playerIndex, false);
+		return;
+	}
+	
+	// Call GameMode to handle bot removal
+	AMPGMGameplay* gameMode = Cast<AMPGMGameplay>(GetWorld()->GetAuthGameMode());
+	if (gameMode)
+	{
+		bool success = gameMode->RemoveBot(playerIndex);
+		ClientRemoveBotResult(playerIndex, success);
+	}
+	else
+	{
+		UMPLogManager::LogError(TEXT("Could not get GameMode for bot removal"), TEXT("MPControllerPlayer"));
+		ClientRemoveBotResult(playerIndex, false);
+	}
+}
+
+// Client RPCs for lobby functionality
+void AMPControllerPlayer::ClientReadyStateResult_Implementation(bool inIsReady, bool success)
+{
+	if (success)
+	{
+		UMPLogManager::LogInfo(FString::Printf(TEXT("Ready state updated successfully: %s"), 
+			inIsReady ? TEXT("Ready") : TEXT("Not Ready")), TEXT("MPControllerPlayer"));
+		
+		// Update HUD if available
+		if (lobbyManagerHUD)
+		{
+			lobbyManagerHUD->UpdateReadyState(inIsReady);
+		}
+	}
+	else
+	{
+		UMPLogManager::LogWarning(FString::Printf(TEXT("Failed to update ready state: %s"), 
+			inIsReady ? TEXT("Ready") : TEXT("Not Ready")), TEXT("MPControllerPlayer"));
+	}
+}
+
+void AMPControllerPlayer::ClientAddBotResult_Implementation(ETeam team, bool success)
+{
+	if (success)
+	{
+		UMPLogManager::LogInfo(FString::Printf(TEXT("Successfully added bot to team: %d"), (int32)team), TEXT("MPControllerPlayer"));
+		// HUD will be updated via GameMode's ClientUpdateLobbyHUDs RPC
+	}
+	else
+	{
+		UMPLogManager::LogWarning(FString::Printf(TEXT("Failed to add bot to team: %d"), (int32)team), TEXT("MPControllerPlayer"));
+	}
+}
+
+void AMPControllerPlayer::ClientRemoveBotResult_Implementation(int32 playerIndex, bool success)
+{
+	if (success)
+	{
+		UMPLogManager::LogInfo(FString::Printf(TEXT("Successfully removed bot at index: %d"), playerIndex), TEXT("MPControllerPlayer"));
+		// HUD will be updated via GameMode's ClientUpdateLobbyHUDs RPC
+	}
+	else
+	{
+		UMPLogManager::LogWarning(FString::Printf(TEXT("Failed to remove bot at index: %d"), playerIndex), TEXT("MPControllerPlayer"));
+	}
+}
+
+void AMPControllerPlayer::FocusPreviewCamera()
+{
+    if (PreviewSlotIndex < 0) return;
+    AMPGMGameplay* GM = Cast<AMPGMGameplay>(GetWorld()->GetAuthGameMode());
+    if (!GM) return;
+    if (!GM->previewCharacters.IsValidIndex(PreviewSlotIndex)) return;
+    AActor* PreviewChar = GM->previewCharacters[PreviewSlotIndex];
+    if (!PreviewChar) return;
+    UCameraComponent* PreviewCam = PreviewChar->FindComponentByClass<UCameraComponent>();
+    if (PreviewCam)
+    {
+        SetViewTargetWithBlend(PreviewChar);
+    }
+}
+
+void AMPControllerPlayer::FocusGameplayCamera()
+{
+    if (controlledBody)
+    {
+        UCameraComponent* GameplayCam = controlledBody->FindComponentByClass<UCameraComponent>();
+        if (GameplayCam)
+        {
+            SetViewTargetWithBlend(controlledBody);
         }
     }
 }

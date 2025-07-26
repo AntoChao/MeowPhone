@@ -32,8 +32,5 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Common Methods")
 		virtual AActor* SpawnMPActor(int actorCode, FVector actorLocation, FRotator actorRotation);
-
-	UFUNCTION(BlueprintCallable, Category = "Common Methods")
-		virtual UObject* SpawnMPObject(AActor* owner, int actorCode);
 	
 };

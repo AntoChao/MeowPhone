@@ -15,7 +15,7 @@ bool AMPEnvActorCompCustom::IsInteractable(AMPCharacter* targetActor)
 
 FText AMPEnvActorCompCustom::GetInteractHintText(AMPCharacter* targetActor)
 {
-	return envActorName;
+	return Super::GetInteractHintText(targetActor);
 }
 
 void AMPEnvActorCompCustom::ApplyInteractEffectDirect(AMPCharacter* targetActor)

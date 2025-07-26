@@ -13,10 +13,9 @@ class UHUDCredit;
 class UHUDCreateSession;
 class UHUDSearchSession;
 class UHUDLobby;
-class UHUDCustomHuman;
-class UHUDCustomCat;
+class UHUDLobbyManager;
 class UHUDHuman;
-class UHUDCat;
+class UHUDCharacterCat;
 class UHUDMenu;
 class UHUDEnd;
 
@@ -25,6 +24,11 @@ class UInputMappingContext;
 class UInputAction;
 
 struct FInputActionValue;
+
+// Forward declarations of gameplay enums used in RPCs
+enum class EItem : uint8;
+enum class EEnvActor : uint8;
+enum class EAbility : uint8;
 
 UCLASS(BlueprintType, Blueprintable)
 class MEOWPHONE_API AMPControllerPlayer : public APlayerController
@@ -43,6 +47,48 @@ public :
     UFUNCTION(BlueprintCallable, Category = "Player State Method")
         void InitializePS(int aPlayerIndex);
 
+    	// Team assignment methods
+	UFUNCTION(BlueprintCallable, Category = "Team Methods")
+	void RequestTeamSwitch(ETeam newTeam);
+    UFUNCTION(BlueprintCallable, Category = "Team Methods")
+        ETeam GetCurrentTeam() const;
+    UFUNCTION(BlueprintCallable, Category = "Team Methods")
+        bool IsTeamAssigned() const;
+
+    // Lobby methods
+    UFUNCTION(BlueprintCallable, Category = "Lobby Methods")
+        void SetReadyState(bool inIsReady);
+    UFUNCTION(BlueprintCallable, Category = "Lobby Methods")
+        bool GetReadyState() const;
+    UFUNCTION(BlueprintCallable, Category = "Lobby Methods")
+        void RequestAddBot(ETeam team);
+    UFUNCTION(BlueprintCallable, Category = "Lobby Methods")
+        void RequestRemoveBot(int32 playerIndex);
+
+    	// Server RPCs for team assignment
+	UFUNCTION(Server, Reliable)
+		void ServerRequestTeamSwitch(ETeam newTeam);
+
+    // Server RPCs for lobby functionality
+    UFUNCTION(Server, Reliable)
+        void ServerSetReadyState(bool inIsReady);
+    UFUNCTION(Server, Reliable)
+        void ServerRequestAddBot(ETeam team);
+    UFUNCTION(Server, Reliable)
+        void ServerRequestRemoveBot(int32 playerIndex);
+
+    	// Client RPCs for team assignment results
+	UFUNCTION(Client, Reliable)
+		void ClientTeamSwitchResult(ETeam newTeam, bool success);
+
+    // Client RPCs for lobby functionality
+    UFUNCTION(Client, Reliable)
+        void ClientReadyStateResult(bool inIsReady, bool success);
+    UFUNCTION(Client, Reliable)
+        void ClientAddBotResult(ETeam team, bool success);
+    UFUNCTION(Client, Reliable)
+        void ClientRemoveBotResult(int32 playerIndex, bool success);
+
 // hud manager
 
 protected :
@@ -59,15 +105,11 @@ protected :
     UPROPERTY(BlueprintReadWrite, Category = "HUD Properties")
         UHUDSearchSession* searchSessionHUD;
     UPROPERTY(BlueprintReadWrite, Category = "HUD Properties")
-        UHUDLobby* lobbyHUD;
-    UPROPERTY(BlueprintReadWrite, Category = "HUD Properties")
-        UHUDCustomHuman* customHumanHUD;
-        UPROPERTY(BlueprintReadWrite, Category = "HUD Properties")
-        UHUDCustomCat* customCatHUD;
+        UHUDLobbyManager* lobbyManagerHUD;
     UPROPERTY(BlueprintReadWrite, Category = "HUD Properties")
         UHUDHuman* humanHUD;
     UPROPERTY(BlueprintReadWrite, Category = "HUD Properties")
-        UHUDCat* catHUD;
+        UHUDCharacterCat* catHUD;
     UPROPERTY(BlueprintReadWrite, Category = "HUD Properties")
         UHUDMenu* menuHUD;
     UPROPERTY(BlueprintReadWrite, Category = "HUD Properties")
@@ -84,15 +126,11 @@ protected :
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HUD Properties")
         TSubclassOf<UHUDSearchSession> searchSessionHUDClass;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HUD Properties")
-        TSubclassOf<UHUDLobby> lobbyHUDClass;
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HUD Properties")
-        TSubclassOf<UHUDCustomHuman> customHumanHUDClass;
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HUD Properties")
-        TSubclassOf<UHUDCustomCat> customCatHUDClass;
+        TSubclassOf<UHUDLobbyManager> lobbyManagerHUDClass;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HUD Properties")
         TSubclassOf<UHUDHuman> humanHUDClass;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HUD Properties")
-        TSubclassOf<UHUDCat> catHUDClass;
+        TSubclassOf<UHUDCharacterCat> catHUDClass;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HUD Properties")
         TSubclassOf<UHUDMenu> menuHUDClass;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HUD Properties")
@@ -219,5 +257,47 @@ public :
         void DropCurItemFunc(const FInputActionValue& value);
     UFUNCTION(BlueprintCallable, Category = "Input Method")
         void UseAbilityFunc(const FInputActionValue& value);
+
+    /* Gameplay action RPCs */
+	UFUNCTION(Server, Reliable, Category = "Action")
+	void Server_RequestInteract();
+
+	UFUNCTION(Server, Reliable, Category = "Action")
+	void Server_RequestSelectItem(int ItemIndex);
+
+	UFUNCTION(Server, Reliable, Category = "Action")
+	void Server_RequestUseCurItem();
+
+	UFUNCTION(Server, Reliable, Category = "Action")
+	void Server_RequestDropCurItem();
     
+    /*
+     * RPC request helpers – let the owning client ask the server (GameMode) to spawn
+     * gameplay objects.  These run only on the server and forward to AMPGMGameplay’s
+     * factory helpers.  Blueprints can call them directly.
+     */
+	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "Spawn")
+	void Server_RequestSpawnItem(EItem ItemTag, const FVector& Location, const FRotator& Rotation);
+
+	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "Spawn")
+	void Server_RequestSpawnEnvironment(EEnvActor EnvTag, const FVector& Location, const FRotator& Rotation);
+
+	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "Spawn")
+	void Server_RequestSpawnAbility(EAbility AbilityTag, AActor* AbilityOwner);
+    
+	UFUNCTION(Server, Reliable, Category = "Action")
+	void Server_RequestUseAbility();
+    
+public:
+    // Preview system
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Preview")
+    int32 PreviewSlotIndex = -1;
+    UFUNCTION(BlueprintCallable, Category = "Preview")
+    void FocusPreviewCamera();
+    UFUNCTION(BlueprintCallable, Category = "Preview")
+    void FocusGameplayCamera();
+    
+    // Input action for opening menu
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input Properties")
+    class UInputAction* openMenuAction;
 };

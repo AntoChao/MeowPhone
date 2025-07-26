@@ -1,33 +1,58 @@
 #include "MPCharacterCat.h"
+#include "Net/UnrealNetwork.h"
 
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
-#include "../PLayer/MPPlayerState.h"
+#include "../Player/MPPlayerState.h"
 #include "Components/CapsuleComponent.h"
 
 #include "../../CommonEnum.h"
 #include "../../CommonStruct.h"
+#include "../../HighLevel/MPLogManager.h"
 
 #include "../../HighLevel/MPGMGameplay.h"
 #include "MPCharacterHuman.h"
 #include "../Ability/MPAbility.h"
 
+// 1. Common class methods
 AMPCharacterCat::AMPCharacterCat()
 {
-	bUseControllerRotationYaw = false;
+	PrimaryActorTick.bCanEverTick = true;
 
-    cameraSpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("Character SpringArm"));
+	bReplicates = true;
+	SetReplicateMovement(true);
+
+	GetCapsuleComponent()->InitCapsuleSize(55.f, 96.0f);
+
+	// Set up camera for third-person view
+	cameraSpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraSpringArm"));
     cameraSpringArm->SetupAttachment(RootComponent);
-    cameraSpringArm->TargetArmLength = 300.0f; 
+	cameraSpringArm->TargetArmLength = 400.0f;
+	cameraSpringArm->SetRelativeRotation(FRotator(-15.0f, 0.0f, 0.0f));
     cameraSpringArm->bUsePawnControlRotation = true;
 		
-    characterCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("Character Camera"));
+	characterCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("CharacterCamera"));
     characterCamera->SetupAttachment(cameraSpringArm, USpringArmComponent::SocketName);
+	characterCamera->bUsePawnControlRotation = false;
 
-	// GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
+	// Initialize animation state
+	animState.curPosture = ECatPosture::Standing;
+	animState.curMove = EMoveState::Idle;
+	animState.curAir = EAirState::Grounded;
+	animState.curContext = ECatContext::None;
+	animState.curInteraction = ECatInteractionState::None;
+}
+
+// 1. all actor class methods
+void AMPCharacterCat::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AMPCharacterCat, struggleBar);
+	DOREPLIFETIME(AMPCharacterCat, animState);
 }
 
 void AMPCharacterCat::BeginPlay()
@@ -35,109 +60,388 @@ void AMPCharacterCat::BeginPlay()
 	Super::BeginPlay();
 	
 	InitializeAllAbility();
+	BeginIdlePoseTimer();
 }
 
 void AMPCharacterCat::Tick(float deltaTime)
 {
-	Super::Tick(deltaTime);
+    Super::Tick(deltaTime);
+    
+	// Update air state tracking
+	if (UCharacterMovementComponent* MovementComp = GetCharacterMovement())
+	{
+		bool bIsGrounded = MovementComp->IsMovingOnGround();
+		
+		if (bIsGrounded)
+		{
+			if (!bWasGroundedLastTick)
+			{
+				// Just landed
+            SetAir(EAirState::Grounded);
+        airTime = 0.0f;
+        bIsFalling = false;
+			}
+		}
+		else
+		{
+			airTime += deltaTime;
+			
+			if (MovementComp->Velocity.Z > 0)
+			{
+            SetAir(EAirState::Jump);
+        }
+			else
+			{
+            SetAir(EAirState::Falling);
+				
+				// Check for long falling
+				if (!bIsFalling)
+				{
+            fallStartZ = GetActorLocation().Z;
+            bIsFalling = true;
+        }
+				
+				float fallDistance = fallStartZ - GetActorLocation().Z;
+				if (fallDistance > longFallingHeightThreshold)
+				{
+					SetContext(ECatContext::LongFalling);
+				}
+			}
+		}
+		
+		bWasGroundedLastTick = bIsGrounded;
+	}
 }
 
-// double jump
-bool AMPCharacterCat::IsFootNearWall()
+// 2.interface
+// 2.1 interactable
+// 2. Interface
+bool AMPCharacterCat::IsInteractable(AMPCharacter* player)
 {
-	const float capsuleHalfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
-    const FVector start = GetActorLocation() - FVector(0, 0, capsuleHalfHeight * wallDetectionHeightPercentage); // near the feet
+	if (!IsValid(player))
+	{
+		return false;
+	}
 
-    const FVector forward = GetActorForwardVector();
-    const FVector end = start + forward * 60.0f + FVector(0, 0, wallDetectDownward); // slight downward slope
+	// Check if player is human and cat is not already being held
+	if (AMPCharacterHuman* humanPlayer = Cast<AMPCharacterHuman>(player))
+	{
+		return !IsBeingHeld() && !IsRubbing();
+	}
 
-    const float sphereRadius = wallDetectRadius;
-    FHitResult hit;
-    FCollisionQueryParams params;
-    params.AddIgnoredActor(this);
+	return false;
+}
 
-    const bool bHit = GetWorld()->SweepSingleByChannel(
-        hit,
-        start,
-        end,
-        FQuat::Identity,
-        ECC_Visibility,
-        FCollisionShape::MakeSphere(sphereRadius),
-        params
-    );
-
-		// Optional: visual debug
-	#if WITH_EDITOR
-		DrawDebugLine(GetWorld(), start, end, FColor::Blue, false, 1.0f);
-		DrawDebugSphere(GetWorld(), end, sphereRadius, 12, bHit ? FColor::Green : FColor::Red, false, 1.0f);
-	#endif
-
-    // If we hit, check the surface normal to ensure it's a mostly vertical wall
-    if (bHit)
+void AMPCharacterCat::BeInteracted(AMPCharacter* player)
+{
+    if (!IsValid(player))
     {
-        const FVector wallNormal = hit.ImpactNormal;
-        const float verticalDot = FVector::DotProduct(wallNormal, FVector::UpVector);
-        return verticalDot < wallDetectionAngleTolerance; // Surface is mostly vertical
+		UMPLogManager::LogWarning(TEXT("Invalid player provided for interaction"), TEXT("MPCharacterCat"));
+        return;
     }
 
+	if (AMPCharacterHuman* humanPlayer = Cast<AMPCharacterHuman>(player))
+	{
+		humanPlayer->StartHoldingCat(this);
+    }
+}
+
+// 3. components
+// 3,1 camera component 
+bool AMPCharacterCat::IsFootNearWall(FVector& OutWallNormal)
+{
+	FVector start = GetActorLocation();
+	FVector end = start + GetActorForwardVector() * wallDetectRadius;
+	
+	FHitResult hitResult;
+	FCollisionQueryParams queryParams;
+	queryParams.AddIgnoredActor(this);
+	
+	bool bHit = GetWorld()->LineTraceSingleByChannel(hitResult, start, end, ECC_Visibility, queryParams);
+	
+    if (bHit)
+    {
+		OutWallNormal = hitResult.Normal;
+		LastWallNormal = OutWallNormal;
+		return true;
+    }
+	
     return false;
 }
 
-bool AMPCharacterCat::CheckIfIsAbleToDoubleJump()
+// 4. common properties
+
+// 5. controller/ input reaction
+void AMPCharacterCat::Move(FVector2D direction)
 {
-	return (curAirState == EMovementAirStatus::EJump 
-		|| curAirState == EMovementAirStatus::EFalling) 
-		&& IsFootNearWall();
+	if (!CheckIfIsAbleToMove()) return;
+
+	// Calculate movement direction
+	FVector forward = GetActorForwardVector();
+	FVector right = GetActorRightVector();
+	FVector movement = forward * direction.Y + right * direction.X;
+	movement.Normalize();
+
+	// Apply movement
+	AddMovementInput(movement, 1.0f);
+    
+	// Update animation state
+	if (movement.SizeSquared() > 0.1f)
+	{
+        SetMove(EMoveState::Walk);
+    }
+	else
+	{
+		SetMove(EMoveState::Idle);
+    }
+}
+void AMPCharacterCat::MoveStop()
+{
+	AddMovementInput(FVector::ZeroVector, 0.0f);
+    SetMove(EMoveState::Idle);
+}
+void AMPCharacterCat::Run()
+{
+	if (!CheckIfIsAbleToRun()) return;
+
+	curSpeed = runSpeed + extraSpeed;
+	UpdateSpeed();
+	SetMove(EMoveState::Run);
 }
 
-// ability
+void AMPCharacterCat::RunStop()
+{
+	curSpeed = moveSpeed + extraSpeed;
+	UpdateSpeed();
+	SetMove(EMoveState::Walk);
+}
+void AMPCharacterCat::CrouchStart()
+{
+	if (!CheckIfIsAbleToCrouch()) return;
+    
+	curSpeed = crouchSpeed + extraSpeed;
+	UpdateSpeed();
+    SetPosture(ECatPosture::Crouching);
+}
+void AMPCharacterCat::CrouchEnd()
+{
+	curSpeed = moveSpeed + extraSpeed;
+	UpdateSpeed();
+    SetPosture(ECatPosture::Standing);
+}
+void AMPCharacterCat::JumpStart()
+{
+	if (!CheckIfIsAbleToJump()) return;
+
+	Jump();
+    SetAir(EAirState::Jump);
+	SetContext(ECatContext::VerticalJump);
+}
+
+void AMPCharacterCat::JumpEnd()
+{
+	StopJumping();
+}
+
+void AMPCharacterCat::PerformDoubleJump()
+{
+    if (!CheckIfIsAbleToDoubleJump()) return;
+
+	// Perform wall jump
+	FVector jumpDirection = LastWallNormal + FVector(0, 0, 1);
+	jumpDirection.Normalize();
+	
+	LaunchCharacter(jumpDirection * jumpStrength, true, true);
+    doubleJumpCount++;
+	
+	SetAir(EAirState::Jump);
+	SetContext(ECatContext::VerticalJump);
+	
+	UMPLogManager::LogInfo(TEXT("Cat performed double jump"), TEXT("MPCharacterCat"));
+}
+
+void AMPCharacterCat::Interact()
+{
+	if (!CheckIfIsAbleToInteract()) return;
+
+	if (detectInteractableActor.IsValid())
+        {
+            detectInteractableActor->BeInteracted(this);
+    }
+}
+
+// 5.1 controller enable/disable
+bool AMPCharacterCat::CheckIfIsAbleToLook()
+{	
+	return Super::CheckIfIsAbleToLook() && !IsBeingHeld();
+}
+bool AMPCharacterCat::CheckIfIsAbleToMove()
+{
+	return Super::CheckIfIsAbleToMove() && !IsBeingHeld();
+}
+bool AMPCharacterCat::CheckIfIsAbleToInteract()
+{
+	return Super::CheckIfIsAbleToInteract() && !IsBeingHeld();
+}
+
+bool AMPCharacterCat::CheckIfIsAbleToUseItems()
+{
+	return Super::CheckIfIsAbleToUseItems() && !IsBeingHeld();
+}
+
+bool AMPCharacterCat::CheckIfIsAbleToRun()
+{
+	return Super::CheckIfIsAbleToRun() && !IsBeingHeld();
+}
+
+bool AMPCharacterCat::CheckIfIsAbleToCrouch()
+{
+	return Super::CheckIfIsAbleToCrouch() && !IsBeingHeld();
+}
+
+bool AMPCharacterCat::CheckIfIsAbleToJump()
+{
+	return Super::CheckIfIsAbleToJump() && !IsBeingHeld();
+}
+bool AMPCharacterCat::CheckIfIsAbleToDoubleJump()
+{
+	// Cats can double jump when near a wall
+	FVector wallNormal;
+	return IsFootNearWall(wallNormal) && doubleJumpCount < 1;
+}
+// 5.2 movement related
+// 5.3 jump related
+// 5.4 air related
+void AMPCharacterCat::UpdateMovingControlsPerTick(float deltaTime)
+{
+	Super::UpdateMovingControlsPerTick(deltaTime);
+	
+	// Update hold time if being held
+	if (IsBeingHeld() && IsValid(humanHolding))
+	{
+		curHoldTime += deltaTime;
+		curHoldPercentage = FMath::Clamp(curHoldTime / holdTotalTime, 0.0f, 1.0f);
+	}
+}
+
+// 5.5 interaction related
+void AMPCharacterCat::OnRep_StruggleBar() {}
+
+void AMPCharacterCat::StartedToBeHold(AMPCharacter* humanPlayer)
+{
+    if (!IsValid(humanPlayer))
+    {
+		UMPLogManager::LogWarning(TEXT("Invalid human player provided for holding"), TEXT("MPCharacterCat"));
+        return;
+    }
+
+	humanHolding = Cast<AMPCharacterHuman>(humanPlayer);
+	if (IsValid(humanHolding))
+	{
+    SetInteraction(ECatInteractionState::BeingHeld);
+    struggleBar = 0.0f;
+		curHoldTime = 0.0f;
+    
+		UMPLogManager::LogInfo(TEXT("Cat started being held"), TEXT("MPCharacterCat"));
+	}
+}
+
+void AMPCharacterCat::Straggle()
+{
+	if (!IsBeingHeld()) return;
+
+	struggleBar += struggleBarPerInput;
+	if (struggleBar >= struggleBarMax)
+	{
+		struggleBar = struggleBarMax;
+		if (IsValid(humanHolding))
+		{
+			humanHolding->ForceReleaseCat();
+		}
+		
+		UMPLogManager::LogInfo(TEXT("Cat struggled free"), TEXT("MPCharacterCat"));
+	}
+}
+
+void AMPCharacterCat::EndToBeHold()
+{
+    if (IsValid(humanHolding))
+    {
+		humanHolding = nullptr;
+		SetInteraction(ECatInteractionState::None);
+		
+		UMPLogManager::LogInfo(TEXT("Cat stopped being held"), TEXT("MPCharacterCat"));
+    }
+}
+
+void AMPCharacterCat::StartToBeRubbed(AMPCharacterHuman* humanToRub)
+{
+    if (!IsValid(humanToRub))
+    {
+		UMPLogManager::LogWarning(TEXT("Invalid human provided for rubbing"), TEXT("MPCharacterCat"));
+        return;
+    }
+
+	humanRubbing = humanToRub;
+    SetInteraction(ECatInteractionState::BeingRubbed);
+	
+	UMPLogManager::LogInfo(TEXT("Cat started being rubbed"), TEXT("MPCharacterCat"));
+}
+
+void AMPCharacterCat::StopToBeRubbed()
+{
+	humanRubbing = nullptr;
+	SetInteraction(ECatInteractionState::None);
+	
+	UMPLogManager::LogInfo(TEXT("Cat stopped being rubbed"), TEXT("MPCharacterCat"));
+}
+
+FVector AMPCharacterCat::GetHoldAnimLeftHandPosition() const
+{
+    if (GetMesh() && GetMesh()->DoesSocketExist(holdAnimLeftHandSocketName))
+    {
+        return GetMesh()->GetSocketLocation(holdAnimLeftHandSocketName);
+    }
+    return FVector::ZeroVector;
+}
+
+FVector AMPCharacterCat::GetHoldAnimRightHandPosition() const
+{
+    if (GetMesh() && GetMesh()->DoesSocketExist(holdAnimRightHandSocketName))
+    {
+        return GetMesh()->GetSocketLocation(holdAnimRightHandSocketName);
+    }
+    return FVector::ZeroVector;
+}
+
+// 5.6 ability related
 void AMPCharacterCat::InitializeAllAbility()
 {
+	// Initialize passive abilities
+	for (EAbility abilityType : initPassiveAbilities)
+	{
+		// This would create ability instances based on the ability type
+		// Implementation depends on your ability factory system
+	}
+	
 	InitializeActiveAbility();
-    InitializeAllPassiveAbility();
 }
 
 void AMPCharacterCat::InitializeActiveAbility()
 {
-	if (GetWorld()) { return; }
-
-	activeAbility = nullptr;
-	AMPPlayerState* curPlayerState = Cast<AMPPlayerState>(GetPlayerState());
-	AGameModeBase* curGameMode = UGameplayStatics::GetGameMode(GetWorld());
-	AMPGMGameplay* curMPGameMode = Cast<AMPGMGameplay>(curGameMode);
-
-	if (curPlayerState && curMPGameMode)
-	{
-		activeAbility = curMPGameMode->SpawnAbility(this, curPlayerState->playerSelectedAbility);
-		if (activeAbility)
-		{
-			activeAbility->BeInitialized(this);
-		}
-	}
+	// Initialize the active ability
+	// Implementation depends on your ability system
 }
+
 void AMPCharacterCat::InitializeAllPassiveAbility()
 {
-	allPassiveAbilities.Empty();
-	AMPGMGameplay* curGameMode = Cast<AMPGMGameplay>(UGameplayStatics::GetGameMode(GetWorld()));
-	
-	if (curGameMode)
-	{
-		int i = 0;
-		for (EAbility eachAbilityTag : initPassiveAbilities)
-		{
-			allPassiveAbilities[i] = curGameMode->SpawnAbility(this, eachAbilityTag);
-			if (allPassiveAbilities[i])
-			{
-				allPassiveAbilities[i]->BeInitialized(this);
-				i ++;
-			}
-		}
-	}
+	// Initialize all passive abilities
+	// Implementation depends on your ability system
 }
 
 void AMPCharacterCat::UseActiveAbility()
 {
-	if (activeAbility)
+	if (IsValid(activeAbility))
 	{
 		activeAbility->BeUsed(detectedActor);
 	}
@@ -145,207 +449,148 @@ void AMPCharacterCat::UseActiveAbility()
 
 void AMPCharacterCat::UsePassiveAbility(EAbility abilityType)
 {
-	for (UMPAbility* eachPassiveAbility : allPassiveAbilities)
-	{
-		if (eachPassiveAbility->GetAbilityTag() == abilityType)
-		{
-			eachPassiveAbility->BeUsed(detectedActor);
-		}
+	// Use a specific passive ability
+	// Implementation depends on your ability system
+}
+
+// 6. animation system
+// 6.1 animation state
+void AMPCharacterCat::SetPosture(ECatPosture newPosture)
+{
+	if (animState.curPosture != newPosture)
+{
+    animState.curPosture = newPosture;
+	}
+}
+void AMPCharacterCat::SetMove(EMoveState newMove)
+{
+	if (animState.curMove != newMove)
+{
+    animState.curMove = newMove;
+	}
+}
+void AMPCharacterCat::SetAir(EAirState newAir)
+{
+	if (animState.curAir != newAir)
+{
+    animState.curAir = newAir;
 	}
 }
 
-// interactable interface
-bool AMPCharacterCat::IsInteractable(AMPCharacter* player)
+void AMPCharacterCat::SetContext(ECatContext newContext, bool bMandatory)
 {
-	return !isBeingHolded;
+	if (bMandatory || !isDoingAnAnimation)
+	{
+		animState.curContext = newContext;
+		if (newContext != ECatContext::None)
+		{
+			PlayCatContextAnimMontage(newContext);
+		}
+    }
 }
 
-FText AMPCharacterCat::GetInteractHintText(AMPCharacter* player)
+void AMPCharacterCat::SetInteraction(ECatInteractionState newInteraction)
 {
-	if (IsInteractable(player))
-	{
-		switch(player->GetCharacterTeam())
-		{
-			case ETeam::EHuman :
-			{
-				return humanInteractHintText;
-			}
-			case ETeam::ECat :
-			{
-				return catInteractHintText;
-			}
-		}
-	}
-	else
-	{
-		switch(player->GetCharacterTeam())
-		{
-			case ETeam::EHuman :
-			{
-				return uninteractableHumanHintText;
-			}
-			case ETeam::ECat :
-			{
-				return uninteractableCatHintText;
-			}
-		}
-	}
-
-	return uninteractableHumanHintText;
-}
-
-void AMPCharacterCat::BeInteracted(AMPCharacter* player)
+	if (animState.curInteraction != newInteraction)
 {
-	if (IsInteractable(player))
-	{
-		switch(player->GetCharacterTeam())
-		{
-			case ETeam::EHuman :
-			{
-				StartedToBeHold(player);
-				
-				// notify humanPlayer
-				humanHolding->StartHoldingCat(this);
-			}
-			case ETeam::ECat :
-			{
-				return;
-				// what should cat interact with other cat
-			}
-		}
+    animState.curInteraction = newInteraction;
 	}
 }
 
-bool AMPCharacterCat::CheckIfIsAbleToLook()
-{	
-	return true;
-}
-bool AMPCharacterCat::CheckIfIsAbleToMove()
+void AMPCharacterCat::BeginIdlePoseTimer()
 {
-	return !isBeingHolded && !isRubbing;
+	float randomTime = FMath::RandRange(idlePoseMinTime, idlePoseMaxTime);
+	GetWorld()->GetTimerManager().SetTimer(idlePoseTimerHandle, this, &AMPCharacterCat::IdlePoseTimeout, randomTime, false);
 }
-bool AMPCharacterCat::CheckIfIsAbleToInteract()
+void AMPCharacterCat::IdlePoseTimeout()
 {
-	return true;
-}
-
-void AMPCharacterCat::Move(FVector2D direction)
-{
-
-	// Convert 2D input into a normalized 3D world direction.
-	FVector inputDir = (direction.X * GetActorRightVector()) + (direction.Y * GetActorForwardVector());
-	inputDir.Z = 0.0f;
-	inputDir.Normalize();
-
-	// Store desired movement direction for use in Tick().
-
-	GEngine->AddOnScreenDebugMessage(1, 5.0f, FColor::Yellow, TEXT("Character: Move"));
-	SetLocomotionState(EMovementLocomotion::EWalk);
-
-	FRotator ControlRotation = GetControlRotation();
-	ControlRotation.Pitch = 0;
-
-	FVector CameraForwardVector = UKismetMathLibrary::GetForwardVector(ControlRotation);
-	FVector CameraRightVector = UKismetMathLibrary::GetRightVector(ControlRotation);
-	CameraForwardVector.Z = 0; // Flatten the vector to the horizontal plane
-	CameraRightVector.Z = 0;
-	CameraForwardVector.Normalize();
-	CameraRightVector.Normalize();
-
-	FVector MoveDirection = CameraForwardVector * direction.Y + CameraRightVector * direction.X;
-	MoveDirection.Normalize();
-
-	AddMovementInput(MoveDirection, 1.0f);
-
-	if (!MoveDirection.IsNearlyZero())
-	{
-		FRotator TargetRotation = MoveDirection.Rotation();
-		TargetRotation.Pitch = 0;
-		TargetRotation.Roll = 0;
-
-		FRotator CurrentRotation = GetActorRotation();
-		FRotator NewRotation = FMath::RInterpTo(CurrentRotation, TargetRotation, GetWorld()->GetDeltaSeconds(), rotationRate);
-
-		SetActorRotation(NewRotation);
-	}
-}
-
-void AMPCharacterCat::StartedToBeHold(AMPCharacter* humanPlayer)
-{
-	// update cat stats
-	isBeingHolded = true;
-	humanHolding = Cast<AMPCharacterHuman>(humanPlayer);
-	curHoldTime = 0;
-}
-void AMPCharacterCat::EndToBeHold()
-{
-	humanHolding->StopHoldingCat();
-
-	isBeingHolded = false;
-	humanHolding = nullptr;
-	curHoldTime = 0;
-}
-void AMPCharacterCat::Straggle()
-{
-	curHoldTime = curHoldTime + holdModifier;
-	curHoldPercentage = curHoldTime / holdTotalTime;
-
-	if (curHoldTime >= holdTotalTime)
-	{
-		EndToBeHold();
-	}
-}
-
-void AMPCharacterCat::StartToRub(AMPCharacterHuman* humanToRub)
-{
-	isRubbing = true;
-    humanRubbing = humanToRub;
-}
-void AMPCharacterCat::StopToRub()
-{
-	isRubbing = false;
-    humanRubbing = nullptr;
-}
-
-// controller/ input reaction
-/*	Interact() -> curCatInteractionAction
-*		beingHold -> straggle
-*		detectActor -> human -> interactHuman
-* 		detectActor -> cat -> interactCat
-* 		detectActor -> envActor -> envActor
-* 		detectActor -> item -> pickup	
-*/
-void AMPCharacterCat::Interact()
-{
-	GEngine->AddOnScreenDebugMessage(5, 5.0f, FColor::Yellow, TEXT("Cat Interact 1"));
-
-	if (CheckIfIsAbleToInteract())
-	{
-		GEngine->AddOnScreenDebugMessage(5, 5.0f, FColor::Yellow, TEXT("Cat Interact 2"));
-
-		if (isRubbing)
-		{
-			StopToRub();
-		}
-		else if (isBeingHolded)
-		{
-			Straggle();
-		}
-		else if (detectInteractableActor)
-		{
-			GEngine->AddOnScreenDebugMessage(5, 5.0f, FColor::Yellow, TEXT("Cat Interact 3"));
-
-			detectInteractableActor->BeInteracted(this);
-		}
-		else
-		{
-			GEngine->AddOnScreenDebugMessage(5, 5.0f, FColor::Yellow, TEXT("Cat Interact 4"));
-		}
-	}
-}
-
-// animation
-void AMPCharacterCat::PlayCatAnimMontage(ECatAnimMontage aMontage)
-{
+	// Randomly change to a different idle pose
+	TArray<ECatPosture> idlePoses = { ECatPosture::Sitting, ECatPosture::Lying };
+	ECatPosture newPose = idlePoses[FMath::RandRange(0, idlePoses.Num() - 1)];
 	
+	SetPosture(newPose);
+	
+	// Start the timer again
+	BeginIdlePoseTimer();
+}
+void AMPCharacterCat::OnRep_AnimState()
+{
+	// Handle animation state replication on clients
+	// This will be called when the server updates the animation state
+}
+
+// 6.2 animation context/ montage
+void AMPCharacterCat::PlayCatContextAnimMontage(ECatContext context)
+{
+	UAnimMontage* montageToPlay = nullptr;
+    float playRate = 1.0f;
+
+    switch (context)
+    {
+        case ECatContext::BeStunned:
+			montageToPlay = beStunned_Montage;
+			playRate = beStunnedMontagePlayRate;
+			break;
+		case ECatContext::VerticalJump:
+			montageToPlay = verticalJump_Montage;
+			playRate = verticalJump_MontagePlayRate;
+			break;
+		case ECatContext::LongFalling:
+			montageToPlay = longFalling_Montage;
+			playRate = longFalling_MontagePlayRate;
+			break;
+		case ECatContext::StandStretch:
+			montageToPlay = standStretch_Montage;
+			playRate = standStretch_MontagePlayRate;
+			break;
+		case ECatContext::SitScratch:
+			montageToPlay = sitScratch_Montage;
+			playRate = sitScratch_MontagePlayRate;
+			break;
+		case ECatContext::SitPaw:
+			montageToPlay = sitPaw_Montage;
+			playRate = sitPaw_MontagePlayRate;
+			break;
+		case ECatContext::SitBiscuit:
+			montageToPlay = sitBiscuit_Montage;
+			playRate = sitBiscuit_MontagePlayRate;
+			break;
+		case ECatContext::SitDrinkWater:
+			montageToPlay = sitDrinkWater_Montage;
+			playRate = sitDrinkWater_MontagePlayRate;
+			break;
+		case ECatContext::LyingSleepSpot:
+			montageToPlay = lyingSleepSpot_Montage;
+			playRate = lyingSleepSpot_MontagePlayRate;
+			break;
+		default:
+			break;
+    }
+
+	if (montageToPlay)
+	{
+		PlaySelectedMontage(montageToPlay, playRate);
+	}
+}
+
+void AMPCharacterCat::OnMontageEndedContextClear(UAnimMontage* montage, bool bInterrupted)
+{
+	animState.curContext = ECatContext::None;
+	switch (montage)
+	{
+		default:
+			break;
+	}
+}
+
+// 7. special condition
+void AMPCharacterCat::BeStunned(int32 stunDuration)
+{
+	Super::BeStunned(stunDuration);
+	SetContext(ECatContext::BeStunned);
+}
+void AMPCharacterCat::StopStunned()
+{
+	Super::StopStunned();
+	SetContext(ECatContext::None);
 }

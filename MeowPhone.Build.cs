@@ -9,7 +9,8 @@ public class MeowPhone : ModuleRules
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", 
-			"EnhancedInput", "UMG", "MediaAssets", "AIModule", "GeometryCollectionEngine", "Chaos"});
+			"EnhancedInput", "UMG", "MediaAssets", "AIModule", "GeometryCollectionEngine", "Chaos",
+            "MotionWarping", "AnimGraphRuntime"});
 
         PublicDependencyModuleNames.AddRange(new string[] { "NavigationSystem"});
 

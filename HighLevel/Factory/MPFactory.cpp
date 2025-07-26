@@ -15,8 +15,3 @@ AActor* UMPFactory::SpawnMPActor(int actorCode,
 {
     return spawnedActor;
 }
-
-UObject* UMPFactory::SpawnMPObject(AActor* owner, int actorCode)
-{
-    return spawnedObject;
-}

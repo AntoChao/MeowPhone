@@ -2,6 +2,8 @@
 
 #include "CoreMinimal.h"
 #include "AIController.h"
+#include "CommonEnum.h"
+#include "Perception/AIPerceptionTypes.h"
 #include "MPAIController.generated.h"
 
 class UBehaviorTree;
@@ -11,49 +13,84 @@ class UAIPerceptionComponent;
 class UAISenseConfig_Sight;
 class UAISenseConfig_Hearing;
 
-UCLASS(BlueprintType, Blueprintable)
+UCLASS(Abstract, Blueprintable)
 class AMPAIController : public AAIController
 {
     GENERATED_BODY()
 
-    // common functions
 public:
     AMPAIController();
 
     virtual void BeginPlay() override;
     virtual void Tick(float DeltaSeconds) override;
 
-// behaviour tree
 protected:
-    virtual void SetupPerceptionSystem();
-    virtual void LoadBehaviorTree();
+    bool bStunned = false;
+    FTimerHandle StunTimerHandle;
 
-    UPROPERTY(EditAnywhere, Category="AI")
+    // Called to apply stun to this AI
+public:
+    UFUNCTION(BlueprintCallable, Category="AI|Status")
+    void ApplyStun(float DurationSeconds);
+
+protected:
+    virtual void ClearStun();
+
+    // Movement / action helpers
+    void MoveToRandomPoint(float Radius);
+    void JumpTowards(const FVector& TargetLoc);
+    // Attempt forced double jump to reach high location – blueprint can call
+    UFUNCTION(BlueprintCallable, Category="AI|Movement")
+    virtual bool CanReachWithDoubleJump(const FVector& TargetLoc) const { return false; }
+
+    // Decide if falling from current loc to target loc is safe
+    UFUNCTION(BlueprintCallable, Category="AI|Movement")
+    virtual bool IsSafeFallingDestination(const FVector& TargetLoc) const { return false; }
+    void StartInteractWithActor(AActor* Target);
+
+    // Perception
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="AI")
+    UAIPerceptionComponent* PerceptionComp;
+
+    UPROPERTY()
+    UAISenseConfig_Sight* SightConfig;
+    UPROPERTY()
+    UAISenseConfig_Hearing* HearingConfig;
+
+    UFUNCTION()
+    virtual void OnPerceptionUpdated(const TArray<AActor*>& UpdatedActors);
+
+    virtual void SetupPerceptionSystem();
+
+    // Behaviour Tree / Blackboard
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="AI")
     UBehaviorTree* BehaviorTreeAsset;
 
-    UPROPERTY(BlueprintReadOnly, Category="AI")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="AI")
+    UBehaviorTreeComponent* BehaviorComp;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="AI")
     UBlackboardComponent* BlackboardComp;
 
-    UPROPERTY(BlueprintReadOnly, Category = "AI")
-    UBehaviorTreeComponent* BehaviorComp;
-    
-// tree assets
-protected:
-    UPROPERTY(BlueprintReadOnly, Category = "AI")
-    bool isDoingGlobalTask = false;
+    virtual void RunBehaviorTreeAsset();
 
-// perception
-protected :
-    UPROPERTY(BlueprintReadOnly, Category="AI")
-    UAIPerceptionComponent* AIPerceptionComp;
+    // Blackboard key names (generic)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Blackboard")
+    FName BB_StateKey = TEXT("State");
 
-    UFUNCTION(BlueprintCallable, Category = "AI")
-    void OnPerceptionUpdated(const TArray<AActor*>& UpdatedActors);
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Blackboard")
+    FName BB_StunnedKey = TEXT("Stunned");
 
+    // Helper functions
 public:
-    UFUNCTION(BlueprintCallable, Category = "AI")
-    bool IsBusyWithGlobalTask();
+    UFUNCTION(BlueprintCallable, Category="AI")
+    UBlackboardComponent* GetBB() const { return BlackboardComp; }
 
-    UFUNCTION(BlueprintCallable, Category = "AI")
-    void AssignGlobalTask(AMPEnvActorComp* envActorAssigend);
-};
+    // Decide next voluntary action – overridden by child classes & callable from BT tasks
+    UFUNCTION(BlueprintCallable, Category="AI|Decision")
+    virtual void ChooseNextVoluntaryAction();
+
+    // Per-actor perception stimulus callback (sight, hearing, etc.)
+    UFUNCTION()
+    virtual void OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus);
+}; 

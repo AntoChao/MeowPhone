@@ -17,7 +17,9 @@ public:
 public :
 	virtual AActor* SpawnMPActor(int actorCode, FVector actorLoItemion, FRotator actorRotation) override;
 
-	virtual UObject* SpawnMPObject(AActor* owner, int actorCode) override;
+	// Spawn AI controller by team
+	UFUNCTION(BlueprintCallable, Category = "AI Controller Factory")
+	AMPAIController* SpawnAIController(ETeam team);
 
 // all tsubclassof
 protected :

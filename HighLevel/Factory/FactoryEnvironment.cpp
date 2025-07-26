@@ -10,8 +10,3 @@ AActor* UFactoryEnvironment::SpawnMPActor(int actorCode,
 {
     return nullptr;
 }
-
-UObject* UFactoryEnvironment::SpawnMPObject(AActor* owner, int actorCode)
-{
-    return nullptr;
-}

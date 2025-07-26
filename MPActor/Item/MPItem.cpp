@@ -1,9 +1,12 @@
 #include "MPItem.h"
+#include "Net/UnrealNetwork.h"
 
 #include "TimerManager.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/BoxComponent.h"
 #include "Components/AudioComponent.h"
+#include "Sound/SoundCue.h"
+#include "Kismet/GameplayStatics.h"
 
 #include "../../CommonStruct.h"
 
@@ -36,15 +39,15 @@ bool AMPItem::IsInteractable(AMPCharacter* player)
 	return !isPickedUp;
 }
 
-FText AMPItem::GetInteractHintText(AMPCharacter* player) 
+FName AMPItem::GetInteractHintTextKey(AMPCharacter* player)
 {
-	if (IsInteractable(player))
+	if (IsInteractable(targetActor))
 	{
-		return interactableText;
+		return UMPLocalizationManager::Get()->GetLocalizedText(interactHintTextKey);
 	}
-	else 
+	else
 	{
-		return uninteractableText;
+		return UMPLocalizationManager::Get()->GetLocalizedText(uninteractableHintTextKey);
 	}
 }
 
@@ -239,4 +242,97 @@ void AMPItem::EndCooldown()
 void AMPItem::GetEliminated()
 {
 	Destroy();
+}
+
+// =====================
+// PlaySound interface
+// =====================
+
+void AMPItem::PlaySoundLocally(USoundCue* aSound)
+{
+    if (aSound)
+    {
+        if (itemAudioComp)
+        {
+            itemAudioComp->SetSound(aSound);
+            itemAudioComp->Play();
+        }
+        else
+        {
+            UGameplayStatics::PlaySoundAtLocation(this, aSound, GetActorLocation());
+        }
+    }
+}
+
+void AMPItem::PlaySoundBroadcast(USoundCue* aSound)
+{
+    if (HasAuthority())
+    {
+        PlaySoundMulticast(aSound);
+    }
+    else
+    {
+        PlaySoundServer(aSound);
+    }
+}
+
+void AMPItem::PlaySoundServer_Implementation(USoundCue* aSound)
+{
+    PlaySoundMulticast(aSound);
+}
+
+void AMPItem::PlaySoundMulticast_Implementation(USoundCue* aSound)
+{
+    PlaySoundLocally(aSound);
+}
+
+void AMPItem::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+    DOREPLIFETIME(AMPItem, isPickedUp);
+    DOREPLIFETIME(AMPItem, isBeingUse);
+    DOREPLIFETIME(AMPItem, isInCooldown);
+}
+
+// Replication callbacks
+
+void AMPItem::OnRep_PickedUp()
+{
+    if (isPickedUp)
+    {
+        // Mirror BePickedUp visuals locally
+        if (itemBodyMesh)
+        {
+            itemBodyMesh->SetVisibility(false);
+            itemBodyMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+        }
+        if (itemCollision)
+        {
+            itemCollision->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+        }
+    }
+    else
+    {
+        // Dropped
+        if (itemBodyMesh)
+        {
+            itemBodyMesh->SetVisibility(true);
+            itemBodyMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+        }
+        if (itemCollision)
+        {
+            itemCollision->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+        }
+    }
+}
+
+void AMPItem::OnRep_BeingUse()
+{
+    // Could trigger UI feedback; left empty for now
+}
+
+void AMPItem::OnRep_InCooldown()
+{
+    // Could update UI cooldown indicators
 }

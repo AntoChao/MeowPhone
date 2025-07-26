@@ -1,4 +1,5 @@
 #include "MPEnvActorComp.h"
+#include "Net/UnrealNetwork.h"
 
 #include "Components/StaticMeshComponent.h"
 #include "Components/BoxComponent.h"
@@ -8,9 +9,13 @@
 #include "../../CommonStruct.h"
 #include "../AI/MPAISystemManager.h"
 
+#include "Sound/SoundCue.h"
+#include "Kismet/GameplayStatics.h"
+
 AMPEnvActorComp::AMPEnvActorComp()
 {
 	PrimaryActorTick.bCanEverTick = false;
+	bReplicates = true;
 
     // Setup scene root
     envActorSceneRoot = CreateDefaultSubobject<USceneComponent>(TEXT("SceneRoot"));
@@ -37,7 +42,14 @@ bool AMPEnvActorComp::IsInteractable(AMPCharacter* targetActor)
 
 FText AMPEnvActorComp::GetInteractHintText(AMPCharacter* targetActor)
 {
-	return envActorName;
+	if (IsInteractable(targetActor))
+	{
+		return UMPLocalizationManager::Get()->GetLocalizedText(interactHintTextKey);
+	}
+	else
+	{
+		return UMPLocalizationManager::Get()->GetLocalizedText(uninteractableHintTextKey);
+	}
 }
 
 void AMPEnvActorComp::BeInteracted(AMPCharacter* targetActor)
@@ -177,6 +189,48 @@ void AMPEnvActorComp::EndCooldown()
 	isInCooldown = false;
 }
 
+// =====================
+// PlaySound interface
+// =====================
+
+void AMPEnvActorComp::PlaySoundLocally(USoundCue* aSound)
+{
+    if (aSound)
+    {
+        if (envActorAudioComp)
+        {
+            envActorAudioComp->SetSound(aSound);
+            envActorAudioComp->Play();
+        }
+        else
+        {
+            UGameplayStatics::PlaySoundAtLocation(this, aSound, GetActorLocation());
+        }
+    }
+}
+
+void AMPEnvActorComp::PlaySoundBroadcast(USoundCue* aSound)
+{
+    if (HasAuthority())
+    {
+        PlaySoundMulticast(aSound);
+    }
+    else
+    {
+        PlaySoundServer(aSound);
+    }
+}
+
+void AMPEnvActorComp::PlaySoundServer_Implementation(USoundCue* aSound)
+{
+    PlaySoundMulticast(aSound);
+}
+
+void AMPEnvActorComp::PlaySoundMulticast_Implementation(USoundCue* aSound)
+{
+    PlaySoundLocally(aSound);
+}
+
 // setter and getter
 bool AMPEnvActorComp::CheckIfIsRandomizable()
 {
@@ -196,4 +250,22 @@ void AMPEnvActorComp::SetAISystem(AMPAISystemManager* aAIManager)
 bool AMPEnvActorComp::CheckIfIsInteractableByCat()
 {
 	return isAbleToBeInteractedByCat;
+}
+
+void AMPEnvActorComp::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+    DOREPLIFETIME(AMPEnvActorComp, isInteracting);
+    DOREPLIFETIME(AMPEnvActorComp, isInCooldown);
+}
+
+void AMPEnvActorComp::OnRep_Interacting()
+{
+    // Placeholder for UI/FX sync when interaction state changes
+}
+
+void AMPEnvActorComp::OnRep_InCooldown()
+{
+    // Placeholder for UI/FX sync when cooldown ends/starts
 }

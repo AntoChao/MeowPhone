@@ -15,7 +15,7 @@ class UAudioComponent;
 enum class EItemType : uint8;
 
 UCLASS(BlueprintType, Blueprintable)
-class AMPItem : public AActor, public IMPInteractable
+class AMPItem : public AActor, public IMPInteractable, public IMPPlaySoundInterface
 {
     GENERATED_BODY()
 
@@ -43,20 +43,20 @@ protected :
 
 // interactable interface
 protected :
-    UPROPERTY(BlueprintReadWrite, Category = "Interact Properties")
+    UPROPERTY(ReplicatedUsing = OnRep_PickedUp, BlueprintReadWrite, Category = "Interact Properties")
         bool isPickedUp = false;
     
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interact Properties")
-        FText interactableText;
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interact Properties")
-        FText uninteractableText;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interface Properties")
+        FString interactHintTextKey;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interface Properties")
+        FString uninteractableHintTextKey;
 
 public:
     UFUNCTION(BlueprintCallable, Category = "Interface Method")
         virtual bool IsInteractable(AMPCharacter* player) override;
 
-    UFUNCTION(BlueprintCallable, Category = "Interface Method")
-        virtual FText GetInteractHintText(AMPCharacter* player) override;
+    // Change return type to FName for localization key
+    virtual FName GetInteractHintTextKey(AMPCharacter* player);
 
     UFUNCTION(BlueprintCallable, Category = "Interface Method")
         virtual void BeInteracted(AMPCharacter* player) override;
@@ -83,7 +83,7 @@ protected :
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Usage Properties")
         bool isSingleUse = false;
-    UPROPERTY(BlueprintReadWrite, Category = "Usage Properties")
+    UPROPERTY(ReplicatedUsing = OnRep_BeingUse, BlueprintReadWrite, Category = "Usage Properties")
         bool isBeingUse = false;
     UPROPERTY(BlueprintReadWrite, Category = "Usage Properties")
         AActor* targetActorSaved = nullptr;
@@ -94,7 +94,7 @@ protected :
     FTimerHandle usageTimerHandle;
 
     // cooldown
-    UPROPERTY(BlueprintReadWrite, Category = "Cooldown Properties")
+    UPROPERTY(ReplicatedUsing = OnRep_InCooldown, BlueprintReadWrite, Category = "Cooldown Properties")
         bool isInCooldown;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cooldown Properties")
         float totalCooldown;
@@ -135,4 +135,25 @@ public :
 public :
     UFUNCTION(BlueprintCallable, Category = "Usage Method")
         void GetEliminated();
+
+    // IMPPlaySoundInterface
+    virtual void PlaySoundLocally(USoundCue* aSound) override;
+    virtual void PlaySoundBroadcast(USoundCue* aSound) override;
+
+protected:
+    UFUNCTION(Server, Reliable)
+        void PlaySoundServer(USoundCue* aSound);
+
+    UFUNCTION(NetMulticast, Reliable)
+        void PlaySoundMulticast(USoundCue* aSound);
+
+public :
+    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+    UFUNCTION()
+        void OnRep_PickedUp();
+    UFUNCTION()
+        void OnRep_BeingUse();
+    UFUNCTION()
+        void OnRep_InCooldown();
 };

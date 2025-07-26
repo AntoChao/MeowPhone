@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UObject/Object.h"
+#include "GameFramework/Actor.h"
 
 #include "TimerManager.h"
 
@@ -12,12 +12,14 @@ class AMPCharacterCat;
 class AActor;
 
 UCLASS(BlueprintType, Blueprintable)
-class UMPAbility : public UObject
+class UMPAbility : public AActor
 {
     GENERATED_BODY()
 
 public:
     UMPAbility();
+
+    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
     // common Ability properties
 protected:
@@ -45,8 +47,17 @@ protected:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Usage Properties")
     EAbilityType abilityType;
 
-    UPROPERTY(BlueprintReadWrite, Category = "Usage Properties")
+    // replication flags
+    UPROPERTY(ReplicatedUsing = OnRep_BeingUse)
     bool isBeingUse = false;
+    UPROPERTY(ReplicatedUsing = OnRep_InCooldown)
+    bool isInCooldown = false;
+
+    UFUNCTION()
+        void OnRep_BeingUse();
+    UFUNCTION()
+        void OnRep_InCooldown();
+
     UPROPERTY(BlueprintReadWrite, Category = "Usage Properties")
     AActor* targetActorSaved = nullptr;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Usage Properties")
@@ -58,8 +69,6 @@ protected:
 
     // cooldown
     UPROPERTY(BlueprintReadWrite, Category = "Cooldown Properties")
-    bool isInCooldown;
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cooldown Properties")
     float totalCooldown;
     UPROPERTY(BlueprintReadWrite, Category = "Cooldown Properties")
     float curCooldownCountDown;

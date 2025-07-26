@@ -12,38 +12,36 @@ class USpringArmComponent;
 class UCameraComponent;
 class SoundCue;
 
-enum class EMPMovementMode : uint8;
-enum class EMovementLocomotion : uint8;
-enum class EMovementAirStatus : uint8;
-
-enum class EMPItem : uint8;
 class AMPItem;
+enum class EMPItem : uint8;
 enum class ETeam : uint8;
 
 UCLASS(BlueprintType, Blueprintable)
 class AMPCharacter : public ACharacter, public IMPInteractable, public IMPPlaySoundInterface
 {
     GENERATED_BODY()
-
+    
+// 1. all actor class methods
 public :
     AMPCharacter();
-
-// common class methods
-public :
-    void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
+    
+    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
     virtual void BeginPlay() override;
-
     virtual void Tick(float deltaTime) override;
 
-// interactable interface
+// 2. interface
+// 2.1 interactable
 public :
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interface Properties")
+    FString interactHintTextKey;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interface Properties")
+    FString uninteractableHintTextKey;
+
     virtual bool IsInteractable(AMPCharacter* player) override;
-
     virtual FText GetInteractHintText(AMPCharacter* player) override;
-
     virtual void BeInteracted(AMPCharacter* player) override;
 
+// 2.2 play sound
 public:
     virtual void PlaySoundLocally(USoundCue* aSound) override;
     virtual void PlaySoundBroadcast(USoundCue* aSound) override;
@@ -55,19 +53,24 @@ protected:
     UFUNCTION(NetMulticast, Reliable)
         void PlaySoundMulticast(USoundCue* aSound);
 
-// camera component
-protected :
+// 3. components
+// 3.1 camera component
 	/* camera 
     * is different between human and cat
 	* human -> first person, cat -> third person
     */
+protected :
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera Properties")
         USpringArmComponent* cameraSpringArm;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera Properties")
         UCameraComponent* characterCamera;
 
-// detect 
+    // Preview camera for lobby preview
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera Properties")
+        UCameraComponent* PreviewCamera;
+
+    // detect 
     FComponentQueryParams DefaultComponentQueryParams;
 	FCollisionResponseParams DefaultResponseParam;
 
@@ -75,7 +78,7 @@ protected :
         bool isAbleToFireTraceLine = true;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Detect Properties")
-        float detectDistance;
+        float detectDistance = 300.0f; // Added default value
     
     UPROPERTY(BlueprintReadWrite, Category = "Detect Properties")
         FVector detectStart;
@@ -87,40 +90,107 @@ protected :
         FHitResult detectHit;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Detect Properties")
-        AActor* detectedActor; // should never be able to interact, only used for item/ ability
+        AActor* detectedActor = nullptr; // Added null initialization
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Detect Properties")
         TScriptInterface<IMPInteractable> detectInteractableActor;
 
-    UPROPERTY(BlueprintReadWrite, Category = "Common Properties")
-        bool ableToInteractCurrently; // hide or not the interact UI
-    UPROPERTY(BlueprintReadWrite, Category = "Common Properties")
-        FText curDetectHintText;
-    UPROPERTY(BlueprintReadWrite, Category = "Common Properties")
-        FText invalidDetectHintText;
+    UPROPERTY(BlueprintReadOnly, Category = "Common Properties")
+        FText detectInvalidHintText = FText::FromString(TEXT("")); // detect hint text for object that are not even mpactors
+    UPROPERTY(BlueprintReadOnly, Category = "Common Properties")
+        FText curDetectHintText; // detect hint text (for objects that are not interactable but are mpactors)
 
     UFUNCTION(BlueprintCallable, Category = "Detect Method")
         void Detect(); // calculate and fire the hit
     UFUNCTION(BlueprintCallable, Category = "Detect Method")
         void DetectReaction(); // determinate the current interaction
 
-// common properties
+    UFUNCTION()
+        void OnRep_AbleToInteract();
+
+// 3.2 motion warping component
+protected:
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Animation, meta = (AllowPrivateAccess = "true"))
+        UMotionWarpingComponent* motionWarpingComponent;
+    
+// 4. common properties
 protected :
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character Common Properties")
-    FText characterName;
+        FText characterName;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character Common Properties")
+        ETeam characterTeam = ETeam::EHuman;
+
+    UFUNCTION(BlueprintCallable, Category = "Getter Method")
+        ETeam GetCharacterTeam() const { return characterTeam; }
+
+// 5. controller/ input reaction
+protected :
+    // possession
+    virtual void PossessedBy(AController* newController) override;
+
+    // input reaction
+    void Look(FVector2D direction);
+    virtual void Move(FVector2D direction);
+    virtual void MoveStop();
+    virtual void Run();
+    virtual void RunStop();
+    virtual void CrouchStart();
+    virtual void CrouchEnd();
+    virtual void JumpStart();
+    virtual void JumpEnd();
+    virtual void Interact();
+
+    void SelectItem(int32 itemIndex);
+    void UnselectCurItem();
+    void UseCurItem();
+    bool IsAbleToUseCurItem();
+    void DropCurItem();
+
+// 5.1 controller enable/disable
+    virtual bool CheckIfIsAbleToLook();
+    virtual bool CheckIfIsAbleToMove();
+    virtual bool CheckIfIsAbleToRun();
+    virtual bool CheckIfIsAbleToCrouch();
+    virtual bool CheckIfIsAbleToJump();
+    virtual bool CheckIfIsAbleToDoubleJump();
+    virtual bool CheckIfIsAbleToClimb();
+    virtual bool CheckIfIsAbleToInteract();
+    virtual bool CheckIfIsAbleToUseItems();
+
+// 5.2 movement related
+    UFUNCTION(BlueprintCallable, Category = "Control Method")
+    virtual void UpdateMovingControlsPerTick(float deltaTime);
+
+    UPROPERTY(ReplicatedUsing = OnRep_CurSpeed, BlueprintReadWrite, Category = "Control Properties")
+        int32 curSpeed = 0; // Added default value
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Control Properties")
+        int32 moveSpeed = 600; // Added default value
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Control Properties")
+        int32 runSpeed = 1200; // Added default value
+    UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
+        int32 crouchSpeed = 300; // Added default value
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Control Properties")
+        int32 extraSpeed = 0; // Added default value
+
+    UFUNCTION(BlueprintCallable, Category = "Control Method")
+        void UpdateSpeed();
     
-// inventory
+    UFUNCTION()
+        void OnRep_CurSpeed();
+        
+// 5.3 inventory related
 protected :
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory Properties")
-        TArray<EItem> initItems;
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory Properties")
+        TArray<EMPItem> initItems;
+    UPROPERTY(Replicated, BlueprintReadWrite, Category = "Inventory Properties")
         TArray<AMPItem*> inventory;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory Properties")
-        int inventoryCapacity;
+        int32 inventoryCapacity = 10; // Added default value
     
-    UPROPERTY(BlueprintReadWrite, Category = "Inventory Properties")
-        int curHoldingItemIndex = -1;
-    UPROPERTY(BlueprintReadWrite, Category = "Inventory Properties")
-        AMPItem* curHoldingItem;
+    UPROPERTY(ReplicatedUsing = OnRep_CurHoldingItemIndex, BlueprintReadWrite, Category = "Inventory Properties")
+        int32 curHoldingItemIndex = -1;
+    UPROPERTY(ReplicatedUsing = OnRep_CurHoldingItem, BlueprintReadWrite, Category = "Inventory Properties")
+        AMPItem* curHoldingItem = nullptr; // Added null initialization
 
     UFUNCTION(BlueprintCallable, Category = "Inventory Method")
         void InitializeItems();
@@ -131,119 +201,61 @@ protected :
     UFUNCTION(BlueprintCallable, Category = "Inventory Method")
         bool IsInventoryFull();
     
+    UFUNCTION()
+    void OnRep_CurHoldingItemIndex();
+    
+    UFUNCTION()
+    void OnRep_CurHoldingItem();
+    
 public :
     UFUNCTION(BlueprintCallable, Category = "Inventory Method")
         void PickupAnItem(AMPItem* aItem);
-
     UFUNCTION(BlueprintCallable, Category = "Inventory Method")
         void DeleteItem(AMPItem* itemToDelete);
-
-// controller/ input reaction
-protected :
-    // possession
-    virtual void PossessedBy(AController* newController) override;
-
-    // movement/ animation control
-    UFUNCTION(BlueprintCallable, Category = "Control Method")
-    virtual void UpdateMovingControls();
-
-    UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
-        EMPMovementMode curMovementMode;
-    UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
-        EMovementLocomotion curLocomotionState;
-    UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
-        EMovementAirStatus curAirState;
-
-
-    UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
-        int curSpeed;
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Control Properties")
-        int moveSpeed;
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Control Properties")
-        int runSpeed;
-    UPROPERTY(BlueprintReadWrite, Category = "Control Properties")
-        int crouchSpeed;
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Control Properties")
-        int extraSpeed;
-
-    UFUNCTION(BlueprintCallable, Category = "Control Method")
-        void UpdateSpeed();
-
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Control Properties")
-        float wallDetectionHeightPercentage = 0.8f;
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Control Properties")
-        float wallDetectDownward = -10.0f;
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Control Properties")
-        float wallDetectRadius = 15.0f;
-        UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Control Properties")
-        float wallDetectionAngleTolerance = 0.3f;
-
-    UFUNCTION(BlueprintCallable, Category = "Control Method")
-        virtual bool CheckIfIsAbleToLook();
-    UFUNCTION(BlueprintCallable, Category = "Control Method")
-        virtual bool CheckIfIsAbleToMove();
-    UFUNCTION(BlueprintCallable, Category = "Control Method")
-        virtual bool CheckIfIsAbleToRun();
-    UFUNCTION(BlueprintCallable, Category = "Control Method")
-        virtual bool CheckIfIsAbleToCrouch();
-    UFUNCTION(BlueprintCallable, Category = "Control Method")
-        virtual bool CheckIfIsAbleToJump();
-    UFUNCTION(BlueprintCallable, Category = "Control Method")
-        virtual bool CheckIfIsAbleToDoubleJump();
-    UFUNCTION(BlueprintCallable, Category = "Control Method")
-        virtual bool CheckIfIsAbleToClimb();
-
-    UFUNCTION(BlueprintCallable, Category = "Control Method")
-        virtual bool CheckIfIsAbleToInteract();
-
-public :
-    UFUNCTION(BlueprintCallable, Category = "Control Method")
-        void Look(FVector2D direction);
-    
-    UFUNCTION(BlueprintCallable, Category = "Control Method")
-        virtual void Move(FVector2D direction);
-    UFUNCTION(BlueprintCallable, Category = "Control Method")
-        virtual void MoveStop();
-    UFUNCTION(BlueprintCallable, Category = "Control Method")
-        void Run();
-    UFUNCTION(BlueprintCallable, Category = "Control Method")
-        void RunStop();
-    UFUNCTION(BlueprintCallable, Category = "Control Method")
-        void CrouchStart();
-    UFUNCTION(BlueprintCallable, Category = "Control Method")
-        void CrouchEnd();
         
-    UFUNCTION(BlueprintCallable, Category = "Control Method")
-        virtual void JumpStart();
-    UFUNCTION(BlueprintCallable, Category = "Control Method")
-        virtual void JumpEnd();
+// 6.Animation system
+// 6.1 animation state
+protected:
+    UPROPERTY(ReplicatedUsing = OnRep_IsDoingAnimation, BlueprintReadWrite, Category = "Animation Properties")
+        bool isDoingAnAnimation = false;
+    UFUNCTION()
+        void OnRep_IsDoingAnimation();
 
-
-    UFUNCTION(BlueprintCallable, Category = "Control Method")
-        virtual void Interact();
-
-    UFUNCTION(BlueprintCallable, Category = "Control Method")
-        void SelectItem(int itemIndex);
-    UFUNCTION(BlueprintCallable, Category = "Control Method")
-        void UnselectCurItem();
-    UFUNCTION(BlueprintCallable, Category = "Control Method")
-        void UseCurItem();
-    UFUNCTION(BlueprintCallable, Category = "Control Method")
-        bool IsAbleToUseCurItem();
-    UFUNCTION(BlueprintCallable, Category = "Control Method")
-        void DropCurItem();
-
-// general setter and getter
-public :
-    UFUNCTION(BlueprintCallable, Category = "Getter Method")
-        ETeam GetCharacterTeam();
-    
+// 6.2 animation context/ montage
+public:
     UFUNCTION(BlueprintCallable, Category = "Setter Method")
-        void SetMovementMode(EMPMovementMode NewMode);
+        void SetMovementMode(EMovementMode newMode);
     UFUNCTION(BlueprintCallable, Category = "Setter Method")
-        void SetLocomotionState(EMovementLocomotion NewLocomotion);
-    UFUNCTION(BlueprintCallable, Category = "Setter Method")
-        void SetAirState(EMovementAirStatus NewAirState);
+        void SetAirState(EAirState newAirState);
         
+    UFUNCTION(BlueprintCallable, Category = "Animation Methods")
+    virtual void PlayContextAnimationMontage() = 0; // Pure virtual - must be implemented by children
+    UFUNCTION(BlueprintCallable, Category = "Animation Methods")
+    virtual void PlaySelectedMontage(UAnimMontage* chosenMontage, float playRate = 1.0f);
+    UFUNCTION(BlueprintCallable, Category = "Animation Methods")
+    virtual void OnMontageEnded(UAnimMontage* montage, bool bInterrupted);
+    UFUNCTION(BlueprintCallable, Category = "Animation Methods")
+    virtual void OnMontageEndedContextClear(UAnimMontage* montage, bool bInterrupted);
+
+    UFUNCTION(BlueprintCallable, Category = "Animation Methods")
+    bool IsPlayerInAnimation() const { return isDoingAnAnimation; }    
+    UFUNCTION(BlueprintCallable, Category = "Animation Methods")
+    void SetIsDoingAnAnimation(bool bDoingAnimation) { isDoingAnAnimation = bDoingAnimation; }
+
+// 7. special condition
+public:
+    // Stun system
+    UPROPERTY(ReplicatedUsing = OnRep_IsStunned, BlueprintReadWrite, Category = "Stun Properties")
+    bool bIsStunned = false;
+    
+    FTimerHandle stunTimerHandle; // Timer for clearing stunned state
+
+    UFUNCTION(BlueprintCallable, Category = "Control Method")
+        virtual void BeStunned(int32 stunDuration);
+    UFUNCTION(BlueprintCallable, Category = "Control Method")
+        virtual void StopStunned();
+
+    UFUNCTION()
+    void OnRep_IsStunned();
+
 };

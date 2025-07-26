@@ -14,7 +14,5 @@ public:
 
 public :
 	virtual AActor* SpawnMPActor(int actorCode, FVector actorLoItemion, FRotator actorRotation) override;
-
-	virtual UObject* SpawnMPObject(AActor* owner, int actorCode) override;
 	
 };

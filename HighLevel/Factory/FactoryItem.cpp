@@ -10,8 +10,3 @@ AActor* UFactoryItem::SpawnMPActor(int actorCode,
 {
     return nullptr;
 }
-
-UObject* UFactoryItem::SpawnMPObject(AActor* owner, int actorCode)
-{
-    return nullptr;
-}

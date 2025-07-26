@@ -19,12 +19,30 @@ class UAudioComponent;
 class AMPAISystemManager;
 
 UCLASS(BlueprintType, Blueprintable)
-class AMPEnvActorComp : public AActor, public IMPInteractable
+class AMPEnvActorComp : public AActor, public IMPInteractable, public IMPPlaySoundInterface
 {
     GENERATED_BODY()
 
 public:
     AMPEnvActorComp();
+
+    // IMPPlaySoundInterface
+    virtual void PlaySoundLocally(USoundCue* aSound) override;
+    virtual void PlaySoundBroadcast(USoundCue* aSound) override;
+
+    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+    UFUNCTION()
+        void OnRep_Interacting();
+    UFUNCTION()
+        void OnRep_InCooldown();
+
+protected:
+    UFUNCTION(Server, Reliable)
+        void PlaySoundServer(USoundCue* aSound);
+
+    UFUNCTION(NetMulticast, Reliable)
+        void PlaySoundMulticast(USoundCue* aSound);
 
     // common envActor properties
 protected:
@@ -71,6 +89,11 @@ protected:
 
     // interactable interface
 public:
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interface Properties")
+    FString interactHintTextKey;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interface Properties")
+    FString uninteractableHintTextKey;
+    
     UFUNCTION(BlueprintCallable, Category = "Interface Method")
     virtual bool IsInteractable(AMPCharacter* targetActor) override;
 
@@ -83,7 +106,7 @@ public:
 protected:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interface Properties")
     bool isSingleUse = false;
-    UPROPERTY(BlueprintReadWrite, Category = "Interface Properties")
+    UPROPERTY(ReplicatedUsing = OnRep_Interacting, BlueprintReadWrite, Category = "Interface Properties")
     bool isInteracting = false;
     UPROPERTY(BlueprintReadWrite, Category = "Interface Properties")
     AMPCharacter* interactedCharacter = nullptr;
@@ -94,7 +117,7 @@ protected:
     FTimerHandle interactTimerHandle;
 
     // cooldown
-    UPROPERTY(BlueprintReadWrite, Category = "Interface Properties")
+    UPROPERTY(ReplicatedUsing = OnRep_InCooldown, BlueprintReadWrite, Category = "Interface Properties")
     bool isInCooldown;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interface Properties")
     float totalCooldown;

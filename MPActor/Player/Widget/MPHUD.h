@@ -17,6 +17,7 @@ class UMPHUD : public UUserWidget
 
 protected:
     virtual void NativeConstruct() override;
+    virtual void NativeDestruct() override;
 
     // common HUD properties
 protected:
@@ -32,4 +33,28 @@ protected:
 public:
     UFUNCTION(BlueprintCallable, Category = "HUD Methods")
     void SetOwner(AMPControllerPlayer* theOwner);
+    
+    // Localization functions - to be implemented by child classes
+    UFUNCTION(BlueprintCallable, Category = "HUD Methods")
+    virtual void UpdateTexts();
+    
+    virtual void OnLanguageChanged();
+    
+    // Helper function to get localized text
+    UFUNCTION(BlueprintCallable, Category = "HUD Methods")
+    FText GetLocalizedText(const FString& textKey) const;
+    
+    // Subscribe to language changes
+    UFUNCTION(BlueprintCallable, Category = "HUD Methods")
+    void SubscribeToLanguageChanges();
+    
+    // Unsubscribe from language changes
+    UFUNCTION(BlueprintCallable, Category = "HUD Methods")
+    void UnsubscribeFromLanguageChanges();
+    
+    // Validate root widget (to be implemented by child classes)
+    UFUNCTION(BlueprintCallable, Category = "HUD Methods")
+    virtual bool ValidateRootWidget();
+    
+
 };

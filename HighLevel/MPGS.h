@@ -69,15 +69,38 @@ public:
 	UPROPERTY(Replicated, BlueprintReadWrite, Category = "GameProgress Properties")
 		int curGameplayTime;
 
-		UPROPERTY(BlueprintReadWrite, Category = "Common Properties")
+		UPROPERTY(Replicated, BlueprintReadWrite, Category = "Common Properties")
 		float totalMPProgression;
-	UPROPERTY(Replicated, BlueprintReadWrite, Category = "Common Properties")
+	UPROPERTY(ReplicatedUsing = OnRep_CurMPProgression, BlueprintReadWrite, Category = "Common Properties")
 		float curMPProgression;
-	UPROPERTY(Replicated, BlueprintReadWrite, Category = "Common Properties")
+	UPROPERTY(ReplicatedUsing = OnRep_CurMPProgressionPercentage, BlueprintReadWrite, Category = "Common Properties")
 		float curMPProgressionPercentage;
+
+	// Cat team objective: percentage of total progression needed to win (default 80%)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Common Properties")
+		float catWinProgressionPercentage = 0.8f; // 80% default
+
+	// Human team progression (cat catching)
+	UPROPERTY(Replicated, BlueprintReadWrite, Category = "Common Properties")
+		int32 totalCatPlayers = 0;
+	UPROPERTY(ReplicatedUsing = OnRep_CaughtCats, BlueprintReadWrite, Category = "Common Properties")
+		int32 caughtCats = 0;
+	UPROPERTY(ReplicatedUsing = OnRep_CaughtCatsPercentage, BlueprintReadWrite, Category = "Common Properties")
+		float caughtCatsPercentage = 0.0f;
 
 	UFUNCTION(BlueprintCallable, Category = "Common Methods")
 		virtual void BeginPlay() override;
 	UFUNCTION(BlueprintCallable, Category = "Common Methods")
 		void UpdateMPProgression(int modifier);
+	UFUNCTION(BlueprintCallable, Category = "Common Methods")
+		void UpdateHumanProgression(int modifier);
+
+	UFUNCTION()
+		void OnRep_CurMPProgression();
+	UFUNCTION()
+		void OnRep_CurMPProgressionPercentage();
+	UFUNCTION()
+		void OnRep_CaughtCats();
+	UFUNCTION()
+		void OnRep_CaughtCatsPercentage();
 };

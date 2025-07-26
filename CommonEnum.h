@@ -3,11 +3,21 @@
 #include "CoreMinimal.h"
 #include "CommonEnum.generated.h"
 
+// Logging system for proper debug output
+UENUM(BlueprintType)
+enum class ELogLevel : uint8 {
+	None = 0,
+	Error = 1,
+	Warning = 2,
+	Info = 3,
+	Debug = 4,
+	Verbose = 5
+};
+
 UENUM(BlueprintType, Blueprintable)
-enum class ELanguage : uint8 {
-	EEnglish,
-	EChinese,
-	ESpanish
+enum class EGameLevel : uint8 {
+	EInit UMETA(DisplayName = "Init Level"),
+	EGameplay UMETA(DisplayName = "Gameplay Level")
 };
 
 UENUM(BlueprintType, Blueprintable)
@@ -36,7 +46,36 @@ enum class EHUDType : uint8 {
 };
 
 UENUM(BlueprintType, Blueprintable)
+enum class ELanguage : uint8 {
+	EEnglish,
+	EChinese,
+	ESpanish
+};
+
+UENUM(BlueprintType, Blueprintable)
+enum class EWindowMode : uint8 {
+	FullScreen UMETA(DisplayName = "Full Screen"),
+	FullScreenWindow UMETA(DisplayName = "Full Screen Window"),
+	Window UMETA(DisplayName = "Window")
+};
+
+UENUM(BlueprintType, Blueprintable)
+enum class EGraphicsQuality : uint8 {
+	Low UMETA(DisplayName = "Low"),
+	Medium UMETA(DisplayName = "Medium"),
+	High UMETA(DisplayName = "High"),
+	Ultra UMETA(DisplayName = "Ultra")
+};
+
+UENUM(BlueprintType, Blueprintable)
+enum class ESyncMode : uint8 {
+	On UMETA(DisplayName = "On"),
+	Off UMETA(DisplayName = "Off")
+};
+
+UENUM(BlueprintType, Blueprintable)
 enum class ETeam : uint8 {
+	ENone,
 	EHuman,
 	ECat
 };
@@ -46,7 +85,9 @@ enum class ECatRace : uint8 {
 	ECatExp,
 	ECat1,
 	ECat2,
-	EDiedCat
+	ECat3,
+	EDiedCat,
+	ECatMax
 };
 
 UENUM(BlueprintType, Blueprintable)
@@ -54,63 +95,14 @@ enum class EHumanProfession : uint8 {
 	EHumanExp,
 	EHuman1,
 	EHuman2,
-	EDiedHuman
-};
-
-// complex movement system
-UENUM(BlueprintType)
-enum class EMPMovementMode : uint8
-{
-    EStanding       UMETA(DisplayName = "Standing"),
-	ECrouch         UMETA(DisplayName = "Crouch"),
-    EClimbing       UMETA(DisplayName = "Climbing")
-};
-
-UENUM(BlueprintType)
-enum class EMovementLocomotion : uint8
-{
-    EIdle           UMETA(DisplayName = "Idle"),
-    EWalk           UMETA(DisplayName = "Walk"),
-    ERun            UMETA(DisplayName = "Run"),
-};
-
-UENUM(BlueprintType)
-enum class EMovementAirStatus : uint8
-{
-    EGround         UMETA(DisplayName = "Grounded"),
-    EJump           UMETA(DisplayName = "Jump"),
-    EDoubleJump     UMETA(DisplayName = "Double Jump"),
-    EFalling        UMETA(DisplayName = "Falling")
-};
-
-// interactions
-UENUM(BlueprintType, Blueprintable)
-enum class EHumanAction : uint8 {
-	ENone
-};
-
-
-UENUM(BlueprintType, Blueprintable)
-enum class ECatAction : uint8 {
-	EStraggle,
-	EInteractHuman,
-	EInteractCat,
-	EInteracEnvActor,
-	EPickupItem,
-	ENone
-};
-
-UENUM(BlueprintType, Blueprintable)
-enum class ECatAnimMontage : uint8 {
-	EPush,
-	EUseMeowPhone,
-	ENone
+	EHuman3,
+	EDiedHuman,
+	EHumanMax
 };
 
 /*
 Pushable means that cat/ human can push the object away
 ECustom means that cat/ human can Interact with them. But they can also allows physics (chairs)
-
 */
 UENUM(BlueprintType, Blueprintable)
 enum class EEnvActor : uint8 {
@@ -144,7 +136,22 @@ enum class EItemType : uint8 {
 
 UENUM(BlueprintType, Blueprintable)
 enum class EAbility : uint8 {
-	ENone
+	ENone,
+	EAbility1,
+	EAbility2,
+	EAbility3,
+	EAbilityMax
+};
+
+UENUM(BlueprintType, Blueprintable)
+enum class EHat : uint8 {
+	ENone,
+	ECap,
+	ECrown,
+	EHat1,
+	EHat2,
+	EHat3,
+	EHatMax
 };
 
 UENUM(BlueprintType, Blueprintable)
@@ -156,4 +163,107 @@ enum class EAbilityType : uint8 {
 UENUM(BlueprintType, Blueprintable)
 enum class EAICatPersonality : uint8 {
 	ECat1
+};
+
+// ---------- Animation / Pose enums ----------
+
+UENUM(BlueprintType)
+enum class EMoveState : uint8 {
+    Idle,
+    Walk,
+    Run
+};
+
+// In-air phase
+UENUM(BlueprintType)
+enum class EAirState : uint8 {
+    Grounded,
+    Jump,
+    Falling,
+};
+
+UENUM(BlueprintType)
+enum class ECatPosture : uint8 {
+    Standing,
+    Crouching,
+    Sitting,
+    Lying
+    // Removed BeingHeld and Rubbing - these are now in ECatInteractionState
+};
+
+UENUM(BlueprintType)
+enum class EHumanPosture : uint8 {
+    Standing,
+    Crouching
+    // Removed Holding and BeingRubbed - these are now in EHumanInteractionState
+};
+
+// New interaction state enums
+UENUM(BlueprintType)
+enum class ECatInteractionState : uint8 {
+    None,
+    BeingHeld,
+    BeingRubbed
+};
+
+UENUM(BlueprintType)
+enum class EHumanInteractionState : uint8 {
+    None,
+    HoldingCat,
+    BeingRubbed
+};
+
+// Context actions are species-specific to avoid name clashes
+UENUM(BlueprintType)
+enum class ECatContext : uint8 {
+    None,
+	BeStunned,
+	VerticalJump,
+    LongFalling,
+	StandStretch,
+    SitScratch,
+	SitPaw,
+	SitBiscuit,
+    SitDrinkWater,
+    LyingSleepSpot
+};
+
+UENUM(BlueprintType)
+enum class EHumanContext : uint8 {
+    None,
+	BeStunned,
+    HoldCat,
+    StopHoldCat,
+    BeStruggleOut,
+    PutCatInCage,
+    DieEffect,
+	TurnOnPower,
+};
+
+// AI state enums
+UENUM(BlueprintType)
+enum class EAICatState : uint8
+{
+    Idle            UMETA(DisplayName="Idle"),
+    Wander          UMETA(DisplayName="Wander"),
+    InteractHuman   UMETA(DisplayName="InteractHuman"),
+    InteractCat     UMETA(DisplayName="InteractCat"),
+    PushEnvActor    UMETA(DisplayName="PushEnvActor"),
+    Jump            UMETA(DisplayName="Jump"),
+    DoubleJump      UMETA(DisplayName="DoubleJump"),
+    Falling         UMETA(DisplayName="Falling"),
+    HeldByHuman     UMETA(DisplayName="HeldByHuman"),
+    Stunned         UMETA(DisplayName="Stunned")
+};
+
+UENUM(BlueprintType)
+enum class EAIHumanState : uint8
+{
+    Idle            UMETA(DisplayName="Idle"),
+    Wander          UMETA(DisplayName="Wander"),
+    Search          UMETA(DisplayName="Search"),
+    HoldCat         UMETA(DisplayName="HoldCat"),
+    UseItem         UMETA(DisplayName="UseItem"),
+    InteractContext UMETA(DisplayName="InteractContext"),
+    Stunned         UMETA(DisplayName="Stunned")
 };

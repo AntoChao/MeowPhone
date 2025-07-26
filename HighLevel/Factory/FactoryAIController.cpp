@@ -1,4 +1,5 @@
 #include "FactoryAIController.h"
+#include "../CommonEnum.h"
 
 UFactoryAIController::UFactoryAIController()
 {
@@ -33,8 +34,36 @@ AActor* UFactoryAIController::SpawnMPActor(int actorCode,
     return spawnedActor;
 }
 
-UObject* UFactoryAIController::SpawnMPObject(AActor* owner, 
-    int actorCode)
+AMPAIController* UFactoryAIController::SpawnAIController(ETeam team)
 {
-    return nullptr;
+    if (!gameWorld)
+    {
+        return nullptr;
+    }
+    
+    AMPAIController* aiController = nullptr;
+    
+    switch (team)
+    {
+        case ETeam::ECat:
+        {
+            if (catAIControllerClass)
+            {
+                aiController = gameWorld->SpawnActor<AMPAIController>(catAIControllerClass);
+            }
+            break;
+        }
+        case ETeam::EHuman:
+        {
+            if (humanAIControllerClass)
+            {
+                aiController = gameWorld->SpawnActor<AMPAIController>(humanAIControllerClass);
+            }
+            break;
+        }
+        default:
+            break;
+    }
+    
+    return aiController;
 }
