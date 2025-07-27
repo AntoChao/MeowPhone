@@ -3,10 +3,10 @@
 #include "Components/Button.h"
 #include "Components/TextBlock.h"
 #include "Components/Viewport.h"
-#include "MPControllerPlayer.h"
-#include "MPPlayerState.h"
-#include "../HighLevel/MPLogManager.h"
-#include "HighLevel/MPGMGameplay.h"
+#include "../MPControllerPlayer.h"
+#include "../MPPlayerState.h"
+#include "../../../HighLevel/Managers/ManagerLog.h"
+#include "../../../HighLevel/MPGMGameplay.h"
 
 UHUDCustomHuman::UHUDCustomHuman()
 {
@@ -14,7 +14,6 @@ UHUDCustomHuman::UHUDCustomHuman()
     selectedHumanProfession = EHumanProfession::EHuman1;
     selectedHat = EHat::ENone;
     selectedAbility = EAbility::ENone;
-    previewManager = nullptr;
 }
 
 void UHUDCustomHuman::NativeConstruct()
@@ -58,7 +57,7 @@ void UHUDCustomHuman::NativeConstruct()
     // Initialize UI
     UpdateUI();
     
-    UMPLogManager::LogInfo(TEXT("Human Customization HUD constructed and initialized"), TEXT("HUDCustomHuman"));
+    UManagerLog::LogInfo(TEXT("Human Customization HUD constructed and initialized"), TEXT("HUDCustomHuman"));
 }
 
 void UHUDCustomHuman::NativeDestruct()
@@ -96,7 +95,7 @@ void UHUDCustomHuman::NativeDestruct()
 
     Super::NativeDestruct();
     
-    UMPLogManager::LogInfo(TEXT("Human Customization HUD destroyed"), TEXT("HUDCustomHuman"));
+    UManagerLog::LogInfo(TEXT("Human Customization HUD destroyed"), TEXT("HUDCustomHuman"));
 }
 
 void UHUDCustomHuman::UpdateCustomizationOptions()
@@ -119,7 +118,7 @@ void UHUDCustomHuman::UpdateCustomizationOptions()
         abilityText->SetText(GetAbilityDisplayText(selectedAbility));
     }
     
-    UMPLogManager::LogDebug(FString::Printf(TEXT("Updated customization options - Profession: %d, Hat: %d, Ability: %d"), 
+    UManagerLog::LogDebug(FString::Printf(TEXT("Updated customization options - Profession: %d, Hat: %d, Ability: %d"), 
         (int32)selectedHumanProfession, (int32)selectedHat, (int32)selectedAbility), TEXT("HUDCustomHuman"));
 }
 
@@ -136,7 +135,7 @@ void UHUDCustomHuman::UpdateCharacterPreview()
         }
         owner->FocusPreviewCamera();
     }
-    UMPLogManager::LogDebug(FString::Printf(TEXT("Character preview updated - Profession: %d, Hat: %d, Ability: %d"), 
+    UManagerLog::LogDebug(FString::Printf(TEXT("Character preview updated - Profession: %d, Hat: %d, Ability: %d"), 
         (int32)selectedHumanProfession, (int32)selectedHat, (int32)selectedAbility), TEXT("HUDCustomHuman"));
 }
 
@@ -151,17 +150,17 @@ void UHUDCustomHuman::SaveCustomization()
             playerState->playerSelectedHat = selectedHat;
             playerState->playerSelectedAbility = selectedAbility;
             
-            UMPLogManager::LogInfo(FString::Printf(TEXT("Customization saved - Profession: %d, Hat: %d, Ability: %d"), 
+            UManagerLog::LogInfo(FString::Printf(TEXT("Customization saved - Profession: %d, Hat: %d, Ability: %d"), 
                 (int32)selectedHumanProfession, (int32)selectedHat, (int32)selectedAbility), TEXT("HUDCustomHuman"));
         }
         else
         {
-            UMPLogManager::LogError(TEXT("Player state is null, cannot save customization"), TEXT("HUDCustomHuman"));
+            UManagerLog::LogError(TEXT("Player state is null, cannot save customization"), TEXT("HUDCustomHuman"));
         }
     }
     else
     {
-        UMPLogManager::LogError(TEXT("Owner is null, cannot save customization"), TEXT("HUDCustomHuman"));
+        UManagerLog::LogError(TEXT("Owner is null, cannot save customization"), TEXT("HUDCustomHuman"));
     }
 }
 
@@ -176,17 +175,17 @@ void UHUDCustomHuman::LoadCustomization()
             selectedHat = playerState->playerSelectedHat;
             selectedAbility = playerState->playerSelectedAbility;
             
-            UMPLogManager::LogDebug(FString::Printf(TEXT("Customization loaded - Profession: %d, Hat: %d, Ability: %d"), 
+            UManagerLog::LogDebug(FString::Printf(TEXT("Customization loaded - Profession: %d, Hat: %d, Ability: %d"), 
                 (int32)selectedHumanProfession, (int32)selectedHat, (int32)selectedAbility), TEXT("HUDCustomHuman"));
         }
         else
         {
-            UMPLogManager::LogWarning(TEXT("Player state is null, using default customization"), TEXT("HUDCustomHuman"));
+            UManagerLog::LogWarning(TEXT("Player state is null, using default customization"), TEXT("HUDCustomHuman"));
         }
     }
     else
     {
-        UMPLogManager::LogWarning(TEXT("Owner is null, using default customization"), TEXT("HUDCustomHuman"));
+        UManagerLog::LogWarning(TEXT("Owner is null, using default customization"), TEXT("HUDCustomHuman"));
     }
 }
 
@@ -201,7 +200,7 @@ ETeam UHUDCustomHuman::GetCurrentTeam() const
 
 void UHUDCustomHuman::OnHumanProfessionLeftClicked()
 {
-    UMPLogManager::LogInfo(TEXT("Human profession left button clicked"), TEXT("HUDCustomHuman"));
+    UManagerLog::LogInfo(TEXT("Human profession left button clicked"), TEXT("HUDCustomHuman"));
     
     // Cycle through human professions (EHuman1, EHuman2, EHuman3 only)
     int32 currentIndex = (int32)selectedHumanProfession;
@@ -230,7 +229,7 @@ void UHUDCustomHuman::OnHumanProfessionLeftClicked()
 
 void UHUDCustomHuman::OnHumanProfessionRightClicked()
 {
-    UMPLogManager::LogInfo(TEXT("Human profession right button clicked"), TEXT("HUDCustomHuman"));
+    UManagerLog::LogInfo(TEXT("Human profession right button clicked"), TEXT("HUDCustomHuman"));
     
     // Cycle through human professions (EHuman1, EHuman2, EHuman3 only)
     int32 currentIndex = (int32)selectedHumanProfession;
@@ -259,7 +258,7 @@ void UHUDCustomHuman::OnHumanProfessionRightClicked()
 
 void UHUDCustomHuman::OnHatLeftClicked()
 {
-    UMPLogManager::LogInfo(TEXT("Hat left button clicked"), TEXT("HUDCustomHuman"));
+    UManagerLog::LogInfo(TEXT("Hat left button clicked"), TEXT("HUDCustomHuman"));
     
     // Cycle through hats (excluding EHatMax)
     int32 currentIndex = (int32)selectedHat;
@@ -280,7 +279,7 @@ void UHUDCustomHuman::OnHatLeftClicked()
 
 void UHUDCustomHuman::OnHatRightClicked()
 {
-    UMPLogManager::LogInfo(TEXT("Hat right button clicked"), TEXT("HUDCustomHuman"));
+    UManagerLog::LogInfo(TEXT("Hat right button clicked"), TEXT("HUDCustomHuman"));
     
     // Cycle through hats (excluding EHatMax)
     int32 currentIndex = (int32)selectedHat;
@@ -301,7 +300,7 @@ void UHUDCustomHuman::OnHatRightClicked()
 
 void UHUDCustomHuman::OnAbilityLeftClicked()
 {
-    UMPLogManager::LogInfo(TEXT("Ability left button clicked"), TEXT("HUDCustomHuman"));
+    UManagerLog::LogInfo(TEXT("Ability left button clicked"), TEXT("HUDCustomHuman"));
     
     // Cycle through abilities (excluding EAbilityMax)
     int32 currentIndex = (int32)selectedAbility;
@@ -322,7 +321,7 @@ void UHUDCustomHuman::OnAbilityLeftClicked()
 
 void UHUDCustomHuman::OnAbilityRightClicked()
 {
-    UMPLogManager::LogInfo(TEXT("Ability right button clicked"), TEXT("HUDCustomHuman"));
+    UManagerLog::LogInfo(TEXT("Ability right button clicked"), TEXT("HUDCustomHuman"));
     
     // Cycle through abilities (excluding EAbilityMax)
     int32 currentIndex = (int32)selectedAbility;

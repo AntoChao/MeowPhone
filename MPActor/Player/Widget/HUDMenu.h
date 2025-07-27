@@ -43,14 +43,6 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Localization")
     FString quitTextKey = TEXT("quit");
 
-    // Reference to PlayerController
-    UPROPERTY(BlueprintReadOnly, Category = "HUD")
-    AMPControllerPlayer* owner;
-
-    // Set owner
-    UFUNCTION(BlueprintCallable, Category = "HUD")
-    void SetOwner(AMPControllerPlayer* theOwner);
-
     // Update button texts from localization
     UFUNCTION(BlueprintCallable, Category = "HUD")
     void UpdateButtonTexts();

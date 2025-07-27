@@ -47,6 +47,9 @@ public:
 	class UTextBlock* humanAddButtonText;
 
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
+	class UTextBlock* countdownText;
+
+	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
 	class UButton* catAddButton;
 
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
@@ -107,6 +110,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Lobby Management")
 	void UpdateTeamButtonVisibility();
 
+	UFUNCTION(BlueprintCallable, Category = "Lobby Management")
+	void UpdateCountdownText(int32 secondsRemaining);
 protected:
 	// Button click handlers
 	UFUNCTION(BlueprintCallable, Category = "Lobby Management")
@@ -125,16 +130,14 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "Lobby Management")
 	void OnRemoveBotClicked(int32 playerIndex);
 
-	// Update UI state
-	UFUNCTION(BlueprintCallable, Category = "Lobby Management")
-	void UpdateUI();
 
 	// Create lobby entry widget
 	UFUNCTION(BlueprintCallable, Category = "Lobby Management")
-	UHUDLobbyEntry* CreateLobbyEntry(const FString& playerName, bool isBot, bool isReady, 
+	UHUDLobbyEntry* CreateLobbyEntry(const FString& playerName, bool isBot, bool isLobbyReady, 
 		ETeam team, int32 playerIndex, class AMPControllerPlayer* playerController, 
 		class AMPAIController* aiController);
 
+public:
 	// Get current team from player controller
 	UFUNCTION(BlueprintCallable, Category = "Lobby Management")
 	ETeam GetCurrentTeam() const;
@@ -142,6 +145,10 @@ protected:
 	// Check if current player is host
 	UFUNCTION(BlueprintCallable, Category = "Lobby Management")
 	bool IsHost() const;
+
+	// Update UI state
+	UFUNCTION(BlueprintCallable, Category = "Lobby Management")
+	void UpdateUI();
 
 	// Delegate for team changes
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTeamChanged, ETeam, NewTeam);

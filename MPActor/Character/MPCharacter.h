@@ -11,10 +11,13 @@
 class USpringArmComponent;
 class UCameraComponent;
 class SoundCue;
+class UMotionWarpingComponent;
 
 class AMPItem;
 enum class EMPItem : uint8;
 enum class ETeam : uint8;
+enum class EMoveState : uint8;
+enum class EAirState : uint8;
 
 UCLASS(BlueprintType, Blueprintable)
 class AMPCharacter : public ACharacter, public IMPInteractable, public IMPPlaySoundInterface
@@ -109,22 +112,23 @@ protected :
 
 // 3.2 motion warping component
 protected:
+    
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Animation, meta = (AllowPrivateAccess = "true"))
         UMotionWarpingComponent* motionWarpingComponent;
-    
+        
 // 4. common properties
 protected :
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character Common Properties")
         FText characterName;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character Common Properties")
-        ETeam characterTeam = ETeam::EHuman;
+        ETeam characterTeam;
 
     UFUNCTION(BlueprintCallable, Category = "Getter Method")
         ETeam GetCharacterTeam() const { return characterTeam; }
 
 // 5. controller/ input reaction
-protected :
+public:
     // possession
     virtual void PossessedBy(AController* newController) override;
 
@@ -157,6 +161,7 @@ protected :
     virtual bool CheckIfIsAbleToInteract();
     virtual bool CheckIfIsAbleToUseItems();
 
+protected:
 // 5.2 movement related
     UFUNCTION(BlueprintCallable, Category = "Control Method")
     virtual void UpdateMovingControlsPerTick(float deltaTime);
@@ -195,7 +200,7 @@ protected :
     UFUNCTION(BlueprintCallable, Category = "Inventory Method")
         void InitializeItems();
     UFUNCTION(BlueprintCallable, Category = "Inventory Method")
-        void AddAnItem(EItem aItemTag);
+        void AddAnItem(EMPItem aItemTag);
     UFUNCTION(BlueprintCallable, Category = "Inventory Method")
         bool IsAbleToAddItem();
     UFUNCTION(BlueprintCallable, Category = "Inventory Method")
@@ -213,9 +218,18 @@ public :
     UFUNCTION(BlueprintCallable, Category = "Inventory Method")
         void DeleteItem(AMPItem* itemToDelete);
         
+    UFUNCTION(BlueprintCallable, Category = "Inventory Method")
+    TArray<AMPItem*> GetInventory() const { return inventory; }
+    UFUNCTION(BlueprintCallable, Category = "Inventory Method")
+    AMPItem* GetCurHoldingItem() const { return curHoldingItem; }
+
+
 // 6.Animation system
 // 6.1 animation state
 protected:
+    virtual void SetMove(EMoveState newMove);
+    virtual void SetAir(EAirState newAir);
+
     UPROPERTY(ReplicatedUsing = OnRep_IsDoingAnimation, BlueprintReadWrite, Category = "Animation Properties")
         bool isDoingAnAnimation = false;
     UFUNCTION()
@@ -223,13 +237,8 @@ protected:
 
 // 6.2 animation context/ montage
 public:
-    UFUNCTION(BlueprintCallable, Category = "Setter Method")
-        void SetMovementMode(EMovementMode newMode);
-    UFUNCTION(BlueprintCallable, Category = "Setter Method")
-        void SetAirState(EAirState newAirState);
-        
     UFUNCTION(BlueprintCallable, Category = "Animation Methods")
-    virtual void PlayContextAnimationMontage() = 0; // Pure virtual - must be implemented by children
+    virtual void PlayContextAnimationMontage();
     UFUNCTION(BlueprintCallable, Category = "Animation Methods")
     virtual void PlaySelectedMontage(UAnimMontage* chosenMontage, float playRate = 1.0f);
     UFUNCTION(BlueprintCallable, Category = "Animation Methods")
@@ -258,4 +267,9 @@ public:
     UFUNCTION()
     void OnRep_IsStunned();
 
+ public:
+    /* AI helper wrappers to allow AI controllers to trigger player actions without exposing full control methods */
+    FORCEINLINE void AI_Move(FVector2D direction) { Move(direction); }
+    FORCEINLINE void AI_JumpStart() { JumpStart(); }
+    FORCEINLINE void AI_Interact() { Interact(); }
 };

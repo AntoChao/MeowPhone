@@ -1,20 +1,18 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UObject/NoExportTypes.h"
-#include "MatchManager.generated.h"
+#include "ManagerMP.h"
+#include "ManagerMatch.generated.h"
 
 class AMPGMGameplay;
 class AMPControllerPlayer;
 
 UCLASS()
-class UMatchManager : public UObject
+class UManagerMatch : public UManagerMP
 {
     GENERATED_BODY()
 
 public:
-    void Initialize(AMPGMGameplay* InGameMode);
-
     // Character Customization
     void StartCustomizeCharacter();
     void CountdownCustomizeCharacter();

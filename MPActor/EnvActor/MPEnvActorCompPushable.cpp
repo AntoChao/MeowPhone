@@ -1,11 +1,11 @@
 #include "MPEnvActorCompPushable.h"
 #include "Net/UnrealNetwork.h"
 #include "Kismet/GameplayStatics.h"
-#include "HighLevel/MPLogManager.h"
-#include "HighLevel/MPGS.h"
-#include "MPActor/Character/MPCharacter.h"
-#include "MPActor/Character/MPCharacterCat.h"
-#include "MPActor/Character/MPCharacterHuman.h"
+#include "../../HighLevel/Managers/ManagerLog.h"
+#include "../../HighLevel/MPGS.h"
+#include "../Character/MPCharacter.h"
+#include "../Character/MPCharacterCat.h"
+#include "../Character/MPCharacterHuman.h"
 
 AMPEnvActorCompPushable::AMPEnvActorCompPushable()
 {
@@ -69,14 +69,14 @@ void AMPEnvActorCompPushable::ApplyInteractEffectDirect(AMPCharacter* targetActo
         // Update progression when object is "completed" through pushing
         UpdateCatTeamProgression();
         
-        UMPLogManager::LogInfo(TEXT("Pushable object completed through pushing - Progression Updated"), TEXT("MPEnvActorCompPushable"));
+        UManagerLog::LogInfo(TEXT("Pushable object completed through pushing - Progression Updated"), TEXT("MPEnvActorCompPushable"));
     }
 }
 
 void AMPEnvActorCompPushable::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor,
     UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit)
 {
-    UMPLogManager::LogInfo(TEXT("Pushable EnvActor OnHIT called"), TEXT("MPEnvActorCompPushable"));
+    UManagerLog::LogInfo(TEXT("Pushable EnvActor OnHIT called"), TEXT("MPEnvActorCompPushable"));
 
     float impactForce = NormalImpulse.Size();
 
@@ -84,13 +84,13 @@ void AMPEnvActorCompPushable::OnHit(UPrimitiveComponent* HitComponent, AActor* O
     AMPCharacter* hitCharacter = Cast<AMPCharacter>(OtherActor);
     if (hitCharacter && stunDuration > 0)
     {
-        UMPLogManager::LogInfo(TEXT("Character hit by pushable object - STUNNED!"), TEXT("MPEnvActorCompPushable"));
+        UManagerLog::LogInfo(TEXT("Character hit by pushable object - STUNNED!"), TEXT("MPEnvActorCompPushable"));
         hitCharacter->BeStunned(stunDuration); // This will call the appropriate override
     }
 
     if (isBreakable && impactForce >= breakableThreshold)
     {
-        UMPLogManager::LogInfo(TEXT("Object broke due to impact!"), TEXT("MPEnvActorCompPushable"));
+        UManagerLog::LogInfo(TEXT("Object broke due to impact!"), TEXT("MPEnvActorCompPushable"));
 
         // Update progression before destroying the object
         UpdateCatTeamProgression();
@@ -128,7 +128,7 @@ void AMPEnvActorCompPushable::UpdateCatTeamProgression()
             // Mark as contributed to prevent double-counting (this will be replicated)
             hasContributedToProgression = true;
             
-            UMPLogManager::LogInfo(FString::Printf(TEXT("Cat Team Progression Updated: +%f (Total: %f/%f)"), 
+            UManagerLog::LogInfo(FString::Printf(TEXT("Cat Team Progression Updated: +%f (Total: %f/%f)"), 
                 progressionWeight, gameState->curMPProgression, gameState->totalMPProgression), TEXT("MPEnvActorCompPushable"));
             
             // Display current progression status (server only)

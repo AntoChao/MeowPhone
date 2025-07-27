@@ -1,21 +1,19 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UObject/NoExportTypes.h"
-#include "CommonEnum.h"
-#include "LobbyManager.generated.h"
+#include "ManagerMP.h"
+#include "../../CommonEnum.h"
+#include "ManagerLobby.generated.h"
 
 class AMPGMGameplay;
 class AMPControllerPlayer;
 
 UCLASS()
-class ULobbyManager : public UObject
+class UManagerLobby : public UManagerMP
 {
     GENERATED_BODY()
 
 public:
-    void Initialize(AMPGMGameplay* InGameMode);
-
     void StartLobby();
     bool SetPlayerReady(AMPControllerPlayer* Player, bool bReady);
     bool CheckReadyToStartGame() const;
@@ -32,7 +30,6 @@ public:
 
     UFUNCTION(Client, Reliable)
     void ClientUpdateLobbyHUDs();
-
     UFUNCTION(Client, Reliable)
     void ClientUpdateReadyCountdown(int32 secondsRemaining);
 

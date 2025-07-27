@@ -1,7 +1,7 @@
 #pragma once
 
 #include "MPHUD.h"
-#include "CommonStruct.h"
+#include "../../../CommonStruct.h"
 #include "HUDCredit.generated.h"
 
 class UTextBlock;

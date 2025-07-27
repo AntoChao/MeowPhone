@@ -1,14 +1,16 @@
-#include "MPLocalizationManager.h"
+#include "Managers/ManagerLocalization.h"
 #include "Engine/DataTable.h"
-#include "HighLevel/MPLogManager.h"
+#include "../MPActor/Player/Widget/MPHUD.h"
+#include "Managers/ManagerLog.h"
+#include "Kismet/GameplayStatics.h"
 
-UMPLocalizationManager::UMPLocalizationManager()
+UManagerLocalization::UManagerLocalization()
 {
     currentLanguage = ELanguage::EEnglish;
     defaultText = FText::FromString(TEXT("TEXT_NOT_FOUND"));
 }
 
-void UMPLocalizationManager::InitializeLocalization()
+void UManagerLocalization::InitializeLocalization()
 {
 	// Set default language
 	currentLanguage = ELanguage::EEnglish;
@@ -16,15 +18,15 @@ void UMPLocalizationManager::InitializeLocalization()
 	// Load text data
 	LoadTextData();
 	
-	UMPLogManager::LogInfo(FString::Printf(TEXT("Initialized with %d text entries"), cachedTextData.Num()), TEXT("MPLocalizationManager"));
+	UManagerLog::LogInfo(FString::Printf(TEXT("Initialized with %d text entries"), cachedTextData.Num()), TEXT("ManagerLocalization"));
 }
 
-FText UMPLocalizationManager::GetLocalizedText(const FString& textKey) const
+FText UManagerLocalization::GetLocalizedText(const FString& textKey) const
 {
 	return GetLocalizedTextForLanguage(textKey, currentLanguage);
 }
 
-FText UMPLocalizationManager::GetLocalizedTextForLanguage(const FString& textKey, ELanguage language) const
+FText UManagerLocalization::GetLocalizedTextForLanguage(const FString& textKey, ELanguage language) const
 {
 	// Check if we have cached data for this key and language
 	FString cacheKey = FString::Printf(TEXT("%s_%d"), *textKey, static_cast<int32>(language));
@@ -44,43 +46,38 @@ FText UMPLocalizationManager::GetLocalizedTextForLanguage(const FString& textKey
 			FText result = textEntry->GetLocalizedText(language);
 			
 			// Cache the result for future use
-			const_cast<UMPLocalizationManager*>(this)->cachedTextData.Add(cacheKey, result);
+			const_cast<UManagerLocalization*>(this)->cachedTextData.Add(cacheKey, result);
 			
 			return result;
 		}
 	}
 	
 	// If not found, log warning and return the key as fallback
-	UMPLogManager::LogWarning(FString::Printf(TEXT("Text key '%s' not found for language %d"), *textKey, (int32)language), TEXT("MPLocalizationManager"));
+	UManagerLog::LogWarning(FString::Printf(TEXT("Text key '%s' not found for language %d"), *textKey, (int32)language), TEXT("ManagerLocalization"));
 	return FText::FromString(textKey);
 }
 
-FText UMPLocalizationManager::GetLocalizedTextForCurrentLanguage(const FString& textKey) const
-{
-    return GetLocalizedText(textKey, currentLanguage);
-}
-
-void UMPLocalizationManager::SetCurrentLanguage(ELanguage newLanguage)
+void UManagerLocalization::SetCurrentLanguage(ELanguage newLanguage)
 {
 	if (currentLanguage != newLanguage)
 	{
 		currentLanguage = newLanguage;
-		UMPLogManager::LogInfo(FString::Printf(TEXT("Language changed to %d"), (int32)newLanguage), TEXT("MPLocalizationManager"));
+		UManagerLog::LogInfo(FString::Printf(TEXT("Language changed to %d"), (int32)newLanguage), TEXT("ManagerLocalization"));
 		
 		// Notify all subscribers of the language change
 		RefreshAllUIText();
 	}
 }
 
-void UMPLocalizationManager::RefreshAllUIText()
+void UManagerLocalization::RefreshAllUIText()
 {
-	UMPLogManager::LogInfo(FString::Printf(TEXT("Refreshing all UI text - Language changed to %d"), (int32)currentLanguage), TEXT("MPLocalizationManager"));
+	UManagerLog::LogInfo(FString::Printf(TEXT("Refreshing all UI text - Language changed to %d"), (int32)currentLanguage), TEXT("ManagerLocalization"));
 	
 	// Broadcast the language change event to all subscribers
 	OnLanguageChanged.Broadcast();
 }
 
-bool UMPLocalizationManager::HasTextKey(const FString& textKey) const
+bool UManagerLocalization::HasTextKey(const FString& textKey) const
 {
     // Check cached data first
     if (cachedTextData.Contains(textKey))
@@ -97,23 +94,23 @@ bool UMPLocalizationManager::HasTextKey(const FString& textKey) const
     return false;
 }
 
-void UMPLocalizationManager::SubscribeToLanguageChanges(UObject* subscriber)
+void UManagerLocalization::SubscribeToLanguageChanges(UMPHUD* subscriber)
 {
-	if (subscriber)
+	if (IsValid(subscriber))
 	{
 		OnLanguageChanged.AddUObject(subscriber, &UMPHUD::OnLanguageChanged);
 	}
 }
 
-void UMPLocalizationManager::UnsubscribeFromLanguageChanges(UObject* subscriber)
+void UManagerLocalization::UnsubscribeFromLanguageChanges(UMPHUD* subscriber)
 {
-	if (subscriber)
+	if (IsValid(subscriber))
 	{
 		OnLanguageChanged.RemoveAll(subscriber);
 	}
 }
 
-void UMPLocalizationManager::SetDataTable(UDataTable* newDataTable)
+void UManagerLocalization::SetDataTable(UDataTable* newDataTable)
 {
 	textDataTable = newDataTable;
 	
@@ -123,17 +120,17 @@ void UMPLocalizationManager::SetDataTable(UDataTable* newDataTable)
 	}
 	else
 	{
-		UMPLogManager::LogError(TEXT("No data table assigned!"), TEXT("MPLocalizationManager"));
+		UManagerLog::LogError(TEXT("No data table assigned!"), TEXT("ManagerLocalization"));
 	}
 }
 
-void UMPLocalizationManager::LoadTextData()
+void UManagerLocalization::LoadTextData()
 {
 	cachedTextData.Empty();
 	
 	if (!textDataTable)
 	{
-		UMPLogManager::LogError(TEXT("No data table assigned!"), TEXT("MPLocalizationManager"));
+		UManagerLog::LogError(TEXT("No data table assigned!"), TEXT("ManagerLocalization"));
 		return;
 	}
 	
@@ -159,19 +156,30 @@ void UMPLocalizationManager::LoadTextData()
 		}
 	}
 	
-	UMPLogManager::LogInfo(FString::Printf(TEXT("Loaded %d text entries"), cachedTextData.Num()), TEXT("MPLocalizationManager"));
+	UManagerLog::LogInfo(FString::Printf(TEXT("Loaded %d text entries"), cachedTextData.Num()), TEXT("ManagerLocalization"));
 }
 
-UMPLocalizationManager* UMPLocalizationManager::GetInstance(UObject* WorldContext)
+UManagerLocalization* UManagerLocalization::GetInstance()
 {
-    if (UWorld* World = GEngine->GetWorldFromContextObject(WorldContext, EGetWorldErrorMode::LogAndReturnNull))
+    static UManagerLocalization* Cached = nullptr;
+    if (Cached && Cached->IsValidLowLevel())
     {
-        if (UMPGI* gameInstance = Cast<UMPGI>(UGameplayStatics::GetGameInstance(World)))
+        return Cached;
+    }
+
+    // Attempt to fetch from any current world’s game instance
+    if (GEngine && GEngine->GetWorldContexts().Num() > 0)
+    {
+        UWorld* World = GEngine->GetWorldContexts()[0].World();
+        if (World)
         {
-            // Return the localization manager from the game instance
-            return gameInstance->localizationManager;
+            if (UMPGI* GI = Cast<UMPGI>(UGameplayStatics::GetGameInstance(World)))
+            {
+                Cached = GI->GetLocalizationManager();
+                return Cached;
+            }
         }
     }
-    
+
     return nullptr;
-} 
+}

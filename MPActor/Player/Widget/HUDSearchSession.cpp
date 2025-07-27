@@ -3,10 +3,10 @@
 #include "Components/Button.h"
 #include "Components/ScrollBox.h"
 #include "Components/ScrollBoxSlot.h"
-#include "HighLevel/MPGI.h"
-#include "HighLevel/MPLogManager.h"
-#include "MPActor/Player/MPControllerPlayer.h"
-#include "CommonStruct.h"
+#include "../../../HighLevel/MPGI.h"
+#include "../../../HighLevel/Managers/ManagerLog.h"
+#include "../MPControllerPlayer.h"
+#include "../../../CommonStruct.h"
 
 UHUDSearchSession::UHUDSearchSession()
 {
@@ -22,7 +22,7 @@ void UHUDSearchSession::NativeConstruct()
 	// Validate root widget first
 	if (!ValidateRootWidget())
 	{
-		UMPLogManager::LogError(TEXT("Root widget validation failed!"), TEXT("HUDSearchSession"));
+		UManagerLog::LogError(TEXT("Root widget validation failed!"), TEXT("HUDSearchSession"));
 		return;
 	}
 	
@@ -100,7 +100,7 @@ bool UHUDSearchSession::ValidateRootWidget()
 {
 	if (!sessionListScrollBox)
 	{
-		UMPLogManager::LogError(TEXT("Session list scroll box is missing!"), TEXT("HUDSearchSession"));
+		UManagerLog::LogError(TEXT("Session list scroll box is missing!"), TEXT("HUDSearchSession"));
 		return false;
 	}
 	return true;
@@ -110,14 +110,14 @@ void UHUDSearchSession::StartSessionSearch()
 {
 	if (isSearching)
 	{
-		UMPLogManager::LogWarning(TEXT("Session search already in progress"), TEXT("HUDSearchSession"));
+		UManagerLog::LogWarning(TEXT("Session search already in progress"), TEXT("HUDSearchSession"));
 		return;
 	}
 	
 	isSearching = true;
 	UpdateSearchUI();
 	
-	UMPLogManager::LogInfo(TEXT("Starting session search"), TEXT("HUDSearchSession"));
+	UManagerLog::LogInfo(TEXT("Starting session search"), TEXT("HUDSearchSession"));
 	
 	// Get game instance and start search
 	UMPGI* gameInstance = Cast<UMPGI>(GetWorld()->GetGameInstance());
@@ -128,7 +128,7 @@ void UHUDSearchSession::StartSessionSearch()
 	}
 	else
 	{
-		UMPLogManager::LogError(TEXT("Could not get game instance for session search"), TEXT("HUDSearchSession"));
+		UManagerLog::LogError(TEXT("Could not get game instance for session search"), TEXT("HUDSearchSession"));
 		StopSessionSearch();
 	}
 }
@@ -138,7 +138,7 @@ void UHUDSearchSession::StopSessionSearch()
 	isSearching = false;
 	UpdateSearchUI();
 	
-	UMPLogManager::LogInfo(TEXT("Session search stopped"), TEXT("HUDSearchSession"));
+	UManagerLog::LogInfo(TEXT("Session search stopped"), TEXT("HUDSearchSession"));
 }
 
 void UHUDSearchSession::UpdateSessionList()
@@ -147,12 +147,12 @@ void UHUDSearchSession::UpdateSessionList()
 	UMPGI* gameInstance = Cast<UMPGI>(GetWorld()->GetGameInstance());
 	if (!gameInstance)
 	{
-		UMPLogManager::LogError(TEXT("Could not get game instance for updating session list"), TEXT("HUDSearchSession"));
+		UManagerLog::LogError(TEXT("Could not get game instance for updating session list"), TEXT("HUDSearchSession"));
 		return;
 	}
 	
 	int32 sessionCount = gameInstance->GetSessionListCount();
-	UMPLogManager::LogInfo(FString::Printf(TEXT("Updating session list with %d results"), sessionCount), TEXT("HUDSearchSession"));
+	UManagerLog::LogInfo(FString::Printf(TEXT("Updating session list with %d results"), sessionCount), TEXT("HUDSearchSession"));
 	
 	// Clear existing list
 	ClearSessionList();
@@ -197,45 +197,45 @@ void UHUDSearchSession::ClearSessionList()
 	// Clear array
 	sessionEntries.Empty();
 	
-	UMPLogManager::LogDebug(TEXT("Session list cleared"), TEXT("HUDSearchSession"));
+	UManagerLog::LogDebug(TEXT("Session list cleared"), TEXT("HUDSearchSession"));
 }
 
 void UHUDSearchSession::JoinSession(int32 sessionIndex)
 {
 	if (sessionIndex < 0 || sessionIndex >= sessionEntries.Num())
 	{
-		UMPLogManager::LogError(FString::Printf(TEXT("Invalid session index: %d"), sessionIndex), TEXT("HUDSearchSession"));
+		UManagerLog::LogError(FString::Printf(TEXT("Invalid session index: %d"), sessionIndex), TEXT("HUDSearchSession"));
 		return;
 	}
 	
 	UHUDSearchSessionEntry* entry = sessionEntries[sessionIndex];
 	if (!entry || !entry->availableToJoin)
 	{
-		UMPLogManager::LogWarning(FString::Printf(TEXT("Cannot join session at index %d - not available"), sessionIndex), TEXT("HUDSearchSession"));
+		UManagerLog::LogWarning(FString::Printf(TEXT("Cannot join session at index %d - not available"), sessionIndex), TEXT("HUDSearchSession"));
 		return;
 	}
 	
-	UMPLogManager::LogInfo(FString::Printf(TEXT("Joining session: %s (Index: %d)"), *entry->sessionName, sessionIndex), TEXT("HUDSearchSession"));
+	UManagerLog::LogInfo(FString::Printf(TEXT("Joining session: %s (Index: %d)"), *entry->sessionName, sessionIndex), TEXT("HUDSearchSession"));
 	
 	// Get game instance and join session
 	UMPGI* gameInstance = Cast<UMPGI>(GetWorld()->GetGameInstance());
 	if (gameInstance)
 	{
-		gameInstance->JoinSession(sessionIndex);
+		gameInstance->JoinSessions(sessionIndex);
 	}
 	else
 	{
-		UMPLogManager::LogError(TEXT("Could not get game instance for joining session"), TEXT("HUDSearchSession"));
+		UManagerLog::LogError(TEXT("Could not get game instance for joining session"), TEXT("HUDSearchSession"));
 	}
 }
 
 void UHUDSearchSession::OnBackButtonClicked()
 {
-	UMPLogManager::LogInfo(TEXT("Back button clicked"), TEXT("HUDSearchSession"));
+	UManagerLog::LogInfo(TEXT("Back button clicked"), TEXT("HUDSearchSession"));
 	
 	if (!owner)
 	{
-		UMPLogManager::LogError(TEXT("Owner is null, cannot navigate"), TEXT("HUDSearchSession"));
+		UManagerLog::LogError(TEXT("Owner is null, cannot navigate"), TEXT("HUDSearchSession"));
 		return;
 	}
 	
@@ -243,12 +243,12 @@ void UHUDSearchSession::OnBackButtonClicked()
 	owner->RemoveHUD(EHUDType::ESearchSession);
 	owner->AttachHUD(EHUDType::ESessionGeneral, 0);
 	
-	UMPLogManager::LogInfo(TEXT("Switched back to Session General HUD"), TEXT("HUDSearchSession"));
+	UManagerLog::LogInfo(TEXT("Switched back to Session General HUD"), TEXT("HUDSearchSession"));
 }
 
 void UHUDSearchSession::OnRefreshButtonClicked()
 {
-	UMPLogManager::LogInfo(TEXT("Refresh button clicked"), TEXT("HUDSearchSession"));
+	UManagerLog::LogInfo(TEXT("Refresh button clicked"), TEXT("HUDSearchSession"));
 	
 	// Start new search
 	StartSessionSearch();
@@ -256,7 +256,7 @@ void UHUDSearchSession::OnRefreshButtonClicked()
 
 void UHUDSearchSession::OnSessionEntryJoinClicked(int32 sessionIndex)
 {
-	UMPLogManager::LogInfo(FString::Printf(TEXT("Session entry join clicked for index: %d"), sessionIndex), TEXT("HUDSearchSession"));
+	UManagerLog::LogInfo(FString::Printf(TEXT("Session entry join clicked for index: %d"), sessionIndex), TEXT("HUDSearchSession"));
 	
 	// Join the session
 	JoinSession(sessionIndex);
@@ -264,7 +264,7 @@ void UHUDSearchSession::OnSessionEntryJoinClicked(int32 sessionIndex)
 
 void UHUDSearchSession::OnSearchCompleted(bool searchCompleted)
 {
-	UMPLogManager::LogInfo(FString::Printf(TEXT("Search completed with result: %s"), searchCompleted ? TEXT("Success") : TEXT("Failed")), TEXT("HUDSearchSession"));
+	UManagerLog::LogInfo(FString::Printf(TEXT("Search completed with result: %s"), searchCompleted ? TEXT("Success") : TEXT("Failed")), TEXT("HUDSearchSession"));
 	
 	if (searchCompleted)
 	{
@@ -275,7 +275,7 @@ void UHUDSearchSession::OnSearchCompleted(bool searchCompleted)
 	{
 		// Search failed, stop searching and show error
 		StopSessionSearch();
-		UMPLogManager::LogWarning(TEXT("Session search failed"), TEXT("HUDSearchSession"));
+		UManagerLog::LogWarning(TEXT("Session search failed"), TEXT("HUDSearchSession"));
 	}
 }
 
@@ -300,7 +300,7 @@ void UHUDSearchSession::UpdateSearchUI()
 		refreshButton->SetIsEnabled(!isSearching);
 	}
 	
-	UMPLogManager::LogDebug(FString::Printf(TEXT("Search UI updated - Searching: %s, Entries: %d"), 
+	UManagerLog::LogDebug(FString::Printf(TEXT("Search UI updated - Searching: %s, Entries: %d"), 
 		isSearching ? TEXT("Yes") : TEXT("No"), sessionEntries.Num()), TEXT("HUDSearchSession"));
 }
 
@@ -308,7 +308,7 @@ UHUDSearchSessionEntry* UHUDSearchSession::CreateSessionEntry(const FSessionInfo
 {
 	if (!sessionEntryClass)
 	{
-		UMPLogManager::LogError(TEXT("Session entry class is not set"), TEXT("HUDSearchSession"));
+		UManagerLog::LogError(TEXT("Session entry class is not set"), TEXT("HUDSearchSession"));
 		return nullptr;
 	}
 	
@@ -316,7 +316,7 @@ UHUDSearchSessionEntry* UHUDSearchSession::CreateSessionEntry(const FSessionInfo
 	UHUDSearchSessionEntry* entry = CreateWidget<UHUDSearchSessionEntry>(this, sessionEntryClass);
 	if (!entry)
 	{
-		UMPLogManager::LogError(TEXT("Failed to create session entry widget"), TEXT("HUDSearchSession"));
+		UManagerLog::LogError(TEXT("Failed to create session entry widget"), TEXT("HUDSearchSession"));
 		return nullptr;
 	}
 	
@@ -334,7 +334,7 @@ UHUDSearchSessionEntry* UHUDSearchSession::CreateSessionEntry(const FSessionInfo
 	// Bind join event
 	entry->OnJoinSessionClicked.AddDynamic(this, &UHUDSearchSession::OnSessionEntryJoinClicked);
 	
-	UMPLogManager::LogDebug(FString::Printf(TEXT("Created session entry: %s (Index: %d)"), *sessionName, index), TEXT("HUDSearchSession"));
+	UManagerLog::LogDebug(FString::Printf(TEXT("Created session entry: %s (Index: %d)"), *sessionName, index), TEXT("HUDSearchSession"));
 	
 	return entry;
 }

@@ -16,6 +16,8 @@ public:
 protected:
     virtual void NativeConstruct() override;
 	virtual void NativeDestruct() override;
+	virtual void UpdateTexts() override;
+	virtual bool ValidateRootWidget() override;
 
 public:
 	// UI Components
@@ -104,6 +106,11 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "Session Search")
 	void OnSessionEntryJoinClicked(int32 sessionIndex);
 
+	// Create session entry widget
+	UFUNCTION(BlueprintCallable, Category = "Session Search")
+	UHUDSearchSessionEntry* CreateSessionEntry(const FSessionInfo& sessionInfo, int32 index);
+
+public:
 	// Search completion handler (called from MPGI)
 	UFUNCTION(BlueprintCallable, Category = "Session Search")
 	void OnSearchCompleted(bool searchCompleted);
@@ -111,10 +118,6 @@ protected:
 	// Update UI state based on search status
 	UFUNCTION(BlueprintCallable, Category = "Session Search")
 	void UpdateSearchUI();
-
-	// Create session entry widget
-	UFUNCTION(BlueprintCallable, Category = "Session Search")
-	UHUDSearchSessionEntry* CreateSessionEntry(const FSessionInfo& sessionInfo, int32 index);
 
 	// Calculate if session is available to join
 	UFUNCTION(BlueprintCallable, Category = "Session Search")

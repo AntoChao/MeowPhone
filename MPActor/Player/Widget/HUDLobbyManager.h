@@ -1,7 +1,7 @@
 #pragma once
 
 #include "MPHUD.h"
-#include "HUDLobbyManager.generated.h"
+#include "HUDManagerLobby.generated.h"
 
 class UCanvasPanel;
 class UOverlay;
@@ -13,12 +13,12 @@ class UHUDCustomCat;
 class UHUDCustomHuman;
 
 UCLASS()
-class MEOWPHONE_API UHUDLobbyManager : public UMPHUD
+class MEOWPHONE_API UHUDManagerLobby : public UMPHUD
 {
 	GENERATED_BODY()
 
 public:
-	UHUDLobbyManager();
+	UHUDManagerLobby();
 
 protected:
 	virtual void NativeConstruct() override;
@@ -148,14 +148,6 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "Manager")
 	void CreateHUDWidgets();
 
-	// Update UI state
-	UFUNCTION(BlueprintCallable, Category = "Manager")
-	void UpdateUI();
-
-	// Handle team changes from lobby
-	UFUNCTION(BlueprintCallable, Category = "Manager")
-	void OnTeamChanged(ETeam newTeam);
-
 	// Find UI components
 	void FindUIComponents();
 
@@ -165,4 +157,16 @@ protected:
 
 	// Bind button events
 	void BindButtonEvents();
+
+public:
+	virtual void SetOwner(AMPControllerPlayer* theOwner) override;
+
+	// Handle team changes from lobby
+	UFUNCTION(BlueprintCallable, Category = "Manager")
+	void OnTeamChanged(ETeam newTeam);
+
+	// Update UI state
+	UFUNCTION(BlueprintCallable, Category = "Manager")
+	void UpdateUI();
+
 }; 

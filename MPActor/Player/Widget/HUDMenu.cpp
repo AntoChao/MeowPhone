@@ -1,9 +1,9 @@
 #include "HUDMenu.h"
 #include "Components/Button.h"
 #include "Components/TextBlock.h"
-#include "MPControllerPlayer.h"
-#include "HighLevel/MPGMGameplay.h"
-#include "HighLevel/MPLogManager.h"
+#include "../MPControllerPlayer.h"
+#include "../../../HighLevel/MPGMGameplay.h"
+#include "../../../HighLevel/Managers/ManagerLog.h"
 #include "HUDOption.h"
 #include "HUDInit.h"
 
@@ -22,11 +22,6 @@ void UHUDMenu::NativeConstruct()
     UpdateButtonTexts();
 }
 
-void UHUDMenu::SetOwner(AMPControllerPlayer* theOwner)
-{
-    owner = theOwner;
-}
-
 void UHUDMenu::UpdateButtonTexts()
 {
     if (continueText)
@@ -43,7 +38,6 @@ void UHUDMenu::OnContinueClicked()
     {
         // Remove this HUD, restore gameplay input/cursor
         owner->RemoveHUD(EHUDType::EMenu);
-        owner->TurnGameplayInputOn();
     }
 }
 
@@ -54,9 +48,9 @@ void UHUDMenu::OnOptionClicked()
         // Remove this HUD, attach OptionHUD, set previousHUD to EMenu
         owner->RemoveHUD(EHUDType::EMenu);
         owner->AttachHUD(EHUDType::EOption, 0);
-        if (owner->optionHUD)
+        if (owner->GetOptionHUD())
         {
-            owner->optionHUD->SetPreviousHUD(EHUDType::EMenu);
+            owner->GetOptionHUD()->SetPreviousHUD(EHUDType::EMenu);
         }
     }
 }

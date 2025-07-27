@@ -2,14 +2,19 @@
 
 #include "CoreMinimal.h"
 #include "MPCharacter.h"
-
+#include "../../CommonStruct.h"
 #include "MPCharacterCat.generated.h"
 
-class UMPAbility;
+class AMPAbility;
 class AMPCharacterHuman;
 enum class EAbility : uint8;
 enum class ECatAction : uint8;
 struct FCatAnimState;
+enum class ECatPosture : uint8;
+enum class EMoveState : uint8;
+enum class ECatContext : uint8;
+enum class ECatInteractState : uint8;
+enum class ECatContext : uint8;
 
 UCLASS(BlueprintType, Blueprintable)
 class AMPCharacterCat : public AMPCharacter
@@ -153,26 +158,26 @@ public:
 
     // Struggle bar getter for UI
     UFUNCTION(BlueprintCallable, Category = "Control Method")
-    float GetStruggleBarPercentage() const { return struggleBarMax > 0.0f ? struggleBar / struggleBarMax : 0.0f; }
+    float GetStruggleBarPercentage();
 
     // State getters
     UFUNCTION(BlueprintCallable, Category = "Control Method")
-    bool IsBeingHeld() const { return animState.curInteraction == ECatInteractionState::BeingHeld; }
+    bool IsBeingHeld();
     UFUNCTION(BlueprintCallable, Category = "Control Method")
-    bool IsRubbing() const { return animState.curInteraction == ECatInteractionState::BeingRubbed; }
+    bool IsRubbing();
     UFUNCTION(BlueprintCallable, Category = "Control Method")
-    AMPCharacterHuman* GetHumanHolding() const { return IsValid(humanHolding) ? humanHolding : nullptr; }
+    AMPCharacterHuman* GetHumanHolding();
     UFUNCTION(BlueprintCallable, Category = "Control Method")
-    AMPCharacterHuman* GetHumanRubbing() const { return IsValid(humanRubbing) ? humanRubbing : nullptr; }
+    AMPCharacterHuman* GetHumanRubbing();
 
 // 5.6 ability related
-protected:
+public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability Properties")
     TArray<EAbility> initPassiveAbilities;
     UPROPERTY(BlueprintReadWrite, Category = "Ability Properties")
-    TArray<UMPAbility*> allPassiveAbilities;
+    TArray<AMPAbility*> allPassiveAbilities;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability Properties")
-    UMPAbility* activeAbility;
+    AMPAbility* activeAbility;
 
     void InitializeAllAbility();
     void InitializeActiveAbility();
@@ -193,12 +198,11 @@ protected:
     float idlePoseMaxTime = 3.0f;
 
     void SetPosture(ECatPosture newPosture);
-    void SetMove(EMoveState newMove);
-    void SetAir(EAirState newAir);
+    virtual void SetMove(EMoveState newMove) override;
+    virtual void SetAir(EAirState newAir) override;
     void SetContext(ECatContext newContext, bool bMandatory = false);
     void SetInteraction(ECatInteractionState newInteraction);
 
-    void BeginIdlePoseTimer();
     void IdlePoseTimeout();
 
     UFUNCTION()
@@ -207,14 +211,17 @@ protected:
     UFUNCTION(BlueprintPure, Category="AnimState")
     const FCatAnimState& GetAnimState() const { return animState; }
     
+public:
+    void BeginIdlePoseTimer();
+
 // 6.2 animation context/ montage
 // public
-    UFUNCTION(BlueprintCallable, Category = "Animation Method")
     void PlayCatContextAnimMontage(ECatContext aMontage);
-    UFUNCTION(BlueprintCallable, Category = "Animation Methods")
     virtual void OnMontageEndedContextClear(UAnimMontage* montage, bool bInterrupted) override;
 
     // Cat-specific animation montages
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation Montages")
+    float beStunnedMontagePlayRate = 1.0f;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation Montages")
     UAnimMontage* beStunned_Montage;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation Montages")

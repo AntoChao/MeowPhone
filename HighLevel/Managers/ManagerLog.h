@@ -2,17 +2,17 @@
 
 #include "CoreMinimal.h"
 #include "Engine/Engine.h"
-#include "CommonEnum.h"
-#include "CommonStruct.h"
-#include "MPLogManager.generated.h"
+#include "../CommonEnum.h"
+#include "../CommonStruct.h"
+#include "ManagerLog.generated.h"
 
 UCLASS(BlueprintType, Blueprintable)
-class MEOWPHONE_API UMPLogManager : public UObject
+class MEOWPHONE_API UManagerLog : public UObject
 {
 	GENERATED_BODY()
 
 public:
-	UMPLogManager();
+	UManagerLog();
 
 	// Initialize the logging system
 	UFUNCTION(BlueprintCallable, Category = "Logging")

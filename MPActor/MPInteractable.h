@@ -18,12 +18,9 @@ class IMPInteractable
     GENERATED_BODY()
 
 public:
-    UFUNCTION(BlueprintCallable, Category = "Interface Method")
-        virtual bool IsInteractable(AMPCharacter* player) = 0;
+    virtual bool IsInteractable(AMPCharacter* player) = 0;
 
-    UFUNCTION(BlueprintCallable, Category = "Interface Method")
-        virtual FText GetInteractHintText(AMPCharacter* player) = 0;
+    virtual FText GetInteractHintText(AMPCharacter* player) = 0;
 
-    UFUNCTION(BlueprintCallable, Category = "Interface Method")
-        virtual void BeInteracted(AMPCharacter* player) = 0;
+    virtual void BeInteracted(AMPCharacter* player) = 0;
 };

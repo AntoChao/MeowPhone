@@ -2,18 +2,18 @@
 #include "../CommonEnum.h"
 #include "MPSave.h"
 #include "Kismet/GameplayStatics.h"
-#include "MPLocalizationManager.h"
-#include "MPLogManager.h"
+#include "Managers/ManagerLocalization.h"
+#include "Managers/ManagerLog.h"
 #include "OnlineSubsystem.h"
 #include "Interfaces/OnlineSessionInterface.h"
-#include "MPActor/Player/Widget/HUDSearchSession.h"
-#include "MPActor/Player/MPControllerPlayer.h"
+#include "../MPActor/Player/Widget/HUDSearchSession.h"
+#include "../MPActor/Player/MPControllerPlayer.h"
 
 #include "UObject/NoExportTypes.h"
 
 UMPGI::UMPGI()
 {
-    createSessionsCompletedDelegate = FOnCreateSessionsCompleteDelegate::CreateUObject(this, &UMPGI::HostSessionCompleted);
+    createSessionsCompletedDelegate = FOnCreateSessionCompleteDelegate::CreateUObject(this, &UMPGI::HostSessionCompleted);
 	searchForSessionsCompletedDelegate = FOnFindSessionsCompleteDelegate::CreateUObject(this, &UMPGI::SearchForSessionsCompleted);
     joinSessionCompletedDelegate = FOnJoinSessionCompleteDelegate::CreateUObject(this, &UMPGI::JoinSessionCompleted);
 	endSessionCompletedDelegate = FOnEndSessionCompleteDelegate::CreateUObject(this, &UMPGI::EndSessionCompleted);
@@ -42,12 +42,12 @@ void UMPGI::Init()
     Super::Init();
     
     // Initialize logging system first
-    UMPLogManager::InitializeLogging();
+    UManagerLog::InitializeLogging();
     
     LoadGame();
     InitializeLocalization();
     
-    UMPLogManager::LogInfo(TEXT("Game Instance initialized"), TEXT("MPGI"));
+    UManagerLog::LogInfo(TEXT("Game Instance initialized"), TEXT("MPGI"));
 }
 
 void UMPGI::Shutdown()
@@ -55,7 +55,7 @@ void UMPGI::Shutdown()
     Super::Shutdown();
     SaveGame();
     
-    UMPLogManager::LogInfo(TEXT("Game Instance shutting down"), TEXT("MPGI"));
+    UManagerLog::LogInfo(TEXT("Game Instance shutting down"), TEXT("MPGI"));
 }
 
 // save file section
@@ -68,11 +68,11 @@ void UMPGI::CreateSaveFile()
         dataToSave->playerNameSave = curPlayerName;
 
         UGameplayStatics::SaveGameToSlot(dataToSave, "Slot1", 0);
-        UMPLogManager::LogInfo(TEXT("Save file created"), TEXT("MPGI"));
+        UManagerLog::LogInfo(TEXT("Save file created"), TEXT("MPGI"));
     }
     else
     {
-        UMPLogManager::LogError(TEXT("Failed to create save file"), TEXT("MPGI"));
+        UManagerLog::LogError(TEXT("Failed to create save file"), TEXT("MPGI"));
     }
 }
 
@@ -88,11 +88,11 @@ void UMPGI::SaveGame()
     {
         dataToSave->playerNameSave = curPlayerName;
         UGameplayStatics::SaveGameToSlot(dataToSave, "Slot1", 0);
-        UMPLogManager::LogDebug(TEXT("Game saved successfully"), TEXT("MPGI"));
+        UManagerLog::LogDebug(TEXT("Game saved successfully"), TEXT("MPGI"));
     }
     else
     {
-        UMPLogManager::LogError(TEXT("Failed to save game"), TEXT("MPGI"));
+        UManagerLog::LogError(TEXT("Failed to save game"), TEXT("MPGI"));
     }
 }
 
@@ -105,17 +105,17 @@ void UMPGI::LoadGame()
         if (dataToLoad)
         {
             curPlayerName = dataToLoad->playerNameSave;
-            UMPLogManager::LogInfo(TEXT("Game loaded successfully"), TEXT("MPGI"));
+            UManagerLog::LogInfo(TEXT("Game loaded successfully"), TEXT("MPGI"));
         }
         else
         {
-            UMPLogManager::LogWarning(TEXT("Failed to load save data, creating new save"), TEXT("MPGI"));
+            UManagerLog::LogWarning(TEXT("Failed to load save data, creating new save"), TEXT("MPGI"));
             CreateSaveFile();
         }
     }
     else 
     {
-        UMPLogManager::LogInfo(TEXT("No save file found, creating new one"), TEXT("MPGI"));
+        UManagerLog::LogInfo(TEXT("No save file found, creating new one"), TEXT("MPGI"));
         CreateSaveFile();
     }
 }
@@ -142,10 +142,10 @@ void UMPGI::SetCurrentLanguage(ELanguage newLanguage)
 	// Save the change immediately
 	SaveGame();
 	
-	UMPLogManager::LogInfo(FString::Printf(TEXT("Language changed to %d and saved"), (int32)newLanguage), TEXT("MPGI"));
+	UManagerLog::LogInfo(FString::Printf(TEXT("Language changed to %d and saved"), (int32)newLanguage), TEXT("MPGI"));
 }
 
-FString UMPGI::getCurPlayerName()
+FString UMPGI::GetCurPlayerName()
 {
     return curPlayerName;
 }
@@ -157,7 +157,7 @@ void UMPGI::HostSession(FName sessionName, int numPlayers)
     // Check if already in a session
     if (IsInSession())
     {
-        UMPLogManager::LogWarning(TEXT("Already in session, ending current session first"), TEXT("MPGI"));
+        UManagerLog::LogWarning(TEXT("Already in session, ending current session first"), TEXT("MPGI"));
         EndSession();
         return;
     }
@@ -168,7 +168,7 @@ void UMPGI::HostSession(FName sessionName, int numPlayers)
 		{
 			if (enableSessionLogging)
 			{
-				UMPLogManager::LogInfo(TEXT("Attempting to host session"), TEXT("MPGI"));
+				UManagerLog::LogInfo(TEXT("Attempting to host session"), TEXT("MPGI"));
 			}
 			curSessionName = sessionName;
 
@@ -209,18 +209,18 @@ void UMPGI::HostSession(FName sessionName, int numPlayers)
 				{
 					if (enableSessionLogging)
 					{
-						UMPLogManager::LogInfo(TEXT("Session creation request sent"), TEXT("MPGI"));
+						UManagerLog::LogInfo(TEXT("Session creation request sent"), TEXT("MPGI"));
 					}
 				}
 				else
 				{
-					UMPLogManager::LogError(TEXT("Failed to create session"), TEXT("MPGI"));
+					UManagerLog::LogError(TEXT("Failed to create session"), TEXT("MPGI"));
 					// Don't call EndSession() here as curSessionName might not be valid yet
 				}
 			}
 			else
 			{
-				UMPLogManager::LogError(TEXT("Local player or UniqueNetId is invalid"), TEXT("MPGI"));
+				UManagerLog::LogError(TEXT("Local player or UniqueNetId is invalid"), TEXT("MPGI"));
 			}
 		}
 	}
@@ -234,7 +234,7 @@ void UMPGI::SearchForSessions()
 		{
 			if (enableSessionLogging)
 			{
-				UMPLogManager::LogInfo(TEXT("Starting session search"), TEXT("MPGI"));
+				UManagerLog::LogInfo(TEXT("Starting session search"), TEXT("MPGI"));
 			}
 
 			searchForSessionsCompletedHandle = onlineSessionInterface->AddOnFindSessionsCompleteDelegate_Handle(searchForSessionsCompletedDelegate);
@@ -252,43 +252,43 @@ void UMPGI::SearchForSessions()
 				{
 					if (enableSessionLogging)
 					{
-						UMPLogManager::LogInfo(TEXT("Session search request sent"), TEXT("MPGI"));
+						UManagerLog::LogInfo(TEXT("Session search request sent"), TEXT("MPGI"));
 					}
 				}
 				else
 				{
-					UMPLogManager::LogError(TEXT("Failed to start session search"), TEXT("MPGI"));
+					UManagerLog::LogError(TEXT("Failed to start session search"), TEXT("MPGI"));
 				}
 			}
 			else
 			{
-				UMPLogManager::LogError(TEXT("Local player or UniqueNetId is invalid for session search"), TEXT("MPGI"));
+				UManagerLog::LogError(TEXT("Local player or UniqueNetId is invalid for session search"), TEXT("MPGI"));
 			}
 		}
 	}
 }
 
-void UMPGI::JoinSession(int sessionIndex)
-		{
+void UMPGI::JoinSessions(int sessionIndex)
+	{
 			if (sessionList.IsValidIndex(sessionIndex) && searchSettings.IsValid())
 			{
 				const ULocalPlayer* localPlayer = GetWorld()->GetFirstLocalPlayerFromController();
 				if (localPlayer && localPlayer->GetPreferredUniqueNetId().IsValid())
 				{
-			joinSessionCompletedHandle = IOnlineSubsystem::Get()->GetSessionInterface()->AddOnJoinSessionCompleteDelegate_Handle(joinSessionCompletedDelegate);
+					joinSessionCompletedHandle = IOnlineSubsystem::Get()->GetSessionInterface()->AddOnJoinSessionCompleteDelegate_Handle(joinSessionCompletedDelegate);
 					
-			IOnlineSubsystem::Get()->GetSessionInterface()->JoinSession(*localPlayer->GetPreferredUniqueNetId(), sessionList[sessionIndex].sessionName, searchSettings->SearchResults[sessionIndex]);
+					IOnlineSubsystem::Get()->GetSessionInterface()->JoinSession(*localPlayer->GetPreferredUniqueNetId(), FName(*sessionList[sessionIndex].sessionName), searchSettings->SearchResults[sessionIndex]);
 
-			UMPLogManager::LogInfo(FString::Printf(TEXT("Attempting to join session %d"), sessionIndex), TEXT("MPGI"));
+					UManagerLog::LogInfo(FString::Printf(TEXT("Attempting to join session %d"), sessionIndex), TEXT("MPGI"));
 				}
 				else
 				{
-			UMPLogManager::LogError(TEXT("Local player or UniqueNetId is invalid for joining session"), TEXT("MPGI"));
+			UManagerLog::LogError(TEXT("Local player or UniqueNetId is invalid for joining session"), TEXT("MPGI"));
 				}
 			}
 			else
 			{
-		UMPLogManager::LogWarning(TEXT("Invalid session index or search settings"), TEXT("MPGI"));
+		UManagerLog::LogWarning(TEXT("Invalid session index or search settings"), TEXT("MPGI"));
 	}
 }
 
@@ -301,7 +301,7 @@ void UMPGI::EndSession()
             endSessionCompletedHandle = onlineSessionInterface->AddOnEndSessionCompleteDelegate_Handle(endSessionCompletedDelegate);
 			onlineSessionInterface->EndSession(curSessionName);
 			
-			UMPLogManager::LogInfo(TEXT("Session end request sent"), TEXT("MPGI"));
+			UManagerLog::LogInfo(TEXT("Session end request sent"), TEXT("MPGI"));
             }
         }
     }
@@ -315,7 +315,7 @@ void UMPGI::DestroySession(FName sessionName)
 			destroySessionCompleteHandle = onlineSessionInterface->AddOnDestroySessionCompleteDelegate_Handle(destroySessionCompleteDelegate);
 			onlineSessionInterface->DestroySession(sessionName);
 			
-			UMPLogManager::LogInfo(TEXT("Session destroy request sent"), TEXT("MPGI"));
+			UManagerLog::LogInfo(TEXT("Session destroy request sent"), TEXT("MPGI"));
 			}
 		}
 	}
@@ -325,7 +325,7 @@ void UMPGI::HostSessionCompleted(FName sessionName, bool hostCompleted)
 {
     if (hostCompleted)
 	{
-		UMPLogManager::LogInfo(TEXT("Session hosted successfully"), TEXT("MPGI"));
+		UManagerLog::LogInfo(TEXT("Session hosted successfully"), TEXT("MPGI"));
 		
     if (IOnlineSubsystem* onlineSubsystem = IOnlineSubsystem::Get())
 	{
@@ -344,7 +344,7 @@ void UMPGI::HostSessionCompleted(FName sessionName, bool hostCompleted)
 	}
 	else
 	{
-		UMPLogManager::LogError(TEXT("Failed to host session"), TEXT("MPGI"));
+		UManagerLog::LogError(TEXT("Failed to host session"), TEXT("MPGI"));
 		curSessionName = NAME_None;
 				}
 }
@@ -353,7 +353,7 @@ void UMPGI::SearchForSessionsCompleted(bool searchCompleted)
 {
     if (searchCompleted)
 	{
-		UMPLogManager::LogInfo(TEXT("Session search completed"), TEXT("MPGI"));
+		UManagerLog::LogInfo(TEXT("Session search completed"), TEXT("MPGI"));
 		
 		if (searchSettings.IsValid())
 		{
@@ -368,12 +368,13 @@ void UMPGI::SearchForSessionsCompleted(bool searchCompleted)
 				sessionInfo.maxPlayersNum = searchSettings->SearchResults[i].Session.SessionSettings.NumPublicConnections;
 				sessionInfo.curPlayersNum = sessionInfo.maxPlayersNum - searchSettings->SearchResults[i].Session.NumOpenPublicConnections;
 				sessionInfo.ping = searchSettings->SearchResults[i].PingInMs;
-				sessionInfo.usePassword = searchSettings->SearchResults[i].Session.SessionSettings.Settings.FindRef(FName("USE_PASSWORD")).Data.GetValue<bool>();
-				
+				// sessionInfo.usePassword = searchSettings->SearchResults[i].Session.SessionSettings.Settings.FindRef(FName("USE_PASSWORD")).Data.GetValue(bUsePassword)();
+				searchSettings->SearchResults[i].Session.SessionSettings.Settings.FindRef(FName("USE_PASSWORD")).Data.GetValue(sessionInfo.usePassword);
+
 				sessionList.Add(sessionInfo);
 			}
 			
-					UMPLogManager::LogInfo(FString::Printf(TEXT("Found %d sessions"), sessionList.Num()), TEXT("MPGI"));
+					UManagerLog::LogInfo(FString::Printf(TEXT("Found %d sessions"), sessionList.Num()), TEXT("MPGI"));
 	}
 	
 			// Notify the HUD that search is complete
@@ -382,24 +383,24 @@ void UMPGI::SearchForSessionsCompleted(bool searchCompleted)
 			// Cast to our custom player controller to access the search session HUD
 			if (AMPControllerPlayer* mpPlayerController = Cast<AMPControllerPlayer>(playerController))
 			{
-				if (mpPlayerController->searchSessionHUD)
+				if (mpPlayerController->GetSearchSessionHUD())
 				{
-					mpPlayerController->searchSessionHUD->OnSearchCompleted(true);
+					mpPlayerController->GetSearchSessionHUD()->OnSearchCompleted(true);
 				}
 				else
 				{
-					UMPLogManager::LogWarning(TEXT("Search session HUD is null"), TEXT("MPGI"));
+					UManagerLog::LogWarning(TEXT("Search session HUD is null"), TEXT("MPGI"));
 				}
 			}
 			else
 			{
-				UMPLogManager::LogWarning(TEXT("Could not cast to MPControllerPlayer"), TEXT("MPGI"));
+				UManagerLog::LogWarning(TEXT("Could not cast to MPControllerPlayer"), TEXT("MPGI"));
 			}
 		}
-}
-else
-{
-	UMPLogManager::LogWarning(TEXT("Session search failed"), TEXT("MPGI"));
+    }
+    else
+    {
+		UManagerLog::LogWarning(TEXT("Session search failed"), TEXT("MPGI"));
 	
 			// Notify the HUD that search failed
 		if (APlayerController* playerController = GetWorld()->GetFirstPlayerController())
@@ -407,36 +408,42 @@ else
 			// Cast to our custom player controller to access the search session HUD
 			if (AMPControllerPlayer* mpPlayerController = Cast<AMPControllerPlayer>(playerController))
 			{
-				if (mpPlayerController->searchSessionHUD)
+				if (mpPlayerController->GetSearchSessionHUD())
 				{
-					mpPlayerController->searchSessionHUD->OnSearchCompleted(false);
+					mpPlayerController->GetSearchSessionHUD()->OnSearchCompleted(false);
 				}
 				else
 				{
-					UMPLogManager::LogWarning(TEXT("Search session HUD is null"), TEXT("MPGI"));
+					UManagerLog::LogWarning(TEXT("Search session HUD is null"), TEXT("MPGI"));
 				}
 			}
 			else
 			{
-				UMPLogManager::LogWarning(TEXT("Could not cast to MPControllerPlayer"), TEXT("MPGI"));
+				UManagerLog::LogWarning(TEXT("Could not cast to MPControllerPlayer"), TEXT("MPGI"));
 			}
 		}
+    }
+
+
+    if (IOnlineSubsystem* onlineSubsystem = IOnlineSubsystem::Get())
+    {
+        if (IOnlineSessionPtr onlineSessionInterface = onlineSubsystem->GetSessionInterface())
+        {
+            onlineSessionInterface->ClearOnFindSessionsCompleteDelegate_Handle(searchForSessionsCompletedHandle);
+        }
+    }
 }
-	
 
-
-	if (IOnlineSubsystem* onlineSubsystem = IOnlineSubsystem::Get())
-	{
-		if (IOnlineSessionPtr onlineSessionInterface = onlineSubsystem->GetSessionInterface())
-		{
-			onlineSessionInterface->ClearOnFindSessionsCompleteDelegate_Handle(searchForSessionsCompletedHandle);
-		}
-						}
-					}
-
-void UMPGI::JoinSessionCompleted(FName sessionName)
+void UMPGI::JoinSessionCompleted(FName sessionName, EOnJoinSessionCompleteResult::Type result)
 {
-    UMPLogManager::LogInfo(TEXT("Session joined successfully"), TEXT("MPGI"));
+    if (result == EOnJoinSessionCompleteResult::Success)
+    {
+        UManagerLog::LogInfo(TEXT("Session joined successfully"), TEXT("MPGI"));
+    }
+    else
+    {
+        UManagerLog::LogWarning(TEXT("Failed to join session"), TEXT("MPGI"));
+    }
 	
 	if (IOnlineSubsystem* onlineSubsystem = IOnlineSubsystem::Get())
 	{
@@ -461,14 +468,14 @@ bool UMPGI::TravelToSession(FName sessionName)
 			FString joinAddress;
 			if (onlineSessionInterface->GetResolvedConnectString(sessionName, joinAddress))
 			{
-				UMPLogManager::LogInfo(TEXT("Traveling to session"), TEXT("MPGI"));
+				UManagerLog::LogInfo(TEXT("Traveling to session"), TEXT("MPGI"));
 				GetWorld()->GetFirstPlayerController()->ClientTravel(joinAddress, ETravelType::TRAVEL_Absolute);
 					return true;
 				}
 		}
 	}
 	
-	UMPLogManager::LogError(TEXT("Failed to travel to session"), TEXT("MPGI"));
+	UManagerLog::LogError(TEXT("Failed to travel to session"), TEXT("MPGI"));
 	return false;
 }
 
@@ -479,7 +486,7 @@ FSessionInfo UMPGI::GetSessionInfo(int32 index) const
 		return sessionList[index];
 	}
 	
-	UMPLogManager::LogWarning(FString::Printf(TEXT("Invalid session index: %d"), index), TEXT("MPGI"));
+	UManagerLog::LogWarning(FString::Printf(TEXT("Invalid session index: %d"), index), TEXT("MPGI"));
 	return FSessionInfo();
 }
 
@@ -487,11 +494,11 @@ void UMPGI::EndSessionCompleted(FName sessionName, bool endCompleted)
 {
     if (endCompleted)
 	{
-		UMPLogManager::LogInfo(TEXT("Session ended successfully"), TEXT("MPGI"));
+		UManagerLog::LogInfo(TEXT("Session ended successfully"), TEXT("MPGI"));
 	}
 	else
 	{
-		UMPLogManager::LogWarning(TEXT("Failed to end session"), TEXT("MPGI"));
+		UManagerLog::LogWarning(TEXT("Failed to end session"), TEXT("MPGI"));
 	}
 	
     if (IOnlineSubsystem* onlineSubsystem = IOnlineSubsystem::Get())
@@ -509,11 +516,11 @@ void UMPGI::DestroySessionCompleted(FName sessionName, bool destroyCompleted)
 {
     if (destroyCompleted)
 	{
-		UMPLogManager::LogInfo(TEXT("Session destroyed successfully"), TEXT("MPGI"));
+		UManagerLog::LogInfo(TEXT("Session destroyed successfully"), TEXT("MPGI"));
 	}
 	else
 	{
-		UMPLogManager::LogWarning(TEXT("Failed to destroy session"), TEXT("MPGI"));
+		UManagerLog::LogWarning(TEXT("Failed to destroy session"), TEXT("MPGI"));
 	}
 	
     if (IOnlineSubsystem* onlineSubsystem = IOnlineSubsystem::Get())
@@ -532,11 +539,11 @@ void UMPGI::OpenLevel(EGameLevel levelType)
 	if (!levelName.IsEmpty())
 	{
 		UGameplayStatics::OpenLevel(GetWorld(), FName(*levelName));
-		UMPLogManager::LogInfo(FString::Printf(TEXT("Opening level: %s"), *levelName), TEXT("MPGI"));
+		UManagerLog::LogInfo(FString::Printf(TEXT("Opening level: %s"), *levelName), TEXT("MPGI"));
 	}
 	else
 	{
-		UMPLogManager::LogError(TEXT("Invalid level type"), TEXT("MPGI"));
+		UManagerLog::LogError(TEXT("Invalid level type"), TEXT("MPGI"));
 	}
 }
 
@@ -568,7 +575,7 @@ void UMPGI::CreateSession(const FString& sessionName, const FString& hostName, b
 
 void UMPGI::StartSinglePlayerGame()
 {
-    UMPLogManager::LogInfo(TEXT("Starting single player game"), TEXT("MPGI"));
+    UManagerLog::LogInfo(TEXT("Starting single player game"), TEXT("MPGI"));
 	OpenLevel(EGameLevel::EGameplay);
 }
 
@@ -595,17 +602,17 @@ void UMPGI::InitializeLocalization()
 {
     if (!localizationManager)
 	{
-		localizationManager = NewObject<UMPLocalizationManager>(this);
+		localizationManager = NewObject<UManagerLocalization>(this);
 	}
 	
 	if (localizationManager)
 	{
 		localizationManager->InitializeLocalization();
-		UMPLogManager::LogInfo(TEXT("Localization system initialized"), TEXT("MPGI"));
+		UManagerLog::LogInfo(TEXT("Localization system initialized"), TEXT("MPGI"));
 	}
 	else
 	{
-		UMPLogManager::LogError(TEXT("Failed to create localization manager"), TEXT("MPGI"));
+		UManagerLog::LogError(TEXT("Failed to create localization manager"), TEXT("MPGI"));
 	}
 }
 
@@ -630,5 +637,5 @@ bool UMPGI::IsHost() const
 void UMPGI::SetHostPlayerID(const FString& hostID)
 {
 	hostPlayerID = hostID;
-	UMPLogManager::LogInfo(FString::Printf(TEXT("Host player ID set to: %s"), *hostID), TEXT("MPGI"));
+	UManagerLog::LogInfo(FString::Printf(TEXT("Host player ID set to: %s"), *hostID), TEXT("MPGI"));
 }

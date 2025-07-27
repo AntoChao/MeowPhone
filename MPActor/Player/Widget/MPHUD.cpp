@@ -1,8 +1,8 @@
 #include "MPHUD.h"
-#include "HighLevel/MPGI.h"
-#include "HighLevel/MPLocalizationManager.h"
-#include "HighLevel/MPLogManager.h"
-#include "MPActor/Player/MPControllerPlayer.h"
+#include "../../../HighLevel/MPGI.h"
+#include "../../../HighLevel/Managers/ManagerLocalization.h"
+#include "../../../HighLevel/Managers/ManagerLog.h"
+#include "../MPControllerPlayer.h"
 
 void UMPHUD::NativeConstruct()
 {
@@ -14,7 +14,7 @@ void UMPHUD::NativeConstruct()
 	// Validate root widget
 	if (!ValidateRootWidget())
 	{
-		UMPLogManager::LogError(TEXT("Root widget validation failed! Widget will not function properly."), TEXT("MPHUD"));
+		UManagerLog::LogError(TEXT("Root widget validation failed! Widget will not function properly."), TEXT("MPHUD"));
 		return;
 	}
 	
@@ -38,7 +38,7 @@ void UMPHUD::SetOwner(AMPControllerPlayer* theOwner)
 void UMPHUD::UpdateTexts()
 {
 	// Base implementation - child classes should override this
-	UMPLogManager::LogWarning(TEXT("UpdateTexts called on base class"), TEXT("MPHUD"));
+	UManagerLog::LogWarning(TEXT("UpdateTexts called on base class"), TEXT("MPHUD"));
 }
 
 void UMPHUD::OnLanguageChanged()
@@ -63,11 +63,11 @@ void UMPHUD::SubscribeToLanguageChanges()
 	if (curGameInstance && curGameInstance->GetLocalizationManager())
 	{
 		curGameInstance->GetLocalizationManager()->SubscribeToLanguageChanges(this);
-		UMPLogManager::LogInfo(TEXT("Subscribed to language changes"), TEXT("MPHUD"));
+		UManagerLog::LogInfo(TEXT("Subscribed to language changes"), TEXT("MPHUD"));
 	}
 	else
 	{
-		UMPLogManager::LogWarning(TEXT("Cannot subscribe - GameInstance or LocalizationManager not ready"), TEXT("MPHUD"));
+		UManagerLog::LogWarning(TEXT("Cannot subscribe - GameInstance or LocalizationManager not ready"), TEXT("MPHUD"));
 	}
 }
 
@@ -76,14 +76,14 @@ void UMPHUD::UnsubscribeFromLanguageChanges()
 	if (curGameInstance && curGameInstance->GetLocalizationManager())
 	{
 		curGameInstance->GetLocalizationManager()->UnsubscribeFromLanguageChanges(this);
-		UMPLogManager::LogInfo(TEXT("Unsubscribed from language changes"), TEXT("MPHUD"));
+		UManagerLog::LogInfo(TEXT("Unsubscribed from language changes"), TEXT("MPHUD"));
 	}
 }
 
 bool UMPHUD::ValidateRootWidget()
 {
 	// Base implementation - child classes should override this
-	UMPLogManager::LogWarning(TEXT("ValidateRootWidget called on base class"), TEXT("MPHUD"));
+	UManagerLog::LogWarning(TEXT("ValidateRootWidget called on base class"), TEXT("MPHUD"));
 	return true;
 }
 

@@ -1,49 +1,48 @@
-#include "MatchManager.h"
-#include "HighLevel/MPGMGameplay.h"
-#include "HighLevel/MPGS.h"
-#include "MPActor/Player/MPControllerPlayer.h"
-#include "MPActor/Player/MPPlayerState.h"
-#include "MPActor/Character/MPCharacter.h"
-#include "MPActor/Character/MPCharacterHuman.h"
-#include "MPActor/Character/MPCharacterCat.h"
-#include "MPActor/Item/MPItem.h"
-#include "MPActor/EnvActor/MPEnvActorComp.h"
-#include "MPActor/EnvActor/MPEnvActorCompPushable.h"
-#include "MPActor/AI/MPAIController.h"
-#include "MPActor/AI/MPAISystemManager.h"
-#include "HighLevel/Factory/FactoryHuman.h"
-#include "HighLevel/Factory/FactoryCat.h"
-#include "HighLevel/Factory/FactoryAIController.h"
-#include "HighLevel/MPLogManager.h"
+#include "ManagerMatch.h"
+
 #include "Kismet/GameplayStatics.h"
 #include "Engine/World.h"
 #include "TimerManager.h"
-#include "MPActor/Player/Widget/HUDLobbyManager.h"
-#include "MPActor/Player/Widget/HUDEnd.h"
-#include "Managers/AIControllerManager.h"
 
+#include "../MPGMGameplay.h"
+#include "../MPGS.h"
 
-void UMatchManager::Initialize(AMPGMGameplay* InGameMode)
-{
-    GameMode = InGameMode;
-}
+#include "../Managers/ManagerLog.h"
+#include "../Managers/ManagerAIController.h"
+
+#include "../Factory/FactoryHuman.h"
+#include "../Factory/FactoryCat.h"
+#include "../Factory/FactoryAIController.h"
+
+#include "../../MPActor/Player/MPControllerPlayer.h"
+#include "../../MPActor/Player/MPPlayerState.h"
+#include "../../MPActor/Character/MPCharacter.h"
+#include "../../MPActor/Character/MPCharacterHuman.h"
+#include "../../MPActor/Character/MPCharacterCat.h"
+#include "../../MPActor/Item/MPItem.h"
+#include "../../MPActor/EnvActor/MPEnvActorComp.h"
+#include "../../MPActor/EnvActor/MPEnvActorCompPushable.h"
+#include "../../MPActor/AI/MPAIController.h"
+#include "../../MPActor/AI/MPAISystemManager.h"
+#include "../../MPActor/Player/Widget/HUDManagerLobby.h"
+#include "../../MPActor/Player/Widget/HUDEnd.h"
 
 // character custom
-void UMatchManager::StartCustomizeCharacter()
+void UManagerMatch::StartCustomizeCharacter()
 {
-    if (!GameMode || !GameMode->theGameState) return;
+    if (!GameMode || !GameMode->GetGameState()) return;
 
-    GameMode->theGameState->curGameplayStatus = EGPStatus::ECustomCharacter;
-    GameMode->theGameState->curCustomCharacterTime = GameMode->theGameState->customCharacterTotalTime;
+    GameMode->GetGameState()->curGameplayStatus = EGPStatus::ECustomCharacter;
+    GameMode->GetGameState()->curCustomCharacterTime = GameMode->GetGameState()->customCharacterTotalTime;
 
     for (AMPControllerPlayer* eachPlayer : GameMode->allPlayersControllers)
     {
-        if (eachPlayer && eachPlayer->lobbyManagerHUD)
+        if (eachPlayer && eachPlayer->GetManagerLobbyHUD())
         {
             AMPPlayerState* eachState = Cast<AMPPlayerState>(eachPlayer->PlayerState);
             if (eachState)
             {
-                eachPlayer->lobbyManagerHUD->ShowCustomizationHUD(eachState->playerTeam);
+                eachPlayer->GetManagerLobbyHUD()->ShowCustomizationHUD(eachState->playerTeam);
             }
         }
     }
@@ -51,17 +50,17 @@ void UMatchManager::StartCustomizeCharacter()
     CountdownCustomizeCharacter();
 }
 
-void UMatchManager::CountdownCustomizeCharacter()
+void UManagerMatch::CountdownCustomizeCharacter()
 {
-    if (!GameMode || !GameMode->theGameState) return;
+    if (!GameMode || !GameMode->GetGameState()) return;
 
-    if (GameMode->theGameState->curCustomCharacterTime > 0)
+    if (GameMode->GetGameState()->curCustomCharacterTime > 0)
     {
         UWorld* serverWorld = GameMode->GetWorld();
         if (serverWorld)
         {
-            GameMode->theGameState->curCustomCharacterTime -= 1;
-            GameMode->ClientUpdateCustomizationCountdown(GameMode->theGameState->curCustomCharacterTime);
+            GameMode->GetGameState()->curCustomCharacterTime -= 1;
+            GameMode->ClientUpdateCustomizationCountdown(GameMode->GetGameState()->curCustomCharacterTime);
 
             serverWorld->GetTimerManager().ClearTimer(customCharacterTimerHandle);
             FTimerDelegate customCharacterTimerDel;
@@ -75,7 +74,7 @@ void UMatchManager::CountdownCustomizeCharacter()
     }
 }
 
-void UMatchManager::EndCustomizeCharacter()
+void UManagerMatch::EndCustomizeCharacter()
 {
     if (!GameMode) return;
 
@@ -91,27 +90,27 @@ void UMatchManager::EndCustomizeCharacter()
 }
 
 // start game
-void UMatchManager::StartGame()
+void UManagerMatch::StartGame()
 {
-    UMPLogManager::LogInfo(TEXT("Starting Game"), TEXT("MatchManager"));
+    UManagerLog::LogInfo(TEXT("Starting Game"), TEXT("ManagerMatch"));
     SetupGame();
     StartPrepareTime();
 }
 
-void UMatchManager::SetupGame()
+void UManagerMatch::SetupGame()
 {
     SetupMap();
     SetupPlayers();
     SetupAIs();
 }
 
-void UMatchManager::SetupMap()
+void UManagerMatch::SetupMap()
 {
     SetupMapItems();
     SetupMapEnvActors();
 }
 
-void UMatchManager::SetupMapItems()
+void UManagerMatch::SetupMapItems()
 {
     if (!GameMode) return;
     TArray<AActor*> allActors;
@@ -131,9 +130,9 @@ void UMatchManager::SetupMapItems()
     }
 }
 
-void UMatchManager::SetupMapEnvActors()
+void UManagerMatch::SetupMapEnvActors()
 {
-    if (!GameMode || !GameMode->theGameState) return;
+    if (!GameMode || !GameMode->GetGameState()) return;
 
     TArray<AActor*> allActors;
     UGameplayStatics::GetAllActorsOfClass(GameMode->GetWorld(), AMPEnvActorComp::StaticClass(), allActors);
@@ -168,25 +167,25 @@ void UMatchManager::SetupMapEnvActors()
         }
     }
 
-    GameMode->theGameState->totalMPProgression = totalProgressionWeight;
-    GameMode->theGameState->curMPProgression = 0.0f;
-    GameMode->theGameState->curMPProgressionPercentage = 0.0f;
+    GameMode->GetGameState()->totalMPProgression = totalProgressionWeight;
+    GameMode->GetGameState()->curMPProgression = 0.0f;
+    GameMode->GetGameState()->curMPProgressionPercentage = 0.0f;
 
     if (totalProgressionWeight <= 0.0f)
     {
-        UMPLogManager::LogWarning(TEXT("No pushable objects remain after randomization! Cat team objective is impossible."), TEXT("MatchManager"));
+        UManagerLog::LogWarning(TEXT("No pushable objects remain after randomization! Cat team objective is impossible."), TEXT("ManagerMatch"));
     }
     else
     {
-        float requiredProgression = totalProgressionWeight * GameMode->theGameState->catWinProgressionPercentage;
-        UMPLogManager::LogInfo(FString::Printf(TEXT("Cat Team Objective Set: Total Weight = %f, Required = %f (%.1f%%)"),
-            totalProgressionWeight, requiredProgression, GameMode->theGameState->catWinProgressionPercentage * 100.0f), TEXT("MatchManager"));
+        float requiredProgression = totalProgressionWeight * GameMode->GetGameState()->catWinProgressionPercentage;
+        UManagerLog::LogInfo(FString::Printf(TEXT("Cat Team Objective Set: Total Weight = %f, Required = %f (%.1f%%)"),
+        totalProgressionWeight, requiredProgression, GameMode->GetGameState()->catWinProgressionPercentage * 100.0f), TEXT("ManagerMatch"));
     }
 }
 
-void UMatchManager::SetupPlayers()
+void UManagerMatch::SetupPlayers()
 {
-    if (!GameMode || !GameMode->theGameState) return;
+    if (!GameMode || !GameMode->GetGameState()) return;
 
     int humanIndex = 0;
     int catIndex = 0;
@@ -212,7 +211,7 @@ void UMatchManager::SetupPlayers()
                             eachPlayer->Possess(humanMPBody);
                             GameMode->allPlayerCharacters.Add(humanMPBody);
                             humanIndex++;
-                            UMPLogManager::LogInfo(TEXT("One human player created successfully"), TEXT("MatchManager"));
+                            UManagerLog::LogInfo(TEXT("One human player created successfully"), TEXT("ManagerMatch"));
                         }
                     }
                 }
@@ -234,7 +233,7 @@ void UMatchManager::SetupPlayers()
                             eachPlayer->Possess(catMPBody);
                             GameMode->allPlayerCharacters.Add(catMPBody);
                             catIndex++;
-                            UMPLogManager::LogInfo(TEXT("One cat player created successfully"), TEXT("MatchManager"));
+                            UManagerLog::LogInfo(TEXT("One cat player created successfully"), TEXT("ManagerMatch"));
                         }
                     }
                 }
@@ -243,33 +242,33 @@ void UMatchManager::SetupPlayers()
         }
     }
 
-    GameMode->theGameState->totalCatPlayers = catPlayerCount;
-    GameMode->theGameState->caughtCats = 0;
-    GameMode->theGameState->caughtCatsPercentage = 0.0f;
+    GameMode->GetGameState()->totalCatPlayers = catPlayerCount;
+    GameMode->GetGameState()->caughtCats = 0;
+    GameMode->GetGameState()->caughtCatsPercentage = 0.0f;
 
     if (catPlayerCount <= 0)
     {
-        UMPLogManager::LogWarning(TEXT("No cat players found! Human team objective is impossible."), TEXT("MatchManager"));
+        UManagerLog::LogWarning(TEXT("No cat players found! Human team objective is impossible."), TEXT("ManagerMatch"));
     }
     else
     {
-        UMPLogManager::LogInfo(FString::Printf(TEXT("Human Team Objective Set: Catch %d Cat Players"), catPlayerCount), TEXT("MatchManager"));
+        UManagerLog::LogInfo(FString::Printf(TEXT("Human Team Objective Set: Catch %d Cat Players"), catPlayerCount), TEXT("ManagerMatch"));
     }
 }
 
-void UMatchManager::SetupAIs()
+void UManagerMatch::SetupAIs()
 {
-    if (GameMode && GameMode->AIControllerManager)
+    if (GameMode && GameMode->ManagerAIController)
     {
-        GameMode->AIControllerManager->SpawnLobbyAIs();
+        GameMode->ManagerAIController->SpawnLobbyAIs();
     }
     SetupAIManager();
 }
 
-void UMatchManager::SetupAICats()
+void UManagerMatch::SetupAICats()
 {
-    if (!GameMode || !GameMode->AIControllerManager) return;
-    int numAICats = GameMode->AIControllerManager->GetAllAICats().Num();
+    if (!GameMode || !GameMode->ManagerAIController) return;
+    int numAICats = GameMode->ManagerAIController->GetAllAICats().Num();
     for (int i = 0; i < numAICats; i++)
     {
         if (GameMode->catFactoryInstance && GameMode->aiControllerFactoryInstance)
@@ -293,10 +292,10 @@ void UMatchManager::SetupAICats()
     }
 }
 
-void UMatchManager::SetupAIHumans()
+void UManagerMatch::SetupAIHumans()
 {
-    if (!GameMode || !GameMode->AIControllerManager) return;
-    int numAIHumans = GameMode->AIControllerManager->GetAllAIHumans().Num();
+    if (!GameMode || !GameMode->ManagerAIController) return;
+    int numAIHumans = GameMode->ManagerAIController->GetAllAIHumans().Num();
     for (int i = 0; i < numAIHumans; i++)
     {
         if (GameMode->humanFactoryInstance && GameMode->aiControllerFactoryInstance)
@@ -320,7 +319,7 @@ void UMatchManager::SetupAIHumans()
     }
 }
 
-void UMatchManager::SetupAIManager()
+void UManagerMatch::SetupAIManager()
 {
     if (!GameMode || !GameMode->aiControllerFactoryInstance) return;
 
@@ -333,12 +332,12 @@ void UMatchManager::SetupAIManager()
 }
 
 // prepare time
-void UMatchManager::StartPrepareTime()
+void UManagerMatch::StartPrepareTime()
 {
-    if (!GameMode || !GameMode->theGameState) return;
+    if (!GameMode || !GameMode->GetGameState()) return;
 
-    GameMode->theGameState->curGameplayStatus = EGPStatus::EPrepare;
-    GameMode->theGameState->curPrepareTime = GameMode->theGameState->prepareTotalTime;
+    GameMode->GetGameState()->curGameplayStatus = EGPStatus::EPrepare;
+    GameMode->GetGameState()->curPrepareTime = GameMode->GetGameState()->prepareTotalTime;
     CountdownPrepareGame();
 
     for (AMPControllerPlayer* eachPlayer : GameMode->allPlayersControllers)
@@ -347,16 +346,16 @@ void UMatchManager::StartPrepareTime()
     }
 }
 
-void UMatchManager::CountdownPrepareGame()
+void UManagerMatch::CountdownPrepareGame()
 {
-    if (!GameMode || !GameMode->theGameState) return;
+    if (!GameMode || !GameMode->GetGameState()) return;
 
-    if (GameMode->theGameState->curPrepareTime > 0)
+    if (GameMode->GetGameState()->curPrepareTime > 0)
     {
         UWorld* serverWorld = GameMode->GetWorld();
         if (serverWorld)
         {
-            GameMode->theGameState->curPrepareTime -= 1;
+            GameMode->GetGameState()->curPrepareTime -= 1;
 
             serverWorld->GetTimerManager().ClearTimer(prepareTimerHandle);
             FTimerDelegate prepareTimerDel;
@@ -370,32 +369,32 @@ void UMatchManager::CountdownPrepareGame()
     }
 }
 
-void UMatchManager::EndPrepareTime()
+void UManagerMatch::EndPrepareTime()
 {
     StartGameplayTime();
 }
 
-void UMatchManager::StartGameplayTime()
+void UManagerMatch::StartGameplayTime()
 {
-    if (!GameMode || !GameMode->theGameState) return;
+    if (!GameMode || !GameMode->GetGameState()) return;
 
-    GameMode->theGameState->curGameplayStatus = EGPStatus::EGameplay;
-    GameMode->theGameState->curGameplayTime = GameMode->theGameState->gameplayTotalTime;
+    GameMode->GetGameState()->curGameplayStatus = EGPStatus::EGameplay;
+    GameMode->GetGameState()->curGameplayTime = GameMode->GetGameState()->gameplayTotalTime;
 
-    bool catObjectiveImpossible = (GameMode->theGameState->totalMPProgression <= 0.0f);
-    bool humanObjectiveImpossible = (GameMode->theGameState->totalCatPlayers <= 0);
+    bool catObjectiveImpossible = (GameMode->GetGameState()->totalMPProgression <= 0.0f);
+    bool humanObjectiveImpossible = (GameMode->GetGameState()->totalCatPlayers <= 0);
 
     if (catObjectiveImpossible && humanObjectiveImpossible)
     {
-        UMPLogManager::LogError(TEXT("CRITICAL ERROR: Both teams have impossible objectives!"), TEXT("MatchManager"));
+        UManagerLog::LogError(TEXT("CRITICAL ERROR: Both teams have impossible objectives!"), TEXT("ManagerMatch"));
     }
     else if (catObjectiveImpossible)
     {
-        UMPLogManager::LogWarning(TEXT("Cat team has impossible objective - no objects to break"), TEXT("MatchManager"));
+        UManagerLog::LogWarning(TEXT("Cat team has impossible objective - no objects to break"), TEXT("ManagerMatch"));
     }
     else if (humanObjectiveImpossible)
     {
-        UMPLogManager::LogWarning(TEXT("Human team has impossible objective - no cat players to catch"), TEXT("MatchManager"));
+        UManagerLog::LogWarning(TEXT("Human team has impossible objective - no cat players to catch"), TEXT("ManagerMatch"));
     }
 
     CountdownGameplayGame();
@@ -406,19 +405,19 @@ void UMatchManager::StartGameplayTime()
     }
 }
 
-void UMatchManager::CountdownGameplayGame()
+void UManagerMatch::CountdownGameplayGame()
 {
-    if (!GameMode || !GameMode->theGameState) return;
+    if (!GameMode || !GameMode->GetGameState()) return;
 
-    if (GameMode->theGameState->curGameplayTime > 0)
+    if (GameMode->GetGameState()->curGameplayTime > 0)
     {
         UWorld* serverWorld = GameMode->GetWorld();
         if (serverWorld)
         {
-            GameMode->theGameState->curGameplayTime -= 1;
+            GameMode->GetGameState()->curGameplayTime -= 1;
             CheckIfGameEnd();
 
-            if (GameMode->theGameState->curGameplayTime > 0)
+            if (GameMode->GetGameState()->curGameplayTime > 0)
             {
                 serverWorld->GetTimerManager().ClearTimer(gameplayTimerHandle);
                 FTimerDelegate gameplayTimerDel;
@@ -433,16 +432,16 @@ void UMatchManager::CountdownGameplayGame()
     }
 }
 
-bool UMatchManager::CheckIfGameEnd()
+bool UManagerMatch::CheckIfGameEnd()
 {
-    if (!GameMode || !GameMode->theGameState) return false;
+    if (!GameMode || !GameMode->GetGameState()) return false;
 
     bool isGameEnd = false;
     FString winningTeam = TEXT("");
 
-    if (GameMode->theGameState->totalMPProgression > 0.0f && GameMode->theGameState->curMPProgression >= 0.0f)
+    if (GameMode->GetGameState()->totalMPProgression > 0.0f && GameMode->GetGameState()->curMPProgression >= 0.0f)
     {
-        bool hasReachedTarget = (GameMode->theGameState->curMPProgressionPercentage >= GameMode->theGameState->catWinProgressionPercentage);
+        bool hasReachedTarget = (GameMode->GetGameState()->curMPProgressionPercentage >= GameMode->GetGameState()->catWinProgressionPercentage);
         if (hasReachedTarget)
         {
             isGameEnd = true;
@@ -450,10 +449,10 @@ bool UMatchManager::CheckIfGameEnd()
         }
     }
 
-    if (!isGameEnd && GameMode->theGameState->totalCatPlayers > 0)
+    if (!isGameEnd && GameMode->GetGameState()->totalCatPlayers > 0)
     {
-        bool hasCaughtAllCats = (GameMode->theGameState->caughtCats >= GameMode->theGameState->totalCatPlayers) ||
-                                (GameMode->theGameState->caughtCatsPercentage >= 0.999f);
+        bool hasCaughtAllCats = (GameMode->GetGameState()->caughtCats >= GameMode->GetGameState()->totalCatPlayers) ||
+                                (GameMode->GetGameState()->caughtCatsPercentage >= 0.999f);
         if (hasCaughtAllCats)
         {
             isGameEnd = true;
@@ -484,14 +483,14 @@ bool UMatchManager::CheckIfGameEnd()
         }
     }
 
-    if (!isGameEnd && GameMode->theGameState->curGameplayTime == 0)
+    if (!isGameEnd && GameMode->GetGameState()->curGameplayTime == 0)
     {
-        if (GameMode->theGameState->curMPProgressionPercentage > GameMode->theGameState->caughtCatsPercentage)
+        if (GameMode->GetGameState()->curMPProgressionPercentage > GameMode->GetGameState()->caughtCatsPercentage)
         {
             isGameEnd = true;
             winningTeam = TEXT("Cat (Time Out)");
         }
-        else if (GameMode->theGameState->caughtCatsPercentage > GameMode->theGameState->curMPProgressionPercentage)
+        else if (GameMode->GetGameState()->caughtCatsPercentage > GameMode->GetGameState()->curMPProgressionPercentage)
         {
             isGameEnd = true;
             winningTeam = TEXT("Human (Time Out)");
@@ -505,7 +504,7 @@ bool UMatchManager::CheckIfGameEnd()
 
     if (isGameEnd)
     {
-        UMPLogManager::LogInfo(FString::Printf(TEXT("=== GAME END: %s Team Wins! ==="), *winningTeam), TEXT("MatchManager"));
+        UManagerLog::LogInfo(FString::Printf(TEXT("=== GAME END: %s Team Wins! ==="), *winningTeam), TEXT("ManagerMatch"));
         EndGameplayTime();
         return true;
     }
@@ -513,9 +512,9 @@ bool UMatchManager::CheckIfGameEnd()
     return false;
 }
 
-void UMatchManager::EndGameplayTime()
+void UManagerMatch::EndGameplayTime()
 {
-    if (!GameMode || !GameMode->theGameState) return;
+    if (!GameMode || !GameMode->GetGameState()) return;
 
     RemoveGameplayHUD();
 
@@ -525,26 +524,26 @@ void UMatchManager::EndGameplayTime()
     
     bool catWin = false;
     bool humanWin = false;
-    if (GameMode->theGameState->curMPProgressionPercentage >= GameMode->theGameState->catWinProgressionPercentage)
+    if (GameMode->GetGameState()->curMPProgressionPercentage >= GameMode->GetGameState()->catWinProgressionPercentage)
         catWin = true;
-    if (GameMode->theGameState->caughtCatsPercentage >= 0.999f || GameMode->theGameState->caughtCats >= GameMode->theGameState->totalCatPlayers)
+    if (GameMode->GetGameState()->caughtCatsPercentage >= 0.999f || GameMode->GetGameState()->caughtCats >= GameMode->GetGameState()->totalCatPlayers)
         humanWin = true;
-    if (!catWin && !humanWin && GameMode->theGameState->curGameplayTime == 0)
+    if (!catWin && !humanWin && GameMode->GetGameState()->curGameplayTime == 0)
     {
-        if (GameMode->theGameState->curMPProgressionPercentage > GameMode->theGameState->caughtCatsPercentage)
+        if (GameMode->GetGameState()->curMPProgressionPercentage > GameMode->GetGameState()->caughtCatsPercentage)
             catWin = true;
         else
             humanWin = true;
     }
-    humanProgress = GameMode->theGameState->caughtCatsPercentage;
-    catProgress = GameMode->theGameState->curMPProgressionPercentage;
+    humanProgress = GameMode->GetGameState()->caughtCatsPercentage;
+    catProgress = GameMode->GetGameState()->curMPProgressionPercentage;
 
     for (AMPControllerPlayer* eachPlayer : GameMode->allPlayersControllers)
     {
         if (eachPlayer)
         {
             eachPlayer->AttachHUD(EHUDType::EEnd, 0);
-            UHUDEnd* endHUD = eachPlayer->endHUD;
+            UHUDEnd* endHUD = eachPlayer->GetEndHUD();
             if (endHUD)
             {
                 AMPPlayerState* state = Cast<AMPPlayerState>(eachPlayer->PlayerState);
@@ -564,10 +563,10 @@ void UMatchManager::EndGameplayTime()
         }
     }
 
-    UMPLogManager::LogInfo(TEXT("Game ended. Players can manually restart or wait for auto-restart."), TEXT("MatchManager"));
+    UManagerLog::LogInfo(TEXT("Game ended. Players can manually restart or wait for auto-restart."), TEXT("ManagerMatch"));
 }
 
-void UMatchManager::RemoveGameplayHUD()
+void UManagerMatch::RemoveGameplayHUD()
 {
     if (!GameMode) return;
     for (AMPControllerPlayer* eachPlayer : GameMode->allPlayersControllers)
@@ -593,7 +592,7 @@ void UMatchManager::RemoveGameplayHUD()
     }
 }
 
-void UMatchManager::RegisterPlayerDeath(AMPControllerPlayer* diedPlayer, FVector diedPlayerLocation, FRotator diedPlayerRotation)
+void UManagerMatch::RegisterPlayerDeath(AMPControllerPlayer* diedPlayer, FVector diedPlayerLocation, FRotator diedPlayerRotation)
 {
     if (!GameMode || !diedPlayer || CheckIfGameEnd()) return;
 
@@ -630,18 +629,18 @@ void UMatchManager::RegisterPlayerDeath(AMPControllerPlayer* diedPlayer, FVector
     }
 }
 
-void UMatchManager::DisplayProgressionStatus()
+void UManagerMatch::DisplayProgressionStatus()
 {
-    if (!GameMode || !GameMode->theGameState) return;
+    if (!GameMode || !GameMode->GetGameState()) return;
 
-    UMPLogManager::LogInfo(TEXT("=== Game Progression Status ==="), TEXT("MatchManager"));
-    UMPLogManager::LogInfo(FString::Printf(TEXT("Cat Team: %f/%f (%.1f%%) - Required: %.1f%%"),
-        GameMode->theGameState->curMPProgression, GameMode->theGameState->totalMPProgression,
-        GameMode->theGameState->curMPProgressionPercentage * 100.0f,
-        GameMode->theGameState->catWinProgressionPercentage * 100.0f), TEXT("MatchManager"));
-    UMPLogManager::LogInfo(FString::Printf(TEXT("Human Team: %d/%d (%.1f%%)"),
-        GameMode->theGameState->caughtCats, GameMode->theGameState->totalCatPlayers,
-        GameMode->theGameState->caughtCatsPercentage * 100.0f), TEXT("MatchManager"));
-    UMPLogManager::LogInfo(FString::Printf(TEXT("Time Remaining: %d seconds"), GameMode->theGameState->curGameplayTime), TEXT("MatchManager"));
-    UMPLogManager::LogInfo(TEXT("================================"), TEXT("MatchManager"));
+    UManagerLog::LogInfo(TEXT("=== Game Progression Status ==="), TEXT("ManagerMatch"));
+    UManagerLog::LogInfo(FString::Printf(TEXT("Cat Team: %f/%f (%.1f%%) - Required: %.1f%%"),
+        GameMode->GetGameState()->curMPProgression, GameMode->GetGameState()->totalMPProgression,
+        GameMode->GetGameState()->curMPProgressionPercentage * 100.0f,
+        GameMode->GetGameState()->catWinProgressionPercentage * 100.0f), TEXT("ManagerMatch"));
+    UManagerLog::LogInfo(FString::Printf(TEXT("Human Team: %d/%d (%.1f%%)"),
+        GameMode->GetGameState()->caughtCats, GameMode->GetGameState()->totalCatPlayers,
+        GameMode->GetGameState()->caughtCatsPercentage * 100.0f), TEXT("ManagerMatch"));
+    UManagerLog::LogInfo(FString::Printf(TEXT("Time Remaining: %d seconds"), GameMode->GetGameState()->curGameplayTime), TEXT("ManagerMatch"));
+    UManagerLog::LogInfo(TEXT("================================"), TEXT("ManagerMatch"));
 } 

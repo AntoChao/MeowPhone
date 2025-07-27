@@ -7,16 +7,21 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Sound/SoundCue.h"
+#include "Components/SceneComponent.h"
+#include "GameFramework/HUD.h"
 
 #include "../../CommonEnum.h"
 #include "../../CommonStruct.h"
-#include "../../HighLevel/MPLogManager.h"
+#include "../../HighLevel/Managers/ManagerLog.h"
 #include "../../HighLevel/MPGMGameplay.h"
 
 #include "../Player/MPControllerPlayer.h"
 #include "../Player/MPPlayerState.h"
 #include "../Item/MPItem.h"
 
+#include "../Player/Widget/HUDCharacter.h"
+
+#include "MotionWarpingComponent.h"
 
 AMPCharacter::AMPCharacter()
 {
@@ -35,7 +40,11 @@ AMPCharacter::AMPCharacter()
 	PreviewCamera->SetAutoActivate(false); // Only activate when needed
 
 	motionWarpingComponent = CreateDefaultSubobject<UMotionWarpingComponent>(TEXT("motionWarpingComponent"));
-	motionWarpingComponent->SetupAttachment(RootComponent);
+	// Attach component if it derives from USceneComponent – otherwise registration is handled automatically
+	if (USceneComponent* SceneComp = Cast<USceneComponent>(motionWarpingComponent))
+	{
+		SceneComp->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
+	}
 }
 
 // common class methods
@@ -82,11 +91,11 @@ FText AMPCharacter::GetInteractHintText(AMPCharacter* player)
 {
 	if (IsInteractable(player))
 	{
-		return UMPLocalizationManager::Get()->GetLocalizedText(interactHintTextKey);
+		return UManagerLocalization::GetInstance()->GetLocalizedText(interactHintTextKey);
 	}
 	else
 	{
-		return UMPLocalizationManager::Get()->GetLocalizedText(uninteractableHintTextKey);
+		return UManagerLocalization::GetInstance()->GetLocalizedText(uninteractableHintTextKey);
 	}
 }
 
@@ -175,7 +184,10 @@ void AMPCharacter::DetectReaction()
             detectInteractableActor.SetObject(hitActor);
             detectInteractableActor.SetInterface(Cast<IMPInteractable>(hitActor));
             detectedActor = hitActor;
-            curDetectHintText = IMPInteractable::Execute_GetInteractHintText(hitActor, this);
+            if (IMPInteractable* interactable = Cast<IMPInteractable>(hitActor))
+            {
+                curDetectHintText = interactable->GetInteractHintText(this);
+            }
             return;
         }
         else
@@ -193,13 +205,6 @@ void AMPCharacter::DetectReaction()
     }
 }
 
-// common properties
-ETeam AMPCharacter::GetCharacterTeam()
-{
-	// Base implementation - should be overridden by derived classes
-	return ETeam::EHuman;
-}
-
 // controller/ input reaction
 void AMPCharacter::PossessedBy(AController* newController)
 {
@@ -207,7 +212,7 @@ void AMPCharacter::PossessedBy(AController* newController)
 	
 	if (IsValid(newController))
 	{
-		UMPLogManager::LogInfo(TEXT("Character possessed by controller"), TEXT("MPCharacter"));
+		UManagerLog::LogInfo(TEXT("Character possessed by controller"), TEXT("MPCharacter"));
 	}
 }
 
@@ -283,7 +288,7 @@ void AMPCharacter::Interact()
 {
 	if (!CheckIfIsAbleToInteract()) return;
 
-	if (detectInteractableActor.IsValid())
+	if (detectInteractableActor)
 	{
 		detectInteractableActor->BeInteracted(this);
 	}
@@ -356,30 +361,30 @@ void AMPCharacter::UpdateSpeed()
 void AMPCharacter::InitializeItems()
 {
 	inventory.Empty();
-	for (EItem eachItemTag : initItems)
+	for (EMPItem eachItemTag : initItems)
 	{
 		AddAnItem(eachItemTag);
 	}
 }
 
-void AMPCharacter::AddAnItem(EItem aItemTag)
+void AMPCharacter::AddAnItem(EMPItem aItemTag)
 {
 	if (!IsAbleToAddItem())
 	{
-		UMPLogManager::LogWarning(TEXT("Cannot add item - inventory full"), TEXT("MPCharacter"));
+		UManagerLog::LogWarning(TEXT("Cannot add item - inventory full"), TEXT("MPCharacter"));
 		return;
 	}
 
 	if (!GetWorld()) 
 	{ 
-		UMPLogManager::LogError(TEXT("World is null"), TEXT("MPCharacter"));
+		UManagerLog::LogError(TEXT("World is null"), TEXT("MPCharacter"));
 		return; 
 	}
 
 	AGameModeBase* curGameMode = UGameplayStatics::GetGameMode(GetWorld());
 	if (!IsValid(curGameMode)) 
 	{ 
-		UMPLogManager::LogError(TEXT("GameMode is null"), TEXT("MPCharacter"));
+		UManagerLog::LogError(TEXT("GameMode is null"), TEXT("MPCharacter"));
 		return; 
 	}
 
@@ -393,7 +398,7 @@ void AMPCharacter::AddAnItem(EItem aItemTag)
 			newItem->BePickedUp(this);
 			
 			inventory.Add(newItem);
-			UMPLogManager::LogDebug(FString::Printf(TEXT("Added item to inventory: %d"), static_cast<int32>(aItemTag)), TEXT("MPCharacter"));
+			UManagerLog::LogDebug(FString::Printf(TEXT("Added item to inventory: %d"), static_cast<int32>(aItemTag)), TEXT("MPCharacter"));
 			// Directly update HUD after adding item
 			if (APlayerController* PC = Cast<APlayerController>(GetController())) {
 				if (PC->IsLocalController()) {
@@ -406,7 +411,7 @@ void AMPCharacter::AddAnItem(EItem aItemTag)
 		}
 		else
 		{
-			UMPLogManager::LogWarning(TEXT("Failed to spawn item"), TEXT("MPCharacter"));
+			UManagerLog::LogWarning(TEXT("Failed to spawn item"), TEXT("MPCharacter"));
 		}
 	}
 }
@@ -425,7 +430,7 @@ void AMPCharacter::PickupAnItem(AMPItem* aItem)
 {
 	if (!IsValid(aItem))
 	{
-		UMPLogManager::LogWarning(TEXT("Invalid item provided for pickup"), TEXT("MPCharacter"));
+		UManagerLog::LogWarning(TEXT("Invalid item provided for pickup"), TEXT("MPCharacter"));
 		return;
 	}
 
@@ -433,11 +438,11 @@ void AMPCharacter::PickupAnItem(AMPItem* aItem)
 	{
 		aItem->BePickedUp(this);
 		inventory.Add(aItem);
-		UMPLogManager::LogInfo(TEXT("Item picked up successfully"), TEXT("MPCharacter"));
+		UManagerLog::LogInfo(TEXT("Item picked up successfully"), TEXT("MPCharacter"));
 	}
 	else
 	{
-		UMPLogManager::LogWarning(TEXT("Cannot pickup item - inventory full"), TEXT("MPCharacter"));
+		UManagerLog::LogWarning(TEXT("Cannot pickup item - inventory full"), TEXT("MPCharacter"));
 	}
 }
 
@@ -445,7 +450,7 @@ void AMPCharacter::DeleteItem(AMPItem* itemToDelete)
 {
 	if (!IsValid(itemToDelete)) 
 	{ 
-		UMPLogManager::LogWarning(TEXT("Invalid item provided for deletion"), TEXT("MPCharacter"));
+		UManagerLog::LogWarning(TEXT("Invalid item provided for deletion"), TEXT("MPCharacter"));
 		return; 
 	}
 
@@ -468,7 +473,7 @@ void AMPCharacter::DeleteItem(AMPItem* itemToDelete)
 			itemToDelete->Destroy();
 		}
 		
-		UMPLogManager::LogInfo(TEXT("Item deleted from inventory"), TEXT("MPCharacter"));
+		UManagerLog::LogInfo(TEXT("Item deleted from inventory"), TEXT("MPCharacter"));
 		// Directly update HUD after deleting item
 		if (APlayerController* PC = Cast<APlayerController>(GetController())) {
 			if (PC->IsLocalController()) {
@@ -481,7 +486,7 @@ void AMPCharacter::DeleteItem(AMPItem* itemToDelete)
 	}
 	else
 	{
-		UMPLogManager::LogWarning(TEXT("Item not found in inventory"), TEXT("MPCharacter"));
+		UManagerLog::LogWarning(TEXT("Item not found in inventory"), TEXT("MPCharacter"));
 	}
 }
 
@@ -518,7 +523,7 @@ void AMPCharacter::SelectItem(int32 itemIndex)
 {
     if (itemIndex < 0 || itemIndex >= inventory.Num())
     {
-        UMPLogManager::LogWarning(TEXT("Invalid item index"), TEXT("MPCharacter"));
+        UManagerLog::LogWarning(TEXT("Invalid item index"), TEXT("MPCharacter"));
         return;
     }
 
@@ -549,7 +554,7 @@ void AMPCharacter::SelectItem(int32 itemIndex)
             }
         }
     }
-    UMPLogManager::LogInfo(FString::Printf(TEXT("Selected item at index %d"), itemIndex), TEXT("MPCharacter"));
+    UManagerLog::LogInfo(FString::Printf(TEXT("Selected item at index %d"), itemIndex), TEXT("MPCharacter"));
 }
 
 void AMPCharacter::UnselectCurItem()
@@ -565,7 +570,7 @@ void AMPCharacter::UnselectCurItem()
             }
         }
     }
-    UMPLogManager::LogInfo(TEXT("Unselected current item"), TEXT("MPCharacter"));
+    UManagerLog::LogInfo(TEXT("Unselected current item"), TEXT("MPCharacter"));
 }
 
 void AMPCharacter::UseCurItem()
@@ -591,7 +596,7 @@ void AMPCharacter::DropCurItem()
 	curHoldingItem = nullptr;
 	curHoldingItemIndex = -1;
 	
-	UMPLogManager::LogInfo(TEXT("Dropped current item"), TEXT("MPCharacter"));
+	UManagerLog::LogInfo(TEXT("Dropped current item"), TEXT("MPCharacter"));
 	// Directly update HUD after dropping item
 	if (APlayerController* PC = Cast<APlayerController>(GetController())) {
 		if (PC->IsLocalController()) {
@@ -604,24 +609,29 @@ void AMPCharacter::DropCurItem()
 }
 
 // animation state
-void AMPCharacter::SetMovementMode(EMPMovementMode newMode)
+void AMPCharacter::SetMove(EMoveState newMode)
 {
 	// Base implementation - should be overridden by derived classes
 	return;
 }
 
-void AMPCharacter::SetAirState(EMovementAirStatus newAirState)
+void AMPCharacter::SetAir(EAirState newAirState)
 {
 	// Base implementation - should be overridden by derived classes
 	return;
 }
 
 // animation context/ montage
+void AMPCharacter::PlayContextAnimationMontage()
+{
+	return;
+}
+
 void AMPCharacter::PlaySelectedMontage(UAnimMontage* chosenMontage, float playRate)
 {
 	if (!IsValid(chosenMontage))
 	{
-		UMPLogManager::LogWarning(TEXT("Invalid animation montage provided"), TEXT("MPCharacter"));
+		UManagerLog::LogWarning(TEXT("Invalid animation montage provided"), TEXT("MPCharacter"));
 		return;
 	}
 
@@ -629,7 +639,7 @@ void AMPCharacter::PlaySelectedMontage(UAnimMontage* chosenMontage, float playRa
 	USkeletalMeshComponent* meshComponent = GetMesh();
 	if (!IsValid(meshComponent))
 	{
-		UMPLogManager::LogWarning(TEXT("Mesh component is null"), TEXT("MPCharacter"));
+		UManagerLog::LogWarning(TEXT("Mesh component is null"), TEXT("MPCharacter"));
 		return;
 	}
 
@@ -637,7 +647,7 @@ void AMPCharacter::PlaySelectedMontage(UAnimMontage* chosenMontage, float playRa
 	UAnimInstance* animInstance = meshComponent->GetAnimInstance();
 	if (!IsValid(animInstance))
 	{
-		UMPLogManager::LogWarning(TEXT("Animation instance is null"), TEXT("MPCharacter"));
+		UManagerLog::LogWarning(TEXT("Animation instance is null"), TEXT("MPCharacter"));
 		return;
 	}
 
@@ -645,9 +655,9 @@ void AMPCharacter::PlaySelectedMontage(UAnimMontage* chosenMontage, float playRa
 	animInstance->Montage_Play(chosenMontage, playRate);
 	isDoingAnAnimation = true;
 	
-	AnimInstance->OnMontageEnded.AddUniqueDynamic(this, &AMPCharacter::OnMontageEnded);
+	animInstance->OnMontageEnded.AddUniqueDynamic(this, &AMPCharacter::OnMontageEnded);
 
-	UMPLogManager::LogDebug(TEXT("Playing animation montage"), TEXT("MPCharacter"));
+	UManagerLog::LogDebug(TEXT("Playing animation montage"), TEXT("MPCharacter"));
 }
 
 void AMPCharacter::OnMontageEnded(UAnimMontage* montage, bool bInterrupted)
@@ -655,7 +665,7 @@ void AMPCharacter::OnMontageEnded(UAnimMontage* montage, bool bInterrupted)
 	isDoingAnAnimation = false;
 	OnMontageEndedContextClear(montage, bInterrupted);
 
-	UMPLogManager::LogDebug(FString::Printf(TEXT("Animation montage ended - Interrupted: %s"), bInterrupted ? TEXT("Yes") : TEXT("No")), TEXT("MPCharacter"));
+	UManagerLog::LogDebug(FString::Printf(TEXT("Animation montage ended - Interrupted: %s"), bInterrupted ? TEXT("Yes") : TEXT("No")), TEXT("MPCharacter"));
 }
 
 void AMPCharacter::OnMontageEndedContextClear(UAnimMontage* montage, bool bInterrupted)
@@ -681,7 +691,7 @@ void AMPCharacter::BeStunned(int32 stunDuration)
 	// Set timer to clear stun
 	GetWorld()->GetTimerManager().SetTimer(stunTimerHandle, this, &AMPCharacter::StopStunned, stunDuration, false);
 	
-	UMPLogManager::LogInfo(FString::Printf(TEXT("Character stunned for %d seconds"), stunDuration), TEXT("MPCharacter"));
+	UManagerLog::LogInfo(FString::Printf(TEXT("Character stunned for %d seconds"), stunDuration), TEXT("MPCharacter"));
 }
 
 void AMPCharacter::StopStunned()
@@ -689,7 +699,7 @@ void AMPCharacter::StopStunned()
 	bIsStunned = false;
 	GetWorld()->GetTimerManager().ClearTimer(stunTimerHandle);
 	
-	UMPLogManager::LogInfo(TEXT("Character unstunned"), TEXT("MPCharacter"));
+	UManagerLog::LogInfo(TEXT("Character unstunned"), TEXT("MPCharacter"));
 }
 
 void AMPCharacter::OnRep_IsStunned()
@@ -697,10 +707,10 @@ void AMPCharacter::OnRep_IsStunned()
 	// Handle stun state changes on clients
 	if (bIsStunned)
 	{
-		UMPLogManager::LogInfo(TEXT("Character stunned"), TEXT("MPCharacter"));
+		UManagerLog::LogInfo(TEXT("Character stunned"), TEXT("MPCharacter"));
 	}
 	else
 	{
-		UMPLogManager::LogInfo(TEXT("Character unstunned"), TEXT("MPCharacter"));
+		UManagerLog::LogInfo(TEXT("Character unstunned"), TEXT("MPCharacter"));
 	}
 }

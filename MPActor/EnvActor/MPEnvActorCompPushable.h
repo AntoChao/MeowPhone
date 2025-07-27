@@ -56,9 +56,6 @@ protected:
     UPROPERTY(ReplicatedUsing = OnRep_PushedCounter, BlueprintReadWrite, Category = "Push Attribute")
     int pushedCounter = 0;
 
-    UFUNCTION()
-        void OnRep_PushedCounter();
-
     // breakable
 protected:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Push Attribute")

@@ -2,12 +2,13 @@
 #include "Components/ScrollBox.h"
 #include "Components/Button.h"
 #include "Components/TextBlock.h"
-#include "MPControllerPlayer.h"
-#include "MPPlayerState.h"
-#include "MPAIController.h"
-#include "../HighLevel/MPGMGameplay.h"
-#include "../HighLevel/MPGI.h"
-#include "../HighLevel/MPLogManager.h"
+#include "../MPControllerPlayer.h"
+#include "../MPPlayerState.h"
+#include "../../AI/MPAIController.h"
+#include "../../../HighLevel/MPGMGameplay.h"
+#include "../../../HighLevel/MPGI.h"
+#include "../../../HighLevel/Managers/ManagerLog.h"
+#include "HUDLobbyEntry.h"
 
 UHUDLobby::UHUDLobby()
 {
@@ -46,7 +47,7 @@ void UHUDLobby::NativeConstruct()
 	UpdateUI();
 	UpdatePlayerLists();
 	
-	UMPLogManager::LogInfo(TEXT("Lobby HUD constructed and initialized"), TEXT("HUDLobby"));
+	UManagerLog::LogInfo(TEXT("Lobby HUD constructed and initialized"), TEXT("HUDLobby"));
 }
 
 void UHUDLobby::NativeDestruct()
@@ -77,12 +78,12 @@ void UHUDLobby::NativeDestruct()
 
 	Super::NativeDestruct();
 	
-	UMPLogManager::LogInfo(TEXT("Lobby HUD destroyed"), TEXT("HUDLobby"));
+	UManagerLog::LogInfo(TEXT("Lobby HUD destroyed"), TEXT("HUDLobby"));
 }
 
 void UHUDLobby::UpdatePlayerLists()
 {
-	UMPLogManager::LogDebug(TEXT("Updating player lists"), TEXT("HUDLobby"));
+	UManagerLog::LogDebug(TEXT("Updating player lists"), TEXT("HUDLobby"));
 	
 	// Clear existing lists
 	ClearPlayerLists();
@@ -91,7 +92,7 @@ void UHUDLobby::UpdatePlayerLists()
 	AMPGMGameplay* gameMode = Cast<AMPGMGameplay>(GetWorld()->GetAuthGameMode());
 	if (!gameMode)
 	{
-		UMPLogManager::LogError(TEXT("Could not get GameMode for player list update"), TEXT("HUDLobby"));
+		UManagerLog::LogError(TEXT("Could not get GameMode for player list update"), TEXT("HUDLobby"));
 		return;
 	}
 	
@@ -215,7 +216,7 @@ void UHUDLobby::UpdatePlayerLists()
 		}
 	}
 	
-	UMPLogManager::LogDebug(FString::Printf(TEXT("Updated player lists - Humans: %d, Cats: %d"), 
+	UManagerLog::LogDebug(FString::Printf(TEXT("Updated player lists - Humans: %d, Cats: %d"), 
 		humanPlayersList.Num(), catPlayersList.Num()), TEXT("HUDLobby"));
 }
 
@@ -257,7 +258,7 @@ void UHUDLobby::UpdateReadyState(bool inIsReady)
 {
 	isReady = inIsReady;
 	
-	UMPLogManager::LogDebug(FString::Printf(TEXT("Ready state updated: %s"), 
+	UManagerLog::LogDebug(FString::Printf(TEXT("Ready state updated: %s"), 
 		isReady ? TEXT("Ready") : TEXT("Not Ready")), TEXT("HUDLobby"));
 }
 
@@ -293,7 +294,7 @@ void UHUDLobby::UpdateHostVisibility()
 		}
 	}
 	
-	UMPLogManager::LogDebug(FString::Printf(TEXT("Host visibility updated: %s"), 
+	UManagerLog::LogDebug(FString::Printf(TEXT("Host visibility updated: %s"), 
 		isHost ? TEXT("Host") : TEXT("Client")), TEXT("HUDLobby"));
 }
 
@@ -314,13 +315,26 @@ void UHUDLobby::UpdateTeamButtonVisibility()
 		catJoinButton->SetVisibility(showCatJoin ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
 	}
 	
-	UMPLogManager::LogDebug(FString::Printf(TEXT("Team button visibility updated: Current Team: %d"), 
+	UManagerLog::LogDebug(FString::Printf(TEXT("Team button visibility updated: Current Team: %d"), 
 		(int32)currentTeam), TEXT("HUDLobby"));
+}
+
+void UHUDLobby::UpdateCountdownText(int32 secondsRemaining)
+{
+	if (countdownText)
+	{
+		FString countdownString = FString::Printf(TEXT("Game starts in %d seconds"), secondsRemaining);
+		countdownText->SetText(FText::FromString(countdownString));
+	}
+	else
+	{
+		UManagerLog::LogWarning(TEXT("Countdown text widget is not set"), TEXT("HUDLobby"));
+	}
 }
 
 void UHUDLobby::OnHumanJoinButtonClicked()
 {
-	UMPLogManager::LogInfo(TEXT("Join Human button clicked"), TEXT("HUDLobby"));
+	UManagerLog::LogInfo(TEXT("Join Human button clicked"), TEXT("HUDLobby"));
 	
 	if (owner)
 	{
@@ -330,13 +344,13 @@ void UHUDLobby::OnHumanJoinButtonClicked()
 	}
 	else
 	{
-		UMPLogManager::LogError(TEXT("Owner is null, cannot switch team"), TEXT("HUDLobby"));
+		UManagerLog::LogError(TEXT("Owner is null, cannot switch team"), TEXT("HUDLobby"));
 	}
 }
 
 void UHUDLobby::OnCatJoinButtonClicked()
 {
-	UMPLogManager::LogInfo(TEXT("Join Cat button clicked"), TEXT("HUDLobby"));
+	UManagerLog::LogInfo(TEXT("Join Cat button clicked"), TEXT("HUDLobby"));
 	
 	if (owner)
 	{
@@ -346,13 +360,13 @@ void UHUDLobby::OnCatJoinButtonClicked()
 	}
 	else
 	{
-		UMPLogManager::LogError(TEXT("Owner is null, cannot switch team"), TEXT("HUDLobby"));
+		UManagerLog::LogError(TEXT("Owner is null, cannot switch team"), TEXT("HUDLobby"));
 	}
 }
 
 void UHUDLobby::OnHumanAddButtonClicked()
 {
-	UMPLogManager::LogInfo(TEXT("Add Human button clicked"), TEXT("HUDLobby"));
+	UManagerLog::LogInfo(TEXT("Add Human button clicked"), TEXT("HUDLobby"));
 	
 	if (owner && isHost)
 	{
@@ -360,13 +374,13 @@ void UHUDLobby::OnHumanAddButtonClicked()
 	}
 	else
 	{
-		UMPLogManager::LogWarning(TEXT("Cannot add human bot - not host or owner is null"), TEXT("HUDLobby"));
+		UManagerLog::LogWarning(TEXT("Cannot add human bot - not host or owner is null"), TEXT("HUDLobby"));
 	}
 }
 
 void UHUDLobby::OnCatAddButtonClicked()
 {
-	UMPLogManager::LogInfo(TEXT("Add Cat button clicked"), TEXT("HUDLobby"));
+	UManagerLog::LogInfo(TEXT("Add Cat button clicked"), TEXT("HUDLobby"));
 	
 	if (owner && isHost)
 	{
@@ -374,13 +388,13 @@ void UHUDLobby::OnCatAddButtonClicked()
 	}
 	else
 	{
-		UMPLogManager::LogWarning(TEXT("Cannot add cat bot - not host or owner is null"), TEXT("HUDLobby"));
+		UManagerLog::LogWarning(TEXT("Cannot add cat bot - not host or owner is null"), TEXT("HUDLobby"));
 	}
 }
 
 void UHUDLobby::OnRemoveBotClicked(int32 playerIndex)
 {
-	UMPLogManager::LogInfo(FString::Printf(TEXT("Remove bot clicked for index: %d"), playerIndex), TEXT("HUDLobby"));
+	UManagerLog::LogInfo(FString::Printf(TEXT("Remove bot clicked for index: %d"), playerIndex), TEXT("HUDLobby"));
 	
 	if (owner && isHost)
 	{
@@ -388,7 +402,7 @@ void UHUDLobby::OnRemoveBotClicked(int32 playerIndex)
 	}
 	else
 	{
-		UMPLogManager::LogWarning(TEXT("Cannot remove bot - not host or owner is null"), TEXT("HUDLobby"));
+		UManagerLog::LogWarning(TEXT("Cannot remove bot - not host or owner is null"), TEXT("HUDLobby"));
 	}
 }
 
@@ -398,12 +412,12 @@ void UHUDLobby::UpdateUI()
 	UpdateTeamButtonVisibility();
 }
 
-UHUDLobbyEntry* UHUDLobby::CreateLobbyEntry(const FString& playerName, bool isBot, bool isReady, 
+UHUDLobbyEntry* UHUDLobby::CreateLobbyEntry(const FString& playerName, bool isBot, bool isEntryReady, 
 	ETeam team, int32 playerIndex, AMPControllerPlayer* playerController, AMPAIController* aiController)
 {
 	if (!lobbyEntryClass)
 	{
-		UMPLogManager::LogError(TEXT("Lobby entry class is not set"), TEXT("HUDLobby"));
+		UManagerLog::LogError(TEXT("Lobby entry class is not set"), TEXT("HUDLobby"));
 		return nullptr;
 	}
 	
@@ -411,12 +425,12 @@ UHUDLobbyEntry* UHUDLobby::CreateLobbyEntry(const FString& playerName, bool isBo
 	UHUDLobbyEntry* entry = CreateWidget<UHUDLobbyEntry>(this, lobbyEntryClass);
 	if (!entry)
 	{
-		UMPLogManager::LogError(TEXT("Failed to create lobby entry widget"), TEXT("HUDLobby"));
+		UManagerLog::LogError(TEXT("Failed to create lobby entry widget"), TEXT("HUDLobby"));
 		return nullptr;
 	}
 	
 	// Initialize the entry
-	entry->InitializeEntry(playerName, isBot, isReady, team, playerIndex, playerController, aiController);
+	entry->InitializeEntry(playerName, isBot, isEntryReady, team, playerIndex, playerController, aiController);
 	
 	// Bind remove bot event
 	entry->OnRemoveBotClicked.AddDynamic(this, &UHUDLobby::OnRemoveBotClicked);
@@ -424,7 +438,7 @@ UHUDLobbyEntry* UHUDLobby::CreateLobbyEntry(const FString& playerName, bool isBo
 	// Update host visibility
 	entry->UpdateHostVisibility(isHost);
 	
-	UMPLogManager::LogDebug(FString::Printf(TEXT("Created lobby entry: %s (Bot: %s, Team: %d)"), 
+	UManagerLog::LogDebug(FString::Printf(TEXT("Created lobby entry: %s (Bot: %s, Team: %d)"), 
 		*playerName, isBot ? TEXT("Yes") : TEXT("No"), (int32)team), TEXT("HUDLobby"));
 	
 	return entry;

@@ -3,7 +3,7 @@
 #include "CoreMinimal.h"
 #include "MPHUD.h"
 
-#include "CommonEnum.h"
+#include "../../../CommonEnum.h"
 #include "HUDCreateSession.generated.h"
 
 class UTextBlock;
@@ -29,7 +29,7 @@ protected:
     virtual void UpdateTexts() override;
     virtual bool ValidateRootWidget() override;
 
-private:
+protected:
     // Root widget
     UPROPERTY(meta = (BindWidget))
     UCanvasPanel* rootCanvas;

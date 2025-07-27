@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "AIController.h"
-#include "CommonEnum.h"
+#include "../../CommonEnum.h"
 #include "Perception/AIPerceptionTypes.h"
 #include "MPAIController.generated.h"
 
@@ -33,11 +33,10 @@ public:
     UFUNCTION(BlueprintCallable, Category="AI|Status")
     void ApplyStun(float DurationSeconds);
 
-protected:
+public:
     virtual void ClearStun();
 
     // Movement / action helpers
-    void MoveToRandomPoint(float Radius);
     void JumpTowards(const FVector& TargetLoc);
     // Attempt forced double jump to reach high location – blueprint can call
     UFUNCTION(BlueprintCallable, Category="AI|Movement")
@@ -46,8 +45,11 @@ protected:
     // Decide if falling from current loc to target loc is safe
     UFUNCTION(BlueprintCallable, Category="AI|Movement")
     virtual bool IsSafeFallingDestination(const FVector& TargetLoc) const { return false; }
+    
     void StartInteractWithActor(AActor* Target);
 
+    void MoveToRandomPoint(float Radius);
+protected:
     // Perception
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="AI")
     UAIPerceptionComponent* PerceptionComp;

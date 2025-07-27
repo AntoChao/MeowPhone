@@ -21,15 +21,15 @@ class AMPEnvActorComp;
 class AMPAISystemManager;
 class AMPAIController;
 
-class ULobbyManager;
-class UPreviewManager;
-class UMatchManager;
-class UAIControllerManager;
+class UManagerLobby;
+class UManagerPreview;
+class UManagerMatch;
+class UManagerAIController;
 
 // Old deprecated enum names removed. Use correct ones below.
 // Correct forward declarations for enums used in this header
 enum class EEnvActor : uint8;
-enum class EItem : uint8;
+enum class EMPItem : uint8;
 enum class EAbility : uint8;
 enum class ETeam : uint8;
 
@@ -37,74 +37,29 @@ UCLASS()
 class AMPGMGameplay : public AMPGM
 {
 	GENERATED_BODY()
-	
-public:
-	AMPGMGameplay();
 
 // gameplay common
 public:
+	AMPGMGameplay();
+	~AMPGMGameplay();
+
+public:
 	virtual void PostLogin(APlayerController* newPlayer) override;
-	
 	virtual void Logout(AController* exiting) override;
-	
 	virtual void BeginPlay() override;
 
-	UPROPERTY(BlueprintReadWrite, Category = "GameState Properties")
-		TArray<AMPControllerPlayer*> allPlayersControllers;
-	UPROPERTY(BlueprintReadWrite, Category = "Setup Properties")
-		TArray<AMPCharacter*> allPlayerCharacters;
-	UPROPERTY(BlueprintReadWrite, Category = "Setup Properties")
-		int itemRemainPercentage = 75;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawn Properties")
-		int envActorRandomnessPercentage = 80;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawn Properties")
-		TArray<FVector> allHumanSpawnLocations;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawn Properties")
-		TArray<FRotator> allHumanSpawnRotations;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawn Properties")
-		TArray<FVector> allCatSpawnLocations;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawn Properties")
-		TArray<FRotator> allCatSpawnRotations;
-	UPROPERTY(BlueprintReadWrite, Category = "Setup Properties")
-		int catAIIndex = 1;
-	UPROPERTY(BlueprintReadWrite, Category = "Setup Properties")
-		int humanAIIndex = 2;
-	UPROPERTY(BlueprintReadWrite, Category = "Setup Properties")
-		int aiManagerIndex = 0;
-	UPROPERTY(BlueprintReadWrite, Category = "Setup Properties")
-		AMPAISystemManager* theHumanAIManager = nullptr;
-
-
-// game state initialize
+// game state common
 protected:
 	UPROPERTY(BlueprintReadWrite, Category = "GameState Properties")
 		AMPGS* theGameState;
 	UFUNCTION(BlueprintCallable, Category = "GameState Methods")
 		void InitializeGameState();
 
-// gameplay lobby manager
-protected:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Lobby Properties")
-		int numOfPlayers;
-	UFUNCTION(BlueprintCallable, Category = "Lobby Methods")
-		void RemoveControlledCharacters(AMPControllerPlayer* aPlayer);
+public:
+	UFUNCTION(BlueprintCallable, Category = "GameState Methods")
+	AMPGS* GetGameState() const { return theGameState; }
 	
-// gameplay custom character 
-protected:
-
-// gameplay
-	// gameplay Setup
-protected:
-	UPROPERTY(BlueprintReadWrite, Category = "Setup Properties")
-		TArray<AMPAIController*> allAICats;
-	UPROPERTY(BlueprintReadWrite, Category = "Setup Properties")
-		TArray<AMPAIController*> allAIHumans;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawn Properties")
-		FVector spectatorSpawnLocation;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawn Properties")
-		FRotator spectatorSpawnRotation;
-		
-// factories
+// factories common
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Factory Properties")
 		TSubclassOf<UFactoryAIController> aiControllerFactoryClass;
@@ -119,35 +74,25 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Factory Properties")
 		TSubclassOf<UFactoryAbility> abilityFactoryClass;
 
-	UPROPERTY(BlueprintReadWrite, Category = "Factory Properties")
-		UFactoryAIController* aiControllerFactoryInstance;
-	UPROPERTY(BlueprintReadWrite, Category = "Factory Properties")
-		UFactoryHuman* humanFactoryInstance;
-	UPROPERTY(BlueprintReadWrite, Category = "Factory Properties")
-		UFactoryCat* catFactoryInstance;
-	UPROPERTY(BlueprintReadWrite, Category = "Factory Properties")
-		UFactoryEnvironment* environmentFactoryInstance;
-	UPROPERTY(BlueprintReadWrite, Category = "Factory Properties")
-		UFactoryItem* itemFactoryInstance;
-	UPROPERTY(BlueprintReadWrite, Category = "Factory Properties")
-		UFactoryAbility* abilityFactoryInstance;
-
 	UFUNCTION(BlueprintCallable, Category = "Factory Methods")
-		void SetupFactoryInstances();
+	void InitializeFactoryInstances();
 
-public :
-	UFUNCTION(BlueprintCallable, Category = "Factory Methods")
-		AMPEnvActorComp* SpawnEnvironment(EEnvActor envTag, FVector spawnLocation, FRotator spawnRotation);
-	UFUNCTION(BlueprintCallable, Category = "Factory Methods")
-		AMPItem* SpawnItem(EItem itemTag, FVector spawnLocation, FRotator spawnRotation);
-	UFUNCTION(BlueprintCallable, Category = "Factory Methods")
-		UMPAbility* SpawnAbility(AActor* abilityOwner, EAbility abilityTag);
+public:
+	// Factory instances now public to allow access from manager classes
+	UPROPERTY(BlueprintReadWrite, Category = "Factory Properties")
+	UFactoryAIController* aiControllerFactoryInstance;
+	UPROPERTY(BlueprintReadWrite, Category = "Factory Properties")
+	UFactoryHuman* humanFactoryInstance;
+	UPROPERTY(BlueprintReadWrite, Category = "Factory Properties")
+	UFactoryCat* catFactoryInstance;
+	UPROPERTY(BlueprintReadWrite, Category = "Factory Properties")
+	UFactoryEnvironment* environmentFactoryInstance;
+	UPROPERTY(BlueprintReadWrite, Category = "Factory Properties")
+	UFactoryItem* itemFactoryInstance;
+	UPROPERTY(BlueprintReadWrite, Category = "Factory Properties")
+	UFactoryAbility* abilityFactoryInstance;
 
-// game process
-protected:
-	FTimerHandle readyTimerHandle;
-	FTimerHandle restartLobbyTimerHandle;
-
+// debug support
 protected:
 	// Debug mode settings - can be changed in Blueprint
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug Settings")
@@ -155,19 +100,44 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug Settings")
 		bool multiplayerDebugMode = false;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug Settings")
-		ETeam debugPlayer = ETeam::EHuman;
+		ETeam debugPlayer;
 
 public:
-	// All lobby, team, and bot methods are now in their respective managers
-	
-	// Client RPC for countdown updates
-	UFUNCTION(Client, Reliable, Category = "Lobby Methods")
-		void ClientUpdateReadyCountdown(int32 secondsRemaining);
-	
-	UFUNCTION(Client, Reliable, Category = "Lobby Methods")
-		void ClientUpdateCustomizationCountdown(int32 secondsRemaining);
-	
-	// Player list access
+	UFUNCTION(BlueprintCallable, Category = "Debug Methods")
+	bool GetSinglePlayerDebugMode() const { return singlePlayerDebugMode; }
+	UFUNCTION(BlueprintCallable, Category = "Debug Methods")
+	bool GetMultiplayerDebugMode() const { return multiplayerDebugMode; }
+
+	UFUNCTION(BlueprintCallable, Category = "Debug Methods")
+		FString GetDebugModeStatus() const;
+	UFUNCTION(BlueprintCallable, Category = "Debug Methods")
+		void SetSinglePlayerDebugMode(bool enabled) { singlePlayerDebugMode = enabled; }
+	UFUNCTION(BlueprintCallable, Category = "Debug Methods")
+		void SetMultiplayerDebugMode(bool enabled) { multiplayerDebugMode = enabled; }
+
+// managers common
+protected:
+	void InitializeAllManagers();
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Managers")
+	UManagerLobby* ManagerLobby;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Managers")
+	UManagerAIController* ManagerAIController;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Managers")
+	UManagerPreview* ManagerPreview;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Managers")
+	UManagerMatch* ManagerMatch;
+
+// manager lobby
+protected:
+	UPROPERTY(BlueprintReadWrite, Category = "GameState Properties")
+		TArray<AMPControllerPlayer*> allPlayersControllers;
+	UPROPERTY(BlueprintReadWrite, Category = "Setup Properties")
+		TArray<AMPCharacter*> allPlayerCharacters;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Lobby Properties")
+		int numOfPlayers;
+
+public:
 	UFUNCTION(BlueprintCallable, Category = "Player Methods")
 		TArray<AMPControllerPlayer*> GetAllPlayerControllers() const { return allPlayersControllers; }
 	
@@ -176,31 +146,106 @@ public:
 		TArray<AMPControllerPlayer*> GetHumanPlayers() const;
 	UFUNCTION(BlueprintCallable, Category = "Player Methods")
 		TArray<AMPControllerPlayer*> GetCatPlayers() const;
+
+	UFUNCTION(BlueprintCallable, Category = "GameProgress Methods")
+		void RestartLobby();
+
+public:
+	UFUNCTION(BlueprintCallable, Category = "GameProgress Methods")
+		bool AddBot(ETeam team);
+	UFUNCTION(BlueprintCallable, Category = "GameProgress Methods")
+		bool RemoveBot(int32 playerIndex);
+
+public:
+	FTimerHandle readyTimerHandle;
+	FTimerHandle restartLobbyTimerHandle;
+
+	UFUNCTION(BlueprintCallable, Category = "Lobby Methods")
+	void RemoveControlledCharacters(AMPControllerPlayer* aPlayer);
+
 	
-	// AI list access
+// manager preview
+protected:
+    // Preview system for lobby customization
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Preview")
+    TArray<FVector> characterPreviewLocations; // Set in Blueprint, size 8
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Preview")
+    TArray<FRotator> characterPreviewRotations; // Set in Blueprint, size 8
+
+public:
+	UFUNCTION(BlueprintCallable, Category = "GameProgress Methods")
+	void StartCustomizeCharacter();
+	UFUNCTION(BlueprintCallable, Category = "GameProgress Methods")
+	void CountdownCustomizeCharacter();
+	UFUNCTION(BlueprintCallable, Category = "GameProgress Methods")
+	void EndCustomizeCharacter();
+
+	// Preview system API now handled by ManagerPreview
+    UFUNCTION(BlueprintCallable, Category = "Preview")
+    int32 GetPlayerPreviewSlot(AMPControllerPlayer* Player) const;
+    UFUNCTION(BlueprintCallable, Category = "Preview")
+    void RequestPreviewCharacterUpdate(AMPControllerPlayer* Player, ETeam Team, int CatRace, int HumanProfession, int Hat);
+
+public:
+	// Client RPC for countdown updates
+	UFUNCTION(Client, Reliable, Category = "Lobby Methods")
+	void ClientUpdateCustomizationCountdown(int32 secondsRemaining);
+
+// manager ai controller
+protected:
+	UPROPERTY(BlueprintReadWrite, Category = "Setup Properties")
+		AMPAISystemManager* theHumanAIManager = nullptr;
+
+	UPROPERTY(BlueprintReadWrite, Category = "Setup Properties")
+	int catAIIndex = 1;
+	UPROPERTY(BlueprintReadWrite, Category = "Setup Properties")
+	int humanAIIndex = 2;
+	UPROPERTY(BlueprintReadWrite, Category = "Setup Properties")
+	int aiManagerIndex = 0;
+
+	UPROPERTY(BlueprintReadWrite, Category = "Setup Properties")
+		TArray<AMPAIController*> allAICats;
+	UPROPERTY(BlueprintReadWrite, Category = "Setup Properties")
+		TArray<AMPAIController*> allAIHumans;
+
+public:
+		// AI list access
 	UFUNCTION(BlueprintCallable, Category = "AI Methods")
 		TArray<AMPAIController*> GetAllHumanAIs() const { return allAIHumans; }
 	UFUNCTION(BlueprintCallable, Category = "AI Methods")
 		TArray<AMPAIController*> GetAllCatAIs() const { return allAICats; }
-	
-	// Team-specific AI lists
-	UFUNCTION(BlueprintCallable, Category = "AI Methods")
-		TArray<AMPAIController*> GetHumanAIs() const { return allAIHumans; }
-	UFUNCTION(BlueprintCallable, Category = "AI Methods")
-		TArray<AMPAIController*> GetCatAIs() const { return allAICats; }
 
-	// Game restart methods
-	UFUNCTION(BlueprintCallable, Category = "GameProgress Methods")
-		void RestartLobby();
+	// manager match
+protected:
+	UPROPERTY(BlueprintReadWrite, Category = "Setup Properties")
+		int itemRemainPercentage = 75;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawn Properties")
+		int envActorRandomnessPercentage = 80;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawn Properties")
+		TArray<FVector> allHumanSpawnLocations;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawn Properties")
+		TArray<FRotator> allHumanSpawnRotations;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawn Properties")
+		TArray<FVector> allCatSpawnLocations;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawn Properties")
+		TArray<FRotator> allCatSpawnRotations;
 	
-		// start game
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawn Properties")
+		FVector spectatorSpawnLocation;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawn Properties")
+		FRotator spectatorSpawnRotation;
+	
+public :
+	UFUNCTION(BlueprintCallable, Category = "Factory Methods")
+		AMPEnvActorComp* SpawnEnvironment(EEnvActor envTag, FVector spawnLocation, FRotator spawnRotation);
+	UFUNCTION(BlueprintCallable, Category = "Factory Methods")
+		AMPItem* SpawnItem(EMPItem itemTag, FVector spawnLocation, FRotator spawnRotation);
+	UFUNCTION(BlueprintCallable, Category = "Factory Methods")
+		AMPAbility* SpawnAbility(AActor* abilityOwner, EAbility abilityTag);
+
 	UFUNCTION(BlueprintCallable, Category = "GameProgress Methods")
 		void StartGame();
 
-protected :
-	// All game setup and progress methods are now in MatchManager
-	
-public :
 	UFUNCTION(BlueprintCallable, Category = "GameProgress Methods")
 		bool CheckIfGameEnd();
 	UFUNCTION(BlueprintCallable, Category = "GameProgress Methods")
@@ -214,48 +259,4 @@ public :
 	
 	UFUNCTION(BlueprintCallable, Category = "GameProgress Methods")
 		void DisplayProgressionStatus();
-	
-// setters and getters
-public :
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Managers")
-    ULobbyManager* LobbyManager;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Managers")
-    UAIControllerManager* AIControllerManager;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Managers")
-    UPreviewManager* PreviewManager;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Managers")
-	UMatchManager* MatchManager;
-	
-	UFUNCTION(BlueprintCallable, Category = "Setter && Getter")
-		void SetNumAICats(int aiCatNum);
-	UFUNCTION(BlueprintCallable, Category = "Setter && Getter")
-		void SetNumAIHumans(int aiHumanNum);
-
-	// Debug mode helpers
-	UFUNCTION(BlueprintCallable, Category = "Debug Methods")
-		bool IsSinglePlayerDebugMode() const { return singlePlayerDebugMode; }
-	UFUNCTION(BlueprintCallable, Category = "Debug Methods")
-		bool IsMultiplayerDebugMode() const { return multiplayerDebugMode; }
-	UFUNCTION(BlueprintCallable, Category = "Debug Methods")
-		FString GetDebugModeStatus() const;
-	UFUNCTION(BlueprintCallable, Category = "Debug Methods")
-		void SetSinglePlayerDebugMode(bool enabled) { singlePlayerDebugMode = enabled; }
-	UFUNCTION(BlueprintCallable, Category = "Debug Methods")
-		void SetMultiplayerDebugMode(bool enabled) { multiplayerDebugMode = enabled; }
-
-public:
-    // Preview system API now handled by PreviewManager
-    UFUNCTION(BlueprintCallable, Category = "Preview")
-    int32 GetPlayerPreviewSlot(AMPControllerPlayer* Player) const;
-    UFUNCTION(BlueprintCallable, Category = "Preview")
-    void RequestPreviewCharacterUpdate(AMPControllerPlayer* Player, ETeam Team, int CatRace, int HumanProfession, int Hat);
-
-protected:
-    // Preview system for lobby customization
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Preview")
-    TArray<FVector> characterPreviewLocations; // Set in Blueprint, size 8
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Preview")
-    TArray<FRotator> characterPreviewRotations; // Set in Blueprint, size 8
-
-    // Preview management is now in PreviewManager
 };

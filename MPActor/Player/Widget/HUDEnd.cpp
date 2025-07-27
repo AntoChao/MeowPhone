@@ -2,12 +2,7 @@
 #include "Components/TextBlock.h"
 #include "Components/ProgressBar.h"
 #include "Components/Button.h"
-#include "MPControllerPlayer.h"
-
-UHUDEnd::UHUDEnd()
-{
-
-}
+#include "../MPControllerPlayer.h"
 
 void UHUDEnd::NativeConstruct()
 {

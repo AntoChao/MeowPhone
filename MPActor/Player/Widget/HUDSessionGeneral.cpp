@@ -2,9 +2,9 @@
 #include "Components/TextBlock.h"
 #include "Components/Button.h"
 #include "Components/CanvasPanel.h"
-#include "HighLevel/MPGI.h"
-#include "HighLevel/MPLogManager.h"
-#include "MPActor/Player/MPControllerPlayer.h"
+#include "../../../HighLevel/MPGI.h"
+#include "../../../HighLevel/Managers/ManagerLog.h"
+#include "../MPControllerPlayer.h"
 
 void UHUDSessionGeneral::NativeConstruct()
 {
@@ -13,7 +13,7 @@ void UHUDSessionGeneral::NativeConstruct()
 	// Validate root widget first
 	if (!ValidateRootWidget())
 	{
-		UMPLogManager::LogError(TEXT("Root widget validation failed!"), TEXT("HUDSessionGeneral"));
+		UManagerLog::LogError(TEXT("Root widget validation failed!"), TEXT("HUDSessionGeneral"));
 		return;
 	}
 	
@@ -101,7 +101,7 @@ bool UHUDSessionGeneral::ValidateRootWidget()
 {
 	if (!rootCanvas)
 	{
-		UMPLogManager::LogError(TEXT("Root canvas is missing!"), TEXT("HUDSessionGeneral"));
+		UManagerLog::LogError(TEXT("Root canvas is missing!"), TEXT("HUDSessionGeneral"));
 		return false;
 	}
 	return true;
@@ -110,11 +110,11 @@ bool UHUDSessionGeneral::ValidateRootWidget()
 // Button click functions
 void UHUDSessionGeneral::OnCreateSessionClicked()
 {
-	UMPLogManager::LogInfo(TEXT("Create session clicked"), TEXT("HUDSessionGeneral"));
+	UManagerLog::LogInfo(TEXT("Create session clicked"), TEXT("HUDSessionGeneral"));
 	
 	if (!owner)
 	{
-		UMPLogManager::LogError(TEXT("Owner is null, cannot navigate"), TEXT("HUDSessionGeneral"));
+		UManagerLog::LogError(TEXT("Owner is null, cannot navigate"), TEXT("HUDSessionGeneral"));
 		return;
 	}
 	
@@ -122,16 +122,16 @@ void UHUDSessionGeneral::OnCreateSessionClicked()
 	owner->RemoveHUD(EHUDType::ESessionGeneral);
 	owner->AttachHUD(EHUDType::ECreateSession, 0);
 	
-	UMPLogManager::LogInfo(TEXT("Switched to Create Session HUD"), TEXT("HUDSessionGeneral"));
+	UManagerLog::LogInfo(TEXT("Switched to Create Session HUD"), TEXT("HUDSessionGeneral"));
 }
 
 void UHUDSessionGeneral::OnSearchSessionClicked()
 {
-	UMPLogManager::LogInfo(TEXT("Search session clicked"), TEXT("HUDSessionGeneral"));
+	UManagerLog::LogInfo(TEXT("Search session clicked"), TEXT("HUDSessionGeneral"));
 	
 	if (!owner)
 	{
-		UMPLogManager::LogError(TEXT("Owner is null, cannot navigate"), TEXT("HUDSessionGeneral"));
+		UManagerLog::LogError(TEXT("Owner is null, cannot navigate"), TEXT("HUDSessionGeneral"));
 		return;
 	}
 	
@@ -139,16 +139,16 @@ void UHUDSessionGeneral::OnSearchSessionClicked()
 	owner->RemoveHUD(EHUDType::ESessionGeneral);
 	owner->AttachHUD(EHUDType::ESearchSession, 0);
 	
-	UMPLogManager::LogInfo(TEXT("Switched to Search Session HUD"), TEXT("HUDSessionGeneral"));
+	UManagerLog::LogInfo(TEXT("Switched to Search Session HUD"), TEXT("HUDSessionGeneral"));
 }
 
 void UHUDSessionGeneral::OnBackClicked()
 {
-	UMPLogManager::LogInfo(TEXT("Back clicked"), TEXT("HUDSessionGeneral"));
+	UManagerLog::LogInfo(TEXT("Back clicked"), TEXT("HUDSessionGeneral"));
 	
 	if (!owner)
 	{
-		UMPLogManager::LogError(TEXT("Owner is null, cannot navigate"), TEXT("HUDSessionGeneral"));
+		UManagerLog::LogError(TEXT("Owner is null, cannot navigate"), TEXT("HUDSessionGeneral"));
 		return;
 	}
 	
@@ -156,5 +156,5 @@ void UHUDSessionGeneral::OnBackClicked()
 	owner->RemoveHUD(EHUDType::ESessionGeneral);
 	owner->AttachHUD(EHUDType::EInit, 0);
 	
-	UMPLogManager::LogInfo(TEXT("Switched back to Init HUD"), TEXT("HUDSessionGeneral"));
+	UManagerLog::LogInfo(TEXT("Switched back to Init HUD"), TEXT("HUDSessionGeneral"));
 }

@@ -11,7 +11,7 @@
 
 #include "../../CommonEnum.h"
 #include "../../CommonStruct.h"
-#include "../../HighLevel/MPLogManager.h"
+#include "../../HighLevel/Managers/ManagerLog.h"
 
 #include "../../HighLevel/MPGMGameplay.h"
 #include "MPCharacterHuman.h"
@@ -136,7 +136,7 @@ void AMPCharacterCat::BeInteracted(AMPCharacter* player)
 {
     if (!IsValid(player))
     {
-		UMPLogManager::LogWarning(TEXT("Invalid player provided for interaction"), TEXT("MPCharacterCat"));
+		UManagerLog::LogWarning(TEXT("Invalid player provided for interaction"), TEXT("MPCharacterCat"));
         return;
     }
 
@@ -257,14 +257,14 @@ void AMPCharacterCat::PerformDoubleJump()
 	SetAir(EAirState::Jump);
 	SetContext(ECatContext::VerticalJump);
 	
-	UMPLogManager::LogInfo(TEXT("Cat performed double jump"), TEXT("MPCharacterCat"));
+	UManagerLog::LogInfo(TEXT("Cat performed double jump"), TEXT("MPCharacterCat"));
 }
 
 void AMPCharacterCat::Interact()
 {
 	if (!CheckIfIsAbleToInteract()) return;
 
-	if (detectInteractableActor.IsValid())
+	if (detectInteractableActor)
         {
             detectInteractableActor->BeInteracted(this);
     }
@@ -331,7 +331,7 @@ void AMPCharacterCat::StartedToBeHold(AMPCharacter* humanPlayer)
 {
     if (!IsValid(humanPlayer))
     {
-		UMPLogManager::LogWarning(TEXT("Invalid human player provided for holding"), TEXT("MPCharacterCat"));
+		UManagerLog::LogWarning(TEXT("Invalid human player provided for holding"), TEXT("MPCharacterCat"));
         return;
     }
 
@@ -342,7 +342,7 @@ void AMPCharacterCat::StartedToBeHold(AMPCharacter* humanPlayer)
     struggleBar = 0.0f;
 		curHoldTime = 0.0f;
     
-		UMPLogManager::LogInfo(TEXT("Cat started being held"), TEXT("MPCharacterCat"));
+		UManagerLog::LogInfo(TEXT("Cat started being held"), TEXT("MPCharacterCat"));
 	}
 }
 
@@ -359,7 +359,7 @@ void AMPCharacterCat::Straggle()
 			humanHolding->ForceReleaseCat();
 		}
 		
-		UMPLogManager::LogInfo(TEXT("Cat struggled free"), TEXT("MPCharacterCat"));
+		UManagerLog::LogInfo(TEXT("Cat struggled free"), TEXT("MPCharacterCat"));
 	}
 }
 
@@ -370,7 +370,7 @@ void AMPCharacterCat::EndToBeHold()
 		humanHolding = nullptr;
 		SetInteraction(ECatInteractionState::None);
 		
-		UMPLogManager::LogInfo(TEXT("Cat stopped being held"), TEXT("MPCharacterCat"));
+		UManagerLog::LogInfo(TEXT("Cat stopped being held"), TEXT("MPCharacterCat"));
     }
 }
 
@@ -378,14 +378,14 @@ void AMPCharacterCat::StartToBeRubbed(AMPCharacterHuman* humanToRub)
 {
     if (!IsValid(humanToRub))
     {
-		UMPLogManager::LogWarning(TEXT("Invalid human provided for rubbing"), TEXT("MPCharacterCat"));
+		UManagerLog::LogWarning(TEXT("Invalid human provided for rubbing"), TEXT("MPCharacterCat"));
         return;
     }
 
 	humanRubbing = humanToRub;
     SetInteraction(ECatInteractionState::BeingRubbed);
 	
-	UMPLogManager::LogInfo(TEXT("Cat started being rubbed"), TEXT("MPCharacterCat"));
+	UManagerLog::LogInfo(TEXT("Cat started being rubbed"), TEXT("MPCharacterCat"));
 }
 
 void AMPCharacterCat::StopToBeRubbed()
@@ -393,7 +393,7 @@ void AMPCharacterCat::StopToBeRubbed()
 	humanRubbing = nullptr;
 	SetInteraction(ECatInteractionState::None);
 	
-	UMPLogManager::LogInfo(TEXT("Cat stopped being rubbed"), TEXT("MPCharacterCat"));
+	UManagerLog::LogInfo(TEXT("Cat stopped being rubbed"), TEXT("MPCharacterCat"));
 }
 
 FVector AMPCharacterCat::GetHoldAnimLeftHandPosition() const
@@ -413,6 +413,30 @@ FVector AMPCharacterCat::GetHoldAnimRightHandPosition() const
     }
     return FVector::ZeroVector;
 }
+
+float AMPCharacterCat::GetStruggleBarPercentage() 
+{ 
+	return struggleBarMax > 0.0f ? struggleBar / struggleBarMax : 0.0f; 
+}
+
+// State getters
+bool AMPCharacterCat::IsBeingHeld()
+{ 
+	return animState.curInteraction == ECatInteractionState::BeingHeld; 
+}
+bool AMPCharacterCat::IsRubbing()
+{ 
+	return animState.curInteraction == ECatInteractionState::BeingRubbed; 
+}
+AMPCharacterHuman* AMPCharacterCat::GetHumanHolding()
+{ 
+	return IsValid(humanHolding) ? humanHolding : nullptr; 
+}
+AMPCharacterHuman* AMPCharacterCat::GetHumanRubbing() 
+{ 
+	return IsValid(humanRubbing) ? humanRubbing : nullptr; 
+}
+
 
 // 5.6 ability related
 void AMPCharacterCat::InitializeAllAbility()
@@ -576,11 +600,6 @@ void AMPCharacterCat::PlayCatContextAnimMontage(ECatContext context)
 void AMPCharacterCat::OnMontageEndedContextClear(UAnimMontage* montage, bool bInterrupted)
 {
 	animState.curContext = ECatContext::None;
-	switch (montage)
-	{
-		default:
-			break;
-	}
 }
 
 // 7. special condition

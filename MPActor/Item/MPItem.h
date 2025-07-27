@@ -5,10 +5,10 @@
 #include "../MPInteractable.h"
 
 #include "TimerManager.h"
-
+#include "../MPPlaySoundInterface.h"
 #include "MPItem.generated.h"
 
-enum class EItem : uint8;
+enum class EMPItem : uint8;
 class UStaticMeshComponent;
 class UBoxComponent;
 class UAudioComponent;
@@ -28,7 +28,7 @@ protected :
         FText itemName;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Common Properties")
-        EItem itemTag;
+        EMPItem itemTag;
 
 // components
 protected :
@@ -56,7 +56,7 @@ public:
         virtual bool IsInteractable(AMPCharacter* player) override;
 
     // Change return type to FName for localization key
-    virtual FName GetInteractHintTextKey(AMPCharacter* player);
+        virtual FText GetInteractHintText(AMPCharacter* player) override;
 
     UFUNCTION(BlueprintCallable, Category = "Interface Method")
         virtual void BeInteracted(AMPCharacter* player) override;

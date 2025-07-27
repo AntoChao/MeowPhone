@@ -4,6 +4,9 @@
 #include "MPAIController.h"
 #include "MPAIControllerHumanPlayer.generated.h"
 
+class AMPAISystemManager;
+class AMPEnvActorComp;
+
 UCLASS(Blueprintable)
 class AMPAIControllerHumanPlayer : public AMPAIController
 {
@@ -13,6 +16,7 @@ public:
 
     virtual void BeginPlay() override;
     virtual void Tick(float DeltaSeconds) override;
+
 
 protected:
     virtual void OnPerceptionUpdated(const TArray<AActor*>& UpdatedActors) override;
@@ -32,7 +36,22 @@ protected:
     FName BB_PerceivedCat = TEXT("PerceivedCat");
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Blackboard")
     FName BB_NoiseLocation = TEXT("NoiseLocation");
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Blackboard")
+    FName BB_GlobalTaskActor = TEXT("GlobalTaskActor");
 
     // Decision making
     virtual void ChooseNextVoluntaryAction() override;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI|System")
+	AMPAISystemManager* AISystem = nullptr;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    bool isBeingAssined;
+
+public:
+    void SetAISystem(AMPAISystemManager* theManager);
+
+    bool IsBusyWithGlobalTask();
+
+    void AssignGlobalTask(AMPEnvActorComp* urgentActor);
 }; 

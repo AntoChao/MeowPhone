@@ -17,9 +17,7 @@ class IMPPlaySoundInterface
     GENERATED_BODY()
 
 public:
-    UFUNCTION(BlueprintCallable, Category = "Interface Method")
-        virtual void PlaySoundLocally(USoundCue* aSound) = 0;
+    virtual void PlaySoundLocally(USoundCue* aSound) = 0;
 
-    UFUNCTION(BlueprintCallable, Category = "Interface Method")
-        virtual void PlaySoundBroadcast(USoundCue* aSound) = 0;
+    virtual void PlaySoundBroadcast(USoundCue* aSound) = 0;
 };

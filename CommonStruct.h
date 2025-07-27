@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "CommonEnum.h"
 #include "CommonStruct.generated.h"
 
 class AMissionZone;
@@ -121,7 +122,6 @@ struct FLocalizedText
     FText spanishText;
 
     // Helper function to get text based on current language
-    UFUNCTION(BlueprintCallable, Category = "Localization")
     FText GetLocalizedText(ELanguage language) const
     {
         switch (language)
@@ -154,7 +154,6 @@ struct FResolution
     FResolution(int32 w, int32 h) : width(w), height(h) {}
 
     // Helper function to get display string
-    UFUNCTION(BlueprintCallable, Category = "Resolution")
     FString GetDisplayString() const
     {
         return FString::Printf(TEXT("%dx%d"), width, height);

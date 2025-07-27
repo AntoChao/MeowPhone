@@ -1,7 +1,7 @@
 #include "MPAISystemManager.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
-#include "MPAIControllerHuman.h"
+#include "../AI/MPAIControllerHumanPlayer.h"
 #include "../EnvActor/MPEnvActorComp.h"
 
 AMPAISystemManager::AMPAISystemManager()
@@ -18,11 +18,11 @@ void AMPAISystemManager::Initialize()
 void AMPAISystemManager::LocateAIHumans()
 {
     TArray<AActor*> allActors;
-    UGameplayStatics::GetAllActorsOfClass(GetWorld(), AMPAIControllerHuman::StaticClass(), allActors);
+    UGameplayStatics::GetAllActorsOfClass(GetWorld(), AMPAIControllerHumanPlayer::StaticClass(), allActors);
 
     for (AActor* eachActor : allActors)
     {
-        AMPAIControllerHuman* eachHumanController = Cast<AMPAIControllerHuman>(eachActor);
+        AMPAIControllerHumanPlayer* eachHumanController = Cast<AMPAIControllerHumanPlayer>(eachActor);
         if (eachHumanController)
         {
             eachHumanController->SetAISystem(this);
@@ -61,7 +61,7 @@ void AMPAISystemManager::ReceiveUrgentNotification(AMPEnvActorComp* eventActor)
 void AMPAISystemManager::AllocateUrgent()
 {
     // Example: Iterate over all spawned AI characters and trigger an urgent behavior.
-    for (AMPAIController* eachHumanController : allAIHumanControllers)
+    for (AMPAIControllerHumanPlayer* eachHumanController : allAIHumanControllers)
     {
         if (eachHumanController && !eachHumanController->IsBusyWithGlobalTask())
         {

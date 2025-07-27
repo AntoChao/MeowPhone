@@ -1,25 +1,23 @@
-#include "Managers/LobbyManager.h"
-#include "HighLevel/MPGMGameplay.h"
-#include "MPActor/Player/MPControllerPlayer.h"
-#include "MPActor/Player/MPPlayerState.h"
-#include "HighLevel/MPLogManager.h"
-#include "MPGS.h"
+#include "../Managers/ManagerLobby.h"
 #include "TimerManager.h"
 
-void ULobbyManager::Initialize(AMPGMGameplay* InGameMode)
-{
-    GameMode = InGameMode;
-}
+#include "../MPGMGameplay.h"
+#include "../Managers/ManagerLog.h"
+#include "../MPGS.h"
+#include "../../MPActor/Player/Widget/HUDManagerLobby.h"
+#include "../../MPActor/Player/Widget/HUDLobby.h"
+#include "../../MPActor/Player/MPControllerPlayer.h"
+#include "../../MPActor/Player/MPPlayerState.h"
 
-void ULobbyManager::StartLobby()
+void UManagerLobby::StartLobby()
 {
-    if (!GameMode || !GameMode->theGameState) return;
-    GameMode->theGameState->curGameplayStatus = EGPStatus::ELobby;
+    if (!GameMode || !GameMode->GetGameState()) return;
+    GameMode->GetGameState()->curGameplayStatus = EGPStatus::ELobby;
 
     // Log debug mode status
-    if (GameMode->singlePlayerDebugMode || GameMode->multiplayerDebugMode)
+    if (GameMode->GetSinglePlayerDebugMode() || GameMode->GetMultiplayerDebugMode())
     {
-        UMPLogManager::LogInfo(FString::Printf(TEXT("Debug mode status: %s"), *GameMode->GetDebugModeStatus()), TEXT("MPGMGameplay"));
+        UManagerLog::LogInfo(FString::Printf(TEXT("Debug mode status: %s"), *GameMode->GetDebugModeStatus()), TEXT("MPGMGameplay"));
     }
 
     // Auto-assign teams for any unassigned players
@@ -35,13 +33,13 @@ void ULobbyManager::StartLobby()
     }
 }
 
-bool ULobbyManager::CheckReadyToStartGame() const
+bool UManagerLobby::CheckReadyToStartGame() const
 {
-    if (GameMode->singlePlayerDebugMode)
+    if (GameMode->GetSinglePlayerDebugMode())
     {
         return CheckAtLeastOnePlayerReady();
     }
-    else if (GameMode->multiplayerDebugMode)
+    else if (GameMode->GetMultiplayerDebugMode())
     {
         return CheckAtLeastOnePlayerReady();
     }
@@ -51,7 +49,7 @@ bool ULobbyManager::CheckReadyToStartGame() const
     }
 }
 
-bool ULobbyManager::CheckAtLeastOnePlayerReady() const
+bool UManagerLobby::CheckAtLeastOnePlayerReady() const
 {
     for (AMPControllerPlayer* eachPlayer : GameMode->allPlayersControllers)
     {
@@ -64,9 +62,9 @@ bool ULobbyManager::CheckAtLeastOnePlayerReady() const
     return false;
 }
 
-bool ULobbyManager::CheckBothTeamHasPlayers() const
+bool UManagerLobby::CheckBothTeamHasPlayers() const
 {
-    if (GameMode->singlePlayerDebugMode || GameMode->multiplayerDebugMode)
+    if (GameMode->GetSinglePlayerDebugMode() || GameMode->GetMultiplayerDebugMode())
     {
         return true;
     }
@@ -88,7 +86,7 @@ bool ULobbyManager::CheckBothTeamHasPlayers() const
     return humanPlayers > 0 && catPlayers > 0;
 }
 
-bool ULobbyManager::CheckHalfPlayersAreReady() const
+bool UManagerLobby::CheckHalfPlayersAreReady() const
 {
     int numReadyPlayers = 0;
     for (AMPControllerPlayer* eachPlayer : GameMode->allPlayersControllers)
@@ -103,7 +101,7 @@ bool ULobbyManager::CheckHalfPlayersAreReady() const
     return numReadyPlayers >= halfPlayers;
 }
 
-bool ULobbyManager::AssignPlayerToTeam(AMPControllerPlayer* player, ETeam team)
+bool UManagerLobby::AssignPlayerToTeam(AMPControllerPlayer* player, ETeam team)
 {
     if (!player) return false;
     AMPPlayerState* playerState = Cast<AMPPlayerState>(player->PlayerState);
@@ -113,14 +111,14 @@ bool ULobbyManager::AssignPlayerToTeam(AMPControllerPlayer* player, ETeam team)
     if (currentTeamCount <= otherTeamCount + 1)
     {
         playerState->playerTeam = team;
-        UMPLogManager::LogInfo(FString::Printf(TEXT("Player %s assigned to %s team"), *playerState->playerName, team == ETeam::EHuman ? TEXT("Human") : TEXT("Cat")), TEXT("MPGMGameplay"));
+        UManagerLog::LogInfo(FString::Printf(TEXT("Player %s assigned to %s team"), *playerState->playerName, team == ETeam::EHuman ? TEXT("Human") : TEXT("Cat")), TEXT("MPGMGameplay"));
         return true;
     }
-    UMPLogManager::LogWarning(FString::Printf(TEXT("Cannot assign player to %s team - teams would be unbalanced"), team == ETeam::EHuman ? TEXT("Human") : TEXT("Cat")), TEXT("MPGMGameplay"));
+    UManagerLog::LogWarning(FString::Printf(TEXT("Cannot assign player to %s team - teams would be unbalanced"), team == ETeam::EHuman ? TEXT("Human") : TEXT("Cat")), TEXT("MPGMGameplay"));
     return false;
 }
 
-bool ULobbyManager::SwitchPlayerTeam(AMPControllerPlayer* player, ETeam newTeam)
+bool UManagerLobby::SwitchPlayerTeam(AMPControllerPlayer* player, ETeam newTeam)
 {
     if (!player) return false;
     AMPPlayerState* playerState = Cast<AMPPlayerState>(player->PlayerState);
@@ -132,14 +130,14 @@ bool ULobbyManager::SwitchPlayerTeam(AMPControllerPlayer* player, ETeam newTeam)
     if (newTeamCount < currentTeamCount || newTeamCount <= currentTeamCount + 1)
     {
         playerState->playerTeam = newTeam;
-        UMPLogManager::LogInfo(FString::Printf(TEXT("Player %s switched from %s to %s team"), *playerState->playerName, currentTeam == ETeam::EHuman ? TEXT("Human") : TEXT("Cat"), newTeam == ETeam::EHuman ? TEXT("Human") : TEXT("Cat")), TEXT("MPGMGameplay"));
+        UManagerLog::LogInfo(FString::Printf(TEXT("Player %s switched from %s to %s team"), *playerState->playerName, currentTeam == ETeam::EHuman ? TEXT("Human") : TEXT("Cat"), newTeam == ETeam::EHuman ? TEXT("Human") : TEXT("Cat")), TEXT("MPGMGameplay"));
         return true;
     }
-    UMPLogManager::LogWarning(FString::Printf(TEXT("Cannot switch player to %s team - would unbalance teams"), newTeam == ETeam::EHuman ? TEXT("Human") : TEXT("Cat")), TEXT("MPGMGameplay"));
+    UManagerLog::LogWarning(FString::Printf(TEXT("Cannot switch player to %s team - would unbalance teams"), newTeam == ETeam::EHuman ? TEXT("Human") : TEXT("Cat")), TEXT("MPGMGameplay"));
     return false;
 }
 
-void ULobbyManager::AutoAssignTeams()
+void UManagerLobby::AutoAssignTeams()
 {
     TArray<AMPControllerPlayer*> unassignedPlayers;
     for (AMPControllerPlayer* player : GameMode->allPlayersControllers)
@@ -157,10 +155,10 @@ void ULobbyManager::AutoAssignTeams()
         ETeam targetTeam = (humanCount <= catCount) ? ETeam::EHuman : ETeam::ECat;
         AssignPlayerToTeam(player, targetTeam);
     }
-    UMPLogManager::LogInfo(FString::Printf(TEXT("Auto-assigned %d players to teams"), unassignedPlayers.Num()), TEXT("MPGMGameplay"));
+    UManagerLog::LogInfo(FString::Printf(TEXT("Auto-assigned %d players to teams"), unassignedPlayers.Num()), TEXT("MPGMGameplay"));
 }
 
-int ULobbyManager::GetTeamPlayerCount(ETeam team) const
+int UManagerLobby::GetTeamPlayerCount(ETeam team) const
 {
     int count = 0;
     for (AMPControllerPlayer* player : GameMode->allPlayersControllers)
@@ -174,26 +172,26 @@ int ULobbyManager::GetTeamPlayerCount(ETeam team) const
     return count;
 }
 
-void ULobbyManager::CountdownReadyGame()
+void UManagerLobby::CountdownReadyGame()
 {
     if (!CheckReadyToStartGame())
     {
-        GameMode->theGameState->isMostPlayerReady = false;
+        GameMode->GetGameState()->isMostPlayerReady = false;
         if (GameMode->GetWorld())
         {
             GameMode->GetWorld()->GetTimerManager().ClearTimer(GameMode->readyTimerHandle);
         }
-        UMPLogManager::LogInfo(TEXT("Lobby: Countdown CANCELLED - conditions no longer met"), TEXT("MPGMGameplay"));
+        UManagerLog::LogInfo(TEXT("Lobby: Countdown CANCELLED - conditions no longer met"), TEXT("MPGMGameplay"));
         return;
     }
-    if (GameMode->theGameState->curReadyTime > 0)
+    if (GameMode->GetGameState()->curReadyTime > 0)
     {
         UWorld* serverWorld = GameMode->GetWorld();
         if (serverWorld)
         {
-            GameMode->theGameState->curReadyTime -= 1;
-            GameMode->ClientUpdateReadyCountdown(GameMode->theGameState->curReadyTime);
-            UMPLogManager::LogInfo(FString::Printf(TEXT("Lobby: Countdown %d seconds remaining"), GameMode->theGameState->curReadyTime), TEXT("MPGMGameplay"));
+            GameMode->GetGameState()->curReadyTime -= 1;
+            ClientUpdateReadyCountdown(GameMode->GetGameState()->curReadyTime);
+            UManagerLog::LogInfo(FString::Printf(TEXT("Lobby: Countdown %d seconds remaining"), GameMode->GetGameState()->curReadyTime), TEXT("MPGMGameplay"));
             serverWorld->GetTimerManager().ClearTimer(GameMode->readyTimerHandle);
             FTimerDelegate readyTimerDel;
             readyTimerDel.BindUFunction(GameMode, FName("CountdownReadyGame"));
@@ -202,12 +200,12 @@ void ULobbyManager::CountdownReadyGame()
     }
     else
     {
-        UMPLogManager::LogInfo(TEXT("Lobby: Countdown FINISHED - starting game"), TEXT("MPGMGameplay"));
+        UManagerLog::LogInfo(TEXT("Lobby: Countdown FINISHED - starting game"), TEXT("MPGMGameplay"));
         EndReadyTime();
     }
 }
 
-void ULobbyManager::EndReadyTime()
+void UManagerLobby::EndReadyTime()
 {
     for (AMPControllerPlayer* eachPlayer : GameMode->allPlayersControllers)
     {
@@ -219,52 +217,64 @@ void ULobbyManager::EndReadyTime()
     GameMode->StartCustomizeCharacter();
 }
 
-bool ULobbyManager::SetPlayerReady(AMPControllerPlayer* player, bool isReady)
+bool UManagerLobby::SetPlayerReady(AMPControllerPlayer* player, bool isReady)
 {
     if (!player)
     {
-        UMPLogManager::LogError(TEXT("SetPlayerReadyState called with null player"), TEXT("MPGMGameplay"));
+        UManagerLog::LogError(TEXT("SetPlayerReadyState called with null player"), TEXT("MPGMGameplay"));
         return false;
     }
     AMPPlayerState* playerState = Cast<AMPPlayerState>(player->PlayerState);
     if (!playerState)
     {
-        UMPLogManager::LogError(TEXT("Player state is null"), TEXT("MPGMGameplay"));
+        UManagerLog::LogError(TEXT("Player state is null"), TEXT("MPGMGameplay"));
         return false;
     }
     playerState->isPlayerReady = isReady;
-    UMPLogManager::LogInfo(FString::Printf(TEXT("Player %s ready state set to: %s"), *playerState->playerName, isReady ? TEXT("Ready") : TEXT("Not Ready")), TEXT("MPGMGameplay"));
+    UManagerLog::LogInfo(FString::Printf(TEXT("Player %s ready state set to: %s"), *playerState->playerName, isReady ? TEXT("Ready") : TEXT("Not Ready")), TEXT("MPGMGameplay"));
     if (isReady && CheckReadyToStartGame())
     {
-        UMPLogManager::LogInfo(TEXT("All requirements met! Starting game..."), TEXT("MPGMGameplay"));
+        UManagerLog::LogInfo(TEXT("All requirements met! Starting game..."), TEXT("MPGMGameplay"));
         CountdownReadyGame();
     }
     BroadcastPlayerListUpdate();
     return true;
 }
 
-void ULobbyManager::BroadcastPlayerListUpdate()
+void UManagerLobby::BroadcastPlayerListUpdate()
 {
-    UMPLogManager::LogDebug(TEXT("Broadcasting player list update to all clients"), TEXT("MPGMGameplay"));
-    GameMode->ClientUpdateLobbyHUDs();
+    UManagerLog::LogDebug(TEXT("Broadcasting player list update to all clients"), TEXT("MPGMGameplay"));
+    ClientUpdateLobbyHUDs();
 }
 
-void ULobbyManager::ClientUpdateLobbyHUDs_Implementation()
+void UManagerLobby::ClientUpdateLobbyHUDs_Implementation()
 {
-    UMPLogManager::LogDebug(TEXT("Client received lobby update request"), TEXT("MPGMGameplay"));
+    UManagerLog::LogDebug(TEXT("Client received lobby update request"), TEXT("MPGMGameplay"));
     for (AMPControllerPlayer* eachPlayer : GameMode->allPlayersControllers)
     {
-        if (eachPlayer && eachPlayer->lobbyManagerHUD && eachPlayer->lobbyManagerHUD->lobbyHUD)
+        if (eachPlayer && eachPlayer->GetManagerLobbyHUD() && eachPlayer->GetManagerLobbyHUD()->lobbyHUD)
         {
-            eachPlayer->lobbyManagerHUD->lobbyHUD->UpdatePlayerLists();
+            eachPlayer->GetManagerLobbyHUD()->lobbyHUD->UpdatePlayerLists();
         }
-        else if (eachPlayer && !eachPlayer->lobbyManagerHUD)
+        else if (eachPlayer && !eachPlayer->GetManagerLobbyHUD())
         {
-            UMPLogManager::LogWarning(FString::Printf(TEXT("Player %s has no lobby manager HUD for update"), *eachPlayer->GetName()), TEXT("MPGMGameplay"));
+            UManagerLog::LogWarning(FString::Printf(TEXT("Player %s has no lobby manager HUD for update"), *eachPlayer->GetName()), TEXT("MPGMGameplay"));
         }
-        else if (eachPlayer && eachPlayer->lobbyManagerHUD && !eachPlayer->lobbyManagerHUD->lobbyHUD)
+        else if (eachPlayer && eachPlayer->GetManagerLobbyHUD() && !eachPlayer->GetManagerLobbyHUD()->lobbyHUD)
         {
-            UMPLogManager::LogWarning(FString::Printf(TEXT("Player %s lobby manager has no lobby HUD for update"), *eachPlayer->GetName()), TEXT("MPGMGameplay"));
+            UManagerLog::LogWarning(FString::Printf(TEXT("Player %s lobby manager has no lobby HUD for update"), *eachPlayer->GetName()), TEXT("MPGMGameplay"));
         }
     }
 } 
+
+// Countdown update RPCs
+void UManagerLobby::ClientUpdateReadyCountdown_Implementation(int32 secondsRemaining)
+{
+    for (AMPControllerPlayer* eachPlayer : GameMode->allPlayersControllers)
+    {
+        if (eachPlayer)
+        {
+            eachPlayer->UpdateLobbyHUDCountdownText(secondsRemaining);
+        }
+    }
+}

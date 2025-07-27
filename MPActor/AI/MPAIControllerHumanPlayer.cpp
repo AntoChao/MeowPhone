@@ -1,9 +1,9 @@
 #include "MPAIControllerHumanPlayer.h"
-#include "CommonEnum.h"
+#include "../../CommonEnum.h"
 #include "BehaviorTree/BlackboardComponent.h"
-#include "MPActor/Character/MPCharacterCat.h"
+#include "../Character/MPCharacterCat.h"
 #include "Perception/AISense_Hearing.h"
-#include "MPActor/Character/MPCharacterHuman.h"
+#include "../Character/MPCharacterHuman.h"
 
 
 AMPAIControllerHumanPlayer::AMPAIControllerHumanPlayer()
@@ -80,3 +80,22 @@ void AMPAIControllerHumanPlayer::OnTargetPerceptionUpdated(AActor* Actor, FAISti
         }
     }
 } 
+
+void AMPAIControllerHumanPlayer::SetAISystem(AMPAISystemManager* theManager)
+{ 
+    AISystem = theManager; 
+}
+
+bool AMPAIControllerHumanPlayer::IsBusyWithGlobalTask()
+{
+    return isBeingAssined;
+}
+
+void AMPAIControllerHumanPlayer::AssignGlobalTask(AMPEnvActorComp* urgentActor)
+{
+    if (BlackboardComp)
+    {
+        BlackboardComp->SetValueAsObject(BB_GlobalTaskActor, urgentActor);
+        isBeingAssined = true;
+    }
+}

@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "CommonEnum.h"
+#include "../../../CommonEnum.h"
 #include "HUDSearchSessionEntry.generated.h"
 
 UCLASS()

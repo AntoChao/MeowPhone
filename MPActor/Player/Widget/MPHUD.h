@@ -32,7 +32,7 @@ protected:
 
 public:
     UFUNCTION(BlueprintCallable, Category = "HUD Methods")
-    void SetOwner(AMPControllerPlayer* theOwner);
+    virtual void SetOwner(AMPControllerPlayer* theOwner);
     
     // Localization functions - to be implemented by child classes
     UFUNCTION(BlueprintCallable, Category = "HUD Methods")

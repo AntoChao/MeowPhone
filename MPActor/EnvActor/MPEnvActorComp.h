@@ -3,7 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "../MPInteractable.h"
-
+#include "../MPPlaySoundInterface.h"
 #include "TimerManager.h"
 
 #include "MPEnvActorComp.generated.h"

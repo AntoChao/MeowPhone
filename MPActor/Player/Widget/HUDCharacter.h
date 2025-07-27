@@ -27,6 +27,7 @@ protected:
     UPROPERTY(BlueprintReadWrite, meta = (BindWidget), Category = "HUD")
     UTextBlock* hintText;
 
+public:
     // Shared logic for updating UI
     UFUNCTION(BlueprintCallable, Category = "HUD")
     virtual void UpdateItemSlots();

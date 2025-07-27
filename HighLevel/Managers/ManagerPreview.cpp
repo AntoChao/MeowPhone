@@ -1,32 +1,33 @@
-#include "PreviewManager.h"
-#include "HighLevel/MPGMGameplay.h"
-#include "MPActor/Player/MPControllerPlayer.h"
-#include "HighLevel/Factory/FactoryCat.h"
-#include "HighLevel/Factory/FactoryHuman.h"
+#include "ManagerPreview.h"
+#include "../MPGMGameplay.h"
+#include "../../MPActor/Player/MPControllerPlayer.h"
+#include "../Factory/FactoryCat.h"
+#include "../Factory/FactoryHuman.h"
+#include "../../CommonEnum.h"
 #include "Engine/World.h"
 
-void UPreviewManager::Initialize(AMPGMGameplay* InGameMode)
+void UManagerPreview::InitializeManager(AMPGMGameplay* inGameMode)
 {
-    GameMode = InGameMode;
-    if (GameMode)
+    Super::InitializeManager(inGameMode);
+    if (gameMode)
     {
         previewCharacters.SetNum(8);
         previewSlotOwners.SetNum(8);
     }
 }
 
-void UPreviewManager::SetPreviewTransforms(const TArray<FVector>& Locations, const TArray<FRotator>& Rotations)
+void UManagerPreview::SetPreviewTransforms(const TArray<FVector>& Locations, const TArray<FRotator>& Rotations)
 {
     characterPreviewLocations = Locations;
     characterPreviewRotations = Rotations;
 }
 
-int32 UPreviewManager::GetPlayerPreviewSlot(AMPControllerPlayer* Player) const
+int32 UManagerPreview::GetPlayerPreviewSlot(AMPControllerPlayer* Player) const
 {
     return FindPlayerPreviewSlot(Player);
 }
 
-void UPreviewManager::RequestPreviewCharacterUpdate(AMPControllerPlayer* Player, ETeam Team, int CatRace, int HumanProfession, int Hat)
+void UManagerPreview::RequestPreviewCharacterUpdate(AMPControllerPlayer* Player, ETeam Team, int CatRace, int HumanProfession, int Hat)
 {
     int32 slot = FindPlayerPreviewSlot(Player);
     if (slot != -1) {
@@ -34,7 +35,7 @@ void UPreviewManager::RequestPreviewCharacterUpdate(AMPControllerPlayer* Player,
     }
 }
 
-void UPreviewManager::AssignPreviewSlot(AMPControllerPlayer* Player)
+void UManagerPreview::AssignPreviewSlot(AMPControllerPlayer* Player)
 {
     int32 slot = FindFreePreviewSlot();
     if (slot != -1 && Player) {
@@ -43,7 +44,7 @@ void UPreviewManager::AssignPreviewSlot(AMPControllerPlayer* Player)
     }
 }
 
-void UPreviewManager::FreePreviewSlot(AMPControllerPlayer* Player)
+void UManagerPreview::FreePreviewSlot(AMPControllerPlayer* Player)
 {
     int32 slot = FindPlayerPreviewSlot(Player);
     if (slot != -1) {
@@ -56,14 +57,14 @@ void UPreviewManager::FreePreviewSlot(AMPControllerPlayer* Player)
     }
 }
 
-void UPreviewManager::DestroyAllPreviewCharacters()
+void UManagerPreview::DestroyAllPreviewCharacters()
 {
     for (int32 i = 0; i < previewCharacters.Num(); ++i) {
         DestroyPreviewCharacter(i);
     }
 }
 
-void UPreviewManager::SpawnOrReplacePreviewCharacter(AMPControllerPlayer* Player, ETeam Team, int32 SlotIdx, int CatRace, int HumanProfession, int Hat)
+void UManagerPreview::SpawnOrReplacePreviewCharacter(AMPControllerPlayer* Player, ETeam Team, int32 SlotIdx, int CatRace, int HumanProfession, int Hat)
 {
     if (!GameMode) return;
 
@@ -83,7 +84,7 @@ void UPreviewManager::SpawnOrReplacePreviewCharacter(AMPControllerPlayer* Player
     }
 }
 
-int32 UPreviewManager::FindFreePreviewSlot() const
+int32 UManagerPreview::FindFreePreviewSlot() const
 {
     for (int32 i = 0; i < previewSlotOwners.Num(); ++i)
         if (previewSlotOwners[i] == nullptr)
@@ -91,7 +92,7 @@ int32 UPreviewManager::FindFreePreviewSlot() const
     return -1;
 }
 
-int32 UPreviewManager::FindPlayerPreviewSlot(AMPControllerPlayer* Player) const
+int32 UManagerPreview::FindPlayerPreviewSlot(AMPControllerPlayer* Player) const
 {
     for (int32 i = 0; i < previewSlotOwners.Num(); ++i)
         if (previewSlotOwners[i] == Player)
@@ -99,7 +100,7 @@ int32 UPreviewManager::FindPlayerPreviewSlot(AMPControllerPlayer* Player) const
     return -1;
 }
 
-void UPreviewManager::DestroyPreviewCharacter(int32 SlotIdx)
+void UManagerPreview::DestroyPreviewCharacter(int32 SlotIdx)
 {
     if (previewCharacters.IsValidIndex(SlotIdx) && previewCharacters[SlotIdx]) {
         previewCharacters[SlotIdx]->Destroy();

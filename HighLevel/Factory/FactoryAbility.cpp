@@ -13,7 +13,7 @@ AActor* UFactoryAbility::SpawnMPActor(int actorCode,
     if (!gameWorld) { return nullptr; }
 
     // For now we only have one ability class – could map code to subclasses later.
-    TSubclassOf<AActor> spawnClass = UMPAbility::StaticClass();
+    TSubclassOf<AActor> spawnClass = AMPAbility::StaticClass();
     spawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
     return gameWorld->SpawnActor<AActor>(spawnClass, actorLocation, actorRotation, spawnParams);

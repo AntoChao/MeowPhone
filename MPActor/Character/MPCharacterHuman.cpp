@@ -9,7 +9,7 @@
 
 #include "../../CommonEnum.h"
 #include "../../CommonStruct.h"
-#include "../../HighLevel/MPLogManager.h"
+#include "../../HighLevel/Managers/ManagerLog.h"
 
 #include "../Player/MPControllerPlayer.h"
 #include "../Player/MPPlayerState.h"
@@ -23,6 +23,8 @@
 #include "GameFramework/Character.h"
 #include "GameFramework/Actor.h"
 #include "Engine/SkeletalMeshSocket.h"
+
+#include "MotionWarpingComponent.h"
 
 AMPCharacterHuman::AMPCharacterHuman()
 {
@@ -101,7 +103,7 @@ void AMPCharacterHuman::BeInteracted(AMPCharacter* player)
 {
 	if (!IsValid(player))
 	{
-		UMPLogManager::LogWarning(TEXT("Invalid player provided for interaction"), TEXT("MPCharacterHuman"));
+		UManagerLog::LogWarning(TEXT("Invalid player provided for interaction"), TEXT("MPCharacterHuman"));
 		return;
 	}
 
@@ -122,7 +124,7 @@ void AMPCharacterHuman::TakeHealthDamage(int32 damageAmount)
 
 	currentHealth = FMath::Max(0, currentHealth - damageAmount);
 	
-	UMPLogManager::LogInfo(FString::Printf(TEXT("Human took %d damage! Health: %d/%d"), damageAmount, currentHealth, maxHealth), TEXT("MPCharacterHuman"));
+	UManagerLog::LogInfo(FString::Printf(TEXT("Human took %d damage! Health: %d/%d"), damageAmount, currentHealth, maxHealth), TEXT("MPCharacterHuman"));
 	
 	if (currentHealth <= 0)
 	{
@@ -136,7 +138,7 @@ void AMPCharacterHuman::HealHealth(int32 healAmount)
 
 	currentHealth = FMath::Min(maxHealth, currentHealth + healAmount);
 	
-	UMPLogManager::LogInfo(FString::Printf(TEXT("Human healed %d health! Health: %d/%d"), healAmount, currentHealth, maxHealth), TEXT("MPCharacterHuman"));
+	UManagerLog::LogInfo(FString::Printf(TEXT("Human healed %d health! Health: %d/%d"), healAmount, currentHealth, maxHealth), TEXT("MPCharacterHuman"));
 }
 
 void AMPCharacterHuman::Die()
@@ -157,7 +159,7 @@ void AMPCharacterHuman::Die()
 		StopToBeRubbed();
 	}
 	
-	UMPLogManager::LogInfo(TEXT("Human player died"), TEXT("MPCharacterHuman"));
+	UManagerLog::LogInfo(TEXT("Human player died"), TEXT("MPCharacterHuman"));
 	
 	// Notify game mode about player death
 	if (AGameModeBase* gameMode = UGameplayStatics::GetGameMode(GetWorld()))
@@ -176,13 +178,13 @@ void AMPCharacterHuman::Die()
 // Replication callbacks
 void AMPCharacterHuman::OnRep_Health()
 {
-	UMPLogManager::LogInfo(FString::Printf(TEXT("Client: Human health updated to %d/%d"), currentHealth, maxHealth), TEXT("MPCharacterHuman"));
+	UManagerLog::LogInfo(FString::Printf(TEXT("Client: Human health updated to %d/%d"), currentHealth, maxHealth), TEXT("MPCharacterHuman"));
 }
 void AMPCharacterHuman::OnRep_IsDead()
 {
 	if (isDead)
 	{
-		UMPLogManager::LogInfo(TEXT("Client: Human player died"), TEXT("MPCharacterHuman"));
+		UManagerLog::LogInfo(TEXT("Client: Human player died"), TEXT("MPCharacterHuman"));
 	}
 }
 
@@ -261,7 +263,7 @@ void AMPCharacterHuman::Interact()
 	if (!CheckIfIsAbleToInteract()) return;
 
 	// Handle cat interaction
-	if (detectInteractableActor.IsValid())
+	if (detectInteractableActor)
 	{
 		detectInteractableActor->BeInteracted(this);
 	}
@@ -338,7 +340,7 @@ void AMPCharacterHuman::StartHoldingCat(AMPCharacterCat* catToHold)
 {
 	if (!IsValid(catToHold))
 	{
-		UMPLogManager::LogWarning(TEXT("Invalid cat provided for holding"), TEXT("MPCharacterHuman"));
+		UManagerLog::LogWarning(TEXT("Invalid cat provided for holding"), TEXT("MPCharacterHuman"));
 		return;
 	}
 
@@ -358,7 +360,7 @@ void AMPCharacterHuman::StartHoldingCat(AMPCharacterCat* catToHold)
 	// Play the hold context animation montage
 	SetContext(EHumanContext::HoldCat, true);
 
-	UMPLogManager::LogInfo(TEXT("Human started holding cat"), TEXT("MPCharacterHuman"));
+	UManagerLog::LogInfo(TEXT("Human started holding cat"), TEXT("MPCharacterHuman"));
 }
 
 void AMPCharacterHuman::StopHoldingCat()
@@ -371,6 +373,11 @@ void AMPCharacterHuman::StopHoldingCat()
     }
 }
 
+bool AMPCharacterHuman::IsHoldingCat()
+{ 
+	return animState.curInteraction == EHumanInteractionState::HoldingCat && IsValid(catHolding);
+}
+
 void AMPCharacterHuman::PutCatInCage()
 {
     SetContext(EHumanContext::PutCatInCage, true);
@@ -380,7 +387,7 @@ void AMPCharacterHuman::ForceReleaseCat()
 {
 	if (IsValid(catHolding))
 	{
-		UMPLogManager::LogWarning(TEXT("Human forced to release cat due to max struggle"), TEXT("MPCharacterHuman"));
+		UManagerLog::LogWarning(TEXT("Human forced to release cat due to max struggle"), TEXT("MPCharacterHuman"));
 		
 		catHolding->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
         
@@ -394,14 +401,14 @@ void AMPCharacterHuman::StartToBeRubbed(AMPCharacterCat* rubbedCat)
 {
 	if (!IsValid(rubbedCat))
 	{
-		UMPLogManager::LogWarning(TEXT("Invalid cat provided for rubbing"), TEXT("MPCharacterHuman"));
+		UManagerLog::LogWarning(TEXT("Invalid cat provided for rubbing"), TEXT("MPCharacterHuman"));
 		return;
 	}
 
 	catRubbing = rubbedCat;
 	SetInteraction(EHumanInteractionState::BeingRubbed);
 	
-	UMPLogManager::LogInfo(TEXT("Human started being rubbed by cat"), TEXT("MPCharacterHuman"));
+	UManagerLog::LogInfo(TEXT("Human started being rubbed by cat"), TEXT("MPCharacterHuman"));
 }
 
 void AMPCharacterHuman::StopToBeRubbed()
@@ -409,8 +416,27 @@ void AMPCharacterHuman::StopToBeRubbed()
 	catRubbing = nullptr;
 	SetInteraction(EHumanInteractionState::None);
 	
-	UMPLogManager::LogInfo(TEXT("Human stopped being rubbed by cat"), TEXT("MPCharacterHuman"));
+	UManagerLog::LogInfo(TEXT("Human stopped being rubbed by cat"), TEXT("MPCharacterHuman"));
 }
+
+// State getters
+AMPCharacterCat* AMPCharacterHuman::GetHeldCat() const 
+{ 
+	return IsValid(catHolding) ? catHolding : nullptr; 
+}
+bool AMPCharacterHuman::IsBeingRubbed() const 
+{ 
+	return animState.curInteraction == EHumanInteractionState::BeingRubbed; 
+}
+AMPCharacterCat* AMPCharacterHuman::GetCatRubbing() const 
+{ 
+	return IsValid(catRubbing) ? catRubbing : nullptr; 
+}
+float AMPCharacterHuman::GetHeldCatStrugglePercentage() const 
+{ 
+	return IsValid(catHolding) ? catHolding->GetStruggleBarPercentage() : 0.0f; 
+}
+
 
 // 6. animation system
 // 6.1 animation state
@@ -482,7 +508,7 @@ void AMPCharacterHuman::PlayHumanContextAnimMontage(EHumanContext context)
         playRate = holdAnimMontagePlayRate;
         if (montageToPlay && catHolding)
         {
-            setupHoldAnimmotionWarping(catHolding);
+			setupHoldAnimMotionWarping(catHolding);
         }
         break;
     case EHumanContext::StopHoldCat:
@@ -518,13 +544,11 @@ void AMPCharacterHuman::PlayHumanContextAnimMontage(EHumanContext context)
 void AMPCharacterHuman::OnMontageEndedContextClear(UAnimMontage* montage, bool bInterrupted)
 {
     animState.curContext = EHumanContext::None;
-	switch (montage)
+	
+	// uanimmontage does not support switch
+	if (montage)
 	{
-		case EHumanContext::StopHoldCat:
-			// no need to call stopHoldAnimCleanup beacuse should be called in blueprint	
-			break; 
-		default:
-			break;
+		return;
 	}
 }
 
@@ -558,7 +582,7 @@ void AMPCharacterHuman::updateHoldAnimHandTargets()
 	}
 }
 
-void AMPCharacterHuman::setupHoldAnimmotionWarping(AMPCharacterCat* catActor)
+void AMPCharacterHuman::setupHoldAnimMotionWarping(AMPCharacterCat* catActor)
 {
     if (!catActor || !motionWarpingComponent) return;
     FVector catLocation = catActor->GetActorLocation();
@@ -568,7 +592,7 @@ void AMPCharacterHuman::setupHoldAnimmotionWarping(AMPCharacterCat* catActor)
     float targetDistance = distanceToCat - holdAnimWarpDistanceOffset;
     FVector warpTargetLocation = humanLocation + directionToCat * targetDistance;
     FRotator warpTargetRotation = directionToCat.Rotation();
-    FmotionWarpingTarget warpTarget;
+    FMotionWarpingTarget warpTarget;
     warpTarget.Name = holdAnimWarpTargetName;
     warpTarget.Location = warpTargetLocation;
     warpTarget.Rotation = warpTargetRotation;
@@ -603,7 +627,7 @@ void AMPCharacterHuman::BeStunned(int32 stunDuration)
 {
     // Calculate playrate based on stunDuration (example: base duration / stunDuration)
     float baseStunAnimDuration = 1.0f; // Set this to your base animation duration in seconds
-    float beStunnedMontagePlayRate = (stunDuration > 0) ? (baseStunAnimDuration / stunDuration) : 1.0f;
+    beStunnedMontagePlayRate = (stunDuration > 0) ? (baseStunAnimDuration / stunDuration) : 1.0f;
     SetContext(EHumanContext::BeStunned, true);
 }
 

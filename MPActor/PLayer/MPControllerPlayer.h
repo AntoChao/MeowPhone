@@ -13,9 +13,10 @@ class UHUDCredit;
 class UHUDCreateSession;
 class UHUDSearchSession;
 class UHUDLobby;
-class UHUDLobbyManager;
+class UHUDManagerLobby;
 class UHUDHuman;
 class UHUDCharacterCat;
+class UHUDCharacterHuman;
 class UHUDMenu;
 class UHUDEnd;
 
@@ -26,7 +27,7 @@ class UInputAction;
 struct FInputActionValue;
 
 // Forward declarations of gameplay enums used in RPCs
-enum class EItem : uint8;
+enum class EMPItem : uint8;
 enum class EEnvActor : uint8;
 enum class EAbility : uint8;
 
@@ -105,9 +106,9 @@ protected :
     UPROPERTY(BlueprintReadWrite, Category = "HUD Properties")
         UHUDSearchSession* searchSessionHUD;
     UPROPERTY(BlueprintReadWrite, Category = "HUD Properties")
-        UHUDLobbyManager* lobbyManagerHUD;
+        UHUDManagerLobby* ManagerLobbyHUD;
     UPROPERTY(BlueprintReadWrite, Category = "HUD Properties")
-        UHUDHuman* humanHUD;
+        UHUDCharacterHuman* humanHUD;
     UPROPERTY(BlueprintReadWrite, Category = "HUD Properties")
         UHUDCharacterCat* catHUD;
     UPROPERTY(BlueprintReadWrite, Category = "HUD Properties")
@@ -126,9 +127,9 @@ protected :
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HUD Properties")
         TSubclassOf<UHUDSearchSession> searchSessionHUDClass;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HUD Properties")
-        TSubclassOf<UHUDLobbyManager> lobbyManagerHUDClass;
+        TSubclassOf<UHUDManagerLobby> ManagerLobbyHUDClass;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HUD Properties")
-        TSubclassOf<UHUDHuman> humanHUDClass;
+        TSubclassOf<UHUDCharacterHuman> humanHUDClass;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HUD Properties")
         TSubclassOf<UHUDCharacterCat> catHUDClass;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HUD Properties")
@@ -147,6 +148,15 @@ public :
     UFUNCTION(BlueprintCallable, Category = "HUD Method")
         void RemoveHUD(EHUDType hudType);
 
+	UFUNCTION(BlueprintCallable, Category = "HUD Method")
+	UHUDManagerLobby* GetManagerLobbyHUD() const { return ManagerLobbyHUD; }
+    UFUNCTION(BlueprintCallable, Category = "HUD Method")
+    UHUDEnd* GetEndHUD() const { return endHUD; }
+    UFUNCTION(BlueprintCallable, Category = "HUD Method")
+	UHUDSearchSession* GetSearchSessionHUD() const { return searchSessionHUD; }
+    UFUNCTION(BlueprintCallable, Category = "HUD Method")
+	UHUDOption* GetOptionHUD() const { return optionHUD; }
+
 // game progress update
 public :
     UFUNCTION(BlueprintCallable, Category = "GameProgress Method")
@@ -157,7 +167,9 @@ public :
         void PrepareStartUpdate();
     UFUNCTION(BlueprintCallable, Category = "GameProgress Method")
         void GameplayStartUpdate();
-    
+       
+    UFUNCTION(BlueprintCallable, Category = "GameProgress Method")
+        void UpdateLobbyHUDCountdownText(int secondRemaining);
 // character relation
 protected :
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character Properties")
@@ -277,7 +289,7 @@ public :
      * factory helpers.  Blueprints can call them directly.
      */
 	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "Spawn")
-	void Server_RequestSpawnItem(EItem ItemTag, const FVector& Location, const FRotator& Rotation);
+	void Server_RequestSpawnItem(EMPItem ItemTag, const FVector& Location, const FRotator& Rotation);
 
 	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "Spawn")
 	void Server_RequestSpawnEnvironment(EEnvActor EnvTag, const FVector& Location, const FRotator& Rotation);
@@ -296,8 +308,4 @@ public:
     void FocusPreviewCamera();
     UFUNCTION(BlueprintCallable, Category = "Preview")
     void FocusGameplayCamera();
-    
-    // Input action for opening menu
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input Properties")
-    class UInputAction* openMenuAction;
 };

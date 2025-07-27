@@ -33,8 +33,3 @@ AActor* UFactoryCat::SpawnMPActor(int actorCode,
     }
     return spawnedActor;
 }
-
-UObject* UFactoryCat::SpawnMPObject(AActor* owner, int actorCode)
-{
-    return nullptr;
-}

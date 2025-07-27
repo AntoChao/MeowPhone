@@ -1,8 +1,8 @@
 #include "MPAIControllerCatPlayer.h"
-#include "CommonEnum.h"
+#include "../../CommonEnum.h"
 #include "BehaviorTree/BlackboardComponent.h"
-#include "MPActor/Character/MPCharacterCat.h"
-#include "MPActor/Character/MPCharacterHuman.h"
+#include "../Character/MPCharacterCat.h"
+#include "../Character/MPCharacterHuman.h"
 
 AMPAIControllerCatPlayer::AMPAIControllerCatPlayer()
 {

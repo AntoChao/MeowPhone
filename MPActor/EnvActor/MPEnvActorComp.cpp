@@ -44,11 +44,11 @@ FText AMPEnvActorComp::GetInteractHintText(AMPCharacter* targetActor)
 {
 	if (IsInteractable(targetActor))
 	{
-		return UMPLocalizationManager::Get()->GetLocalizedText(interactHintTextKey);
+		return UManagerLocalization::GetInstance()->GetLocalizedText(interactHintTextKey);
 	}
 	else
 	{
-		return UMPLocalizationManager::Get()->GetLocalizedText(uninteractableHintTextKey);
+		return UManagerLocalization::GetInstance()->GetLocalizedText(uninteractableHintTextKey);
 	}
 }
 

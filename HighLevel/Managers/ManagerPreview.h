@@ -1,8 +1,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UObject/NoExportTypes.h"
-#include "PreviewManager.generated.h"
+#include "ManagerMP.h"
+#include "ManagerPreview.generated.h"
 
 class AMPGMGameplay;
 class AMPControllerPlayer;
@@ -10,12 +10,12 @@ class AActor;
 enum class ETeam : uint8;
 
 UCLASS()
-class UPreviewManager : public UObject
+class UManagerPreview : public UManagerMP
 {
     GENERATED_BODY()
 
 public:
-    void Initialize(AMPGMGameplay* InGameMode);
+    virtual void InitializeManager(AMPGMGameplay* inGameMode) override;
 
     // Preview system API
     int32 GetPlayerPreviewSlot(AMPControllerPlayer* Player) const;
@@ -40,11 +40,15 @@ protected:
     UPROPERTY(VisibleAnywhere, Category = "Preview")
     TArray<TObjectPtr<AMPControllerPlayer>> previewSlotOwners;
 
+    
+public:
+    TArray<TObjectPtr<AActor>> GetPreviewCharacters() const { return previewCharacters; }
+
     // Preview management
     int32 FindFreePreviewSlot() const;
     int32 FindPlayerPreviewSlot(AMPControllerPlayer* Player) const;
     void DestroyPreviewCharacter(int32 SlotIdx);
-    
+
 public:
     // Allow GM to set locations/rotations from its own properties
     void SetPreviewTransforms(const TArray<FVector>& Locations, const TArray<FRotator>& Rotations);

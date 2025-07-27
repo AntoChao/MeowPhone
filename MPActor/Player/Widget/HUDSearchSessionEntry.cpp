@@ -1,8 +1,8 @@
 #include "HUDSearchSessionEntry.h"
 #include "Components/TextBlock.h"
 #include "Components/Button.h"
-#include "HighLevel/MPGI.h"
-#include "HighLevel/MPLogManager.h"
+#include "../../../HighLevel/MPGI.h"
+#include "../../../HighLevel/Managers/ManagerLog.h"
 
 UHUDSearchSessionEntry::UHUDSearchSessionEntry(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -82,7 +82,7 @@ void UHUDSearchSessionEntry::InitializeEntry(const FString& inSessionName, const
 	// Update button state
 	UpdateButtonState();
 
-	UMPLogManager::LogDebug(FString::Printf(TEXT("Session entry initialized: %s (Host: %s, Players: %d/%d, Ping: %d, Available: %s)"), 
+	UManagerLog::LogDebug(FString::Printf(TEXT("Session entry initialized: %s (Host: %s, Players: %d/%d, Ping: %d, Available: %s)"), 
 		*sessionName, *hostName, currentPlayersNumber, maxPlayersNumber, ping, availableToJoin ? TEXT("Yes") : TEXT("No")), TEXT("HUDSearchSessionEntry"));
 }
 
@@ -91,7 +91,7 @@ void UHUDSearchSessionEntry::UpdateAvailability(bool inAvailableToJoin)
 	availableToJoin = inAvailableToJoin;
 	UpdateButtonState();
 
-	UMPLogManager::LogDebug(FString::Printf(TEXT("Session availability updated: %s (Available: %s)"), 
+	UManagerLog::LogDebug(FString::Printf(TEXT("Session availability updated: %s (Available: %s)"), 
 		*sessionName, availableToJoin ? TEXT("Yes") : TEXT("No")), TEXT("HUDSearchSessionEntry"));
 }
 
@@ -104,7 +104,7 @@ void UHUDSearchSessionEntry::UpdatePing(int32 inPing)
 		pingText->SetText(FText::FromString(FString::FromInt(ping)));
 	}
 
-	UMPLogManager::LogDebug(FString::Printf(TEXT("Session ping updated: %s (Ping: %d)"), 
+	UManagerLog::LogDebug(FString::Printf(TEXT("Session ping updated: %s (Ping: %d)"), 
 		*sessionName, ping), TEXT("HUDSearchSessionEntry"));
 }
 
@@ -117,7 +117,7 @@ void UHUDSearchSessionEntry::UpdatePlayerCount(int32 inCurrentPlayersNumber)
 		currentPlayersNumberText->SetText(FText::FromString(FString::FromInt(currentPlayersNumber)));
 	}
 
-	UMPLogManager::LogDebug(FString::Printf(TEXT("Session player count updated: %s (Players: %d/%d)"), 
+	UManagerLog::LogDebug(FString::Printf(TEXT("Session player count updated: %s (Players: %d/%d)"), 
 		*sessionName, currentPlayersNumber, maxPlayersNumber), TEXT("HUDSearchSessionEntry"));
 }
 
@@ -125,7 +125,7 @@ void UHUDSearchSessionEntry::OnJoinButtonClicked()
 {
 	if (availableToJoin && sessionIndex >= 0)
 	{
-		UMPLogManager::LogInfo(FString::Printf(TEXT("Join button clicked for session: %s (Index: %d)"), 
+		UManagerLog::LogInfo(FString::Printf(TEXT("Join button clicked for session: %s (Index: %d)"), 
 			*sessionName, sessionIndex), TEXT("HUDSearchSessionEntry"));
 		
 		// Broadcast the join session event
@@ -133,7 +133,7 @@ void UHUDSearchSessionEntry::OnJoinButtonClicked()
 	}
 	else
 	{
-		UMPLogManager::LogWarning(FString::Printf(TEXT("Join button clicked but session not available: %s (Available: %s, Index: %d)"), 
+		UManagerLog::LogWarning(FString::Printf(TEXT("Join button clicked but session not available: %s (Available: %s, Index: %d)"), 
 			*sessionName, availableToJoin ? TEXT("Yes") : TEXT("No"), sessionIndex), TEXT("HUDSearchSessionEntry"));
 	}
 }

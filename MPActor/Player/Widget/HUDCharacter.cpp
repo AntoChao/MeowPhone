@@ -18,7 +18,7 @@ void UHUDCharacter::UpdateItemSlots() {
     AMPCharacter* character = Cast<AMPCharacter>(GetOwningPlayerPawn());
     if (!character) return;
 
-    const TArray<AMPItem*>& inventory = character->inventory;
+    const TArray<AMPItem*>& inventory = character->GetInventory();
     int32 slotCount = itemSlots.Num();
     for (int32 i = 0; i < slotCount; ++i) {
         if (itemSlots[i]) {
@@ -40,7 +40,7 @@ void UHUDCharacter::UpdateCenterImage() {
         centerImage->SetVisibility(ESlateVisibility::Hidden);
         return;
     }
-    if (character->curHoldingItem) {
+    if (character->GetCurHoldingItem()) {
         // TODO: Set centerImage->SetBrushFromTexture with the held item's icon
         centerImage->SetVisibility(ESlateVisibility::Visible);
     } else {

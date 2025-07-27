@@ -5,36 +5,36 @@
 #include "../Character/MPCharacterCat.h"
 
 
-UMPAbility::UMPAbility()
+AMPAbility::AMPAbility()
 {
 	bReplicates = true;
 }
 
-void UMPAbility::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+void AMPAbility::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-    DOREPLIFETIME(UMPAbility, isBeingUse);
-    DOREPLIFETIME(UMPAbility, isInCooldown);
+    DOREPLIFETIME(AMPAbility, isBeingUse);
+    DOREPLIFETIME(AMPAbility, isInCooldown);
 }
 
-void UMPAbility::OnRep_BeingUse() {}
-void UMPAbility::OnRep_InCooldown() {}
+void AMPAbility::OnRep_BeingUse() {}
+void AMPAbility::OnRep_InCooldown() {}
 
 // common Ability methods
-void UMPAbility::BeInitialized(AMPCharacterCat* player)
+void AMPAbility::BeInitialized(AMPCharacterCat* player)
 {
 	abilityOwner = player;
 	ownerWorld = abilityOwner->GetWorld();
 }
 
-EAbility UMPAbility::GetAbilityTag()
+EAbility AMPAbility::GetAbilityTag()
 {
 	return abilityTag;
 }
 
 // usage
-void UMPAbility::BeUsed(AActor* targetActor)
+void AMPAbility::BeUsed(AActor* targetActor)
 {
 	if (IsAbleToBeUsed(targetActor))
 	{
@@ -56,7 +56,7 @@ void UMPAbility::BeUsed(AActor* targetActor)
 		}
 	}
 }
-bool UMPAbility::IsAbleToBeUsed(AActor* targetActor)
+bool AMPAbility::IsAbleToBeUsed(AActor* targetActor)
 {
 	return !isBeingUse && !isInCooldown;
 }  
@@ -64,16 +64,16 @@ bool UMPAbility::IsAbleToBeUsed(AActor* targetActor)
 /* ApplyUsageEffectDirect(AActor* targetActor)
 *	no need to save targetActor
 */
-void UMPAbility::ApplyUsageEffectDirect(AActor* targetActor)
+void AMPAbility::ApplyUsageEffectDirect(AActor* targetActor)
 {
 	// effect ...
 }
-void UMPAbility::EndUsageEffectDirect(AActor* targetActor)
+void AMPAbility::EndUsageEffectDirect(AActor* targetActor)
 {
 	StartCooldown();
 }
 
-void UMPAbility::StartUsageEffectDuration(AActor* targetActor)
+void AMPAbility::StartUsageEffectDuration(AActor* targetActor)
 {
 	isBeingUse = true;
 	targetActorSaved = targetActor;
@@ -82,16 +82,16 @@ void UMPAbility::StartUsageEffectDuration(AActor* targetActor)
 	ApplyUsageEffectDuration();
 }
 
-void UMPAbility::ApplyUsageEffectDuration()
+void AMPAbility::ApplyUsageEffectDuration()
 {
 	ApplyUsageEffectDurationEffect();
 	ApplyUsageEffectDurationCountdown();
 }
-void UMPAbility::ApplyUsageEffectDurationEffect()
+void AMPAbility::ApplyUsageEffectDurationEffect()
 {
 	// effect ...
 }
-void UMPAbility::ApplyUsageEffectDurationCountdown()
+void AMPAbility::ApplyUsageEffectDurationCountdown()
 {
 	if (curUsageCountDown > 0)
 	{
@@ -112,7 +112,7 @@ void UMPAbility::ApplyUsageEffectDurationCountdown()
 	}
 }
 
-void UMPAbility::ExpireUsageEffectDuration()
+void AMPAbility::ExpireUsageEffectDuration()
 {
 	isBeingUse = false;
 	targetActorSaved = nullptr;
@@ -120,14 +120,14 @@ void UMPAbility::ExpireUsageEffectDuration()
 	StartCooldown();
 }
 
-void UMPAbility::StartCooldown()
+void AMPAbility::StartCooldown()
 {
 	isInCooldown = true;
 	curCooldownCountDown = totalCooldown;
 	CooldownCountDown();
 }
 
-void UMPAbility::CooldownCountDown()
+void AMPAbility::CooldownCountDown()
 {
 	if (curCooldownCountDown > 0)
 	{
@@ -147,7 +147,7 @@ void UMPAbility::CooldownCountDown()
 		EndCooldown();
 	}
 }
-void UMPAbility::EndCooldown()
+void AMPAbility::EndCooldown()
 {
 	isInCooldown = false;
 }

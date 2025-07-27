@@ -1,46 +1,43 @@
-#include "Managers/AIControllerManager.h"
-#include "HighLevel/MPGMGameplay.h"
-#include "HighLevel/Factory/FactoryAIController.h"
-#include "MPActor/AI/MPAIController.h"
-#include "HighLevel/MPLogManager.h"
-#include "../CommonEnum.h"
-#include "MPActor/AI/MPAIControllerHumanPlayer.h"
+#include "ManagerAIController.h"
 #include "BehaviorTree/BlackboardComponent.h"
 
-void UAIControllerManager::Initialize(AMPGMGameplay* InGameMode)
-{
-    GameMode = InGameMode;
-}
+#include "../../CommonEnum.h"
+#include "../MPGMGameplay.h"
+#include "../Factory/FactoryAIController.h"
 
-bool UAIControllerManager::AddBot(ETeam team)
+#include "../Managers/ManagerLog.h"
+#include "../../MPActor/AI/MPAIControllerHumanPlayer.h"
+#include "../../MPActor/AI/MPAIController.h"
+
+bool UManagerAIController::AddBot(ETeam team)
 {
     if (!GameMode || !GameMode->aiControllerFactoryInstance)
     {
-        UMPLogManager::LogError(TEXT("Failed to create AI controller for bot: Factory instance missing"), TEXT("AIControllerManager"));
+        UManagerLog::LogError(TEXT("Failed to create AI controller for bot: Factory instance missing"), TEXT("ManagerAIController"));
         return false;
     }
 
     AMPAIController* NewAI = GameMode->aiControllerFactoryInstance->SpawnAIController(team);
     if (!NewAI)
     {
-        UMPLogManager::LogError(TEXT("Failed to spawn AI controller"), TEXT("AIControllerManager"));
+        UManagerLog::LogError(TEXT("Failed to spawn AI controller"), TEXT("ManagerAIController"));
         return false;
     }
 
     if (team == ETeam::EHuman)
     {
         AllAIHumans.Add(NewAI);
-        UMPLogManager::LogInfo(FString::Printf(TEXT("Added human bot. Total human AIs: %d"), AllAIHumans.Num()), TEXT("AIControllerManager"));
+        UManagerLog::LogInfo(FString::Printf(TEXT("Added human bot. Total human AIs: %d"), AllAIHumans.Num()), TEXT("ManagerAIController"));
     }
     else if (team == ETeam::ECat)
     {
         AllAICats.Add(NewAI);
-        UMPLogManager::LogInfo(FString::Printf(TEXT("Added cat bot. Total cat AIs: %d"), AllAICats.Num()), TEXT("AIControllerManager"));
+        UManagerLog::LogInfo(FString::Printf(TEXT("Added cat bot. Total cat AIs: %d"), AllAICats.Num()), TEXT("ManagerAIController"));
     }
     return true;
 }
 
-bool UAIControllerManager::RemoveBot(int32 playerIndex)
+bool UManagerAIController::RemoveBot(int32 playerIndex)
 {
     int32 HumanCount = AllAIHumans.Num();
     bool Removed = false;
@@ -54,7 +51,7 @@ bool UAIControllerManager::RemoveBot(int32 playerIndex)
         }
         AllAIHumans.RemoveAt(playerIndex);
         Removed = true;
-        UMPLogManager::LogInfo(FString::Printf(TEXT("Removed human bot idx %d"), playerIndex), TEXT("AIControllerManager"));
+        UManagerLog::LogInfo(FString::Printf(TEXT("Removed human bot idx %d"), playerIndex), TEXT("ManagerAIController"));
     }
     else
     {
@@ -68,18 +65,18 @@ bool UAIControllerManager::RemoveBot(int32 playerIndex)
             }
             AllAICats.RemoveAt(CatIndex);
             Removed = true;
-            UMPLogManager::LogInfo(FString::Printf(TEXT("Removed cat bot idx %d"), CatIndex), TEXT("AIControllerManager"));
+            UManagerLog::LogInfo(FString::Printf(TEXT("Removed cat bot idx %d"), CatIndex), TEXT("ManagerAIController"));
         }
     }
 
     if (!Removed)
     {
-        UMPLogManager::LogWarning(FString::Printf(TEXT("Bot idx %d not found"), playerIndex), TEXT("AIControllerManager"));
+        UManagerLog::LogWarning(FString::Printf(TEXT("Bot idx %d not found"), playerIndex), TEXT("ManagerAIController"));
     }
     return Removed;
 }
 
-void UAIControllerManager::SpawnLobbyAIs()
+void UManagerAIController::SpawnLobbyAIs()
 {
     if (!GameMode) return;
 
@@ -130,7 +127,7 @@ void UAIControllerManager::SpawnLobbyAIs()
     }
 }
 
-void UAIControllerManager::AddGlobalSearchTask(const FVector& NoiseLocation)
+void UManagerAIController::AddGlobalSearchTask(const FVector& NoiseLocation)
 {
     FGlobalAITask NewTask;
     NewTask.Location = NoiseLocation;
@@ -139,7 +136,7 @@ void UAIControllerManager::AddGlobalSearchTask(const FVector& NoiseLocation)
     AssignGlobalTasks();
 }
 
-void UAIControllerManager::AssignGlobalTasks()
+void UManagerAIController::AssignGlobalTasks()
 {
     for (FGlobalAITask& Task : PendingTasks)
     {
@@ -166,3 +163,13 @@ void UAIControllerManager::AssignGlobalTasks()
     // Remove completed tasks (all assigned)
     PendingTasks.RemoveAll([](const FGlobalAITask& T){ return T.bAssigned; });
 } 
+
+
+void UManagerAIController::SetNumAICats(int aiCatNum)
+{
+	aiCatNumber = aiCatNum;
+}
+void UManagerAIController::SetNumAIHumans(int aiHumanNum)
+{
+	aiHumanNumber = aiHumanNum;
+}

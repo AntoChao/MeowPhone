@@ -12,12 +12,12 @@ class AMPCharacterCat;
 class AActor;
 
 UCLASS(BlueprintType, Blueprintable)
-class UMPAbility : public AActor
+class AMPAbility : public AActor
 {
     GENERATED_BODY()
 
 public:
-    UMPAbility();
+    AMPAbility();
 
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 

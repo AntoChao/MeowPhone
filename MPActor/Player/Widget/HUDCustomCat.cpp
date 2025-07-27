@@ -3,10 +3,10 @@
 #include "Components/Button.h"
 #include "Components/TextBlock.h"
 #include "Components/Viewport.h"
-#include "MPControllerPlayer.h"
-#include "MPPlayerState.h"
-#include "../HighLevel/MPLogManager.h"
-#include "HighLevel/MPGMGameplay.h"
+#include "../MPControllerPlayer.h"
+#include "../MPPlayerState.h"
+#include "../../../HighLevel/Managers/ManagerLog.h"
+#include "../../../HighLevel/MPGMGameplay.h"
 
 UHUDCustomCat::UHUDCustomCat()
 {
@@ -14,7 +14,6 @@ UHUDCustomCat::UHUDCustomCat()
     selectedCatRace = ECatRace::ECat1;
     selectedHat = EHat::ENone;
     selectedAbility = EAbility::ENone;
-    previewManager = nullptr;
 }
 
 void UHUDCustomCat::NativeConstruct()
@@ -58,7 +57,7 @@ void UHUDCustomCat::NativeConstruct()
     // Initialize UI
     UpdateUI();
     
-    UMPLogManager::LogInfo(TEXT("Cat Customization HUD constructed and initialized"), TEXT("HUDCustomCat"));
+    UManagerLog::LogInfo(TEXT("Cat Customization HUD constructed and initialized"), TEXT("HUDCustomCat"));
 }
 
 void UHUDCustomCat::NativeDestruct()
@@ -96,7 +95,7 @@ void UHUDCustomCat::NativeDestruct()
 
     Super::NativeDestruct();
     
-    UMPLogManager::LogInfo(TEXT("Cat Customization HUD destroyed"), TEXT("HUDCustomCat"));
+    UManagerLog::LogInfo(TEXT("Cat Customization HUD destroyed"), TEXT("HUDCustomCat"));
 }
 
 void UHUDCustomCat::UpdateCustomizationOptions()
@@ -119,7 +118,7 @@ void UHUDCustomCat::UpdateCustomizationOptions()
         abilityText->SetText(GetAbilityDisplayText(selectedAbility));
     }
     
-    UMPLogManager::LogDebug(FString::Printf(TEXT("Updated customization options - Race: %d, Hat: %d, Ability: %d"), 
+    UManagerLog::LogDebug(FString::Printf(TEXT("Updated customization options - Race: %d, Hat: %d, Ability: %d"), 
         (int32)selectedCatRace, (int32)selectedHat, (int32)selectedAbility), TEXT("HUDCustomCat"));
 }
 
@@ -136,7 +135,7 @@ void UHUDCustomCat::UpdateCharacterPreview()
         }
         owner->FocusPreviewCamera();
     }
-    UMPLogManager::LogDebug(FString::Printf(TEXT("Character preview updated - Race: %d, Hat: %d, Ability: %d"), 
+    UManagerLog::LogDebug(FString::Printf(TEXT("Character preview updated - Race: %d, Hat: %d, Ability: %d"), 
         (int32)selectedCatRace, (int32)selectedHat, (int32)selectedAbility), TEXT("HUDCustomCat"));
 }
 
@@ -151,17 +150,17 @@ void UHUDCustomCat::SaveCustomization()
             playerState->playerSelectedHat = selectedHat;
             playerState->playerSelectedAbility = selectedAbility;
             
-            UMPLogManager::LogInfo(FString::Printf(TEXT("Customization saved - Race: %d, Hat: %d, Ability: %d"), 
+            UManagerLog::LogInfo(FString::Printf(TEXT("Customization saved - Race: %d, Hat: %d, Ability: %d"), 
                 (int32)selectedCatRace, (int32)selectedHat, (int32)selectedAbility), TEXT("HUDCustomCat"));
         }
         else
         {
-            UMPLogManager::LogError(TEXT("Player state is null, cannot save customization"), TEXT("HUDCustomCat"));
+            UManagerLog::LogError(TEXT("Player state is null, cannot save customization"), TEXT("HUDCustomCat"));
         }
     }
     else
     {
-        UMPLogManager::LogError(TEXT("Owner is null, cannot save customization"), TEXT("HUDCustomCat"));
+        UManagerLog::LogError(TEXT("Owner is null, cannot save customization"), TEXT("HUDCustomCat"));
     }
 }
 
@@ -176,17 +175,17 @@ void UHUDCustomCat::LoadCustomization()
             selectedHat = playerState->playerSelectedHat;
             selectedAbility = playerState->playerSelectedAbility;
             
-            UMPLogManager::LogDebug(FString::Printf(TEXT("Customization loaded - Race: %d, Hat: %d, Ability: %d"), 
+            UManagerLog::LogDebug(FString::Printf(TEXT("Customization loaded - Race: %d, Hat: %d, Ability: %d"), 
                 (int32)selectedCatRace, (int32)selectedHat, (int32)selectedAbility), TEXT("HUDCustomCat"));
         }
         else
         {
-            UMPLogManager::LogWarning(TEXT("Player state is null, using default customization"), TEXT("HUDCustomCat"));
+            UManagerLog::LogWarning(TEXT("Player state is null, using default customization"), TEXT("HUDCustomCat"));
         }
     }
     else
     {
-        UMPLogManager::LogWarning(TEXT("Owner is null, using default customization"), TEXT("HUDCustomCat"));
+        UManagerLog::LogWarning(TEXT("Owner is null, using default customization"), TEXT("HUDCustomCat"));
     }
 }
 
@@ -201,7 +200,7 @@ ETeam UHUDCustomCat::GetCurrentTeam() const
 
 void UHUDCustomCat::OnCatRaceLeftClicked()
 {
-    UMPLogManager::LogInfo(TEXT("Cat race left button clicked"), TEXT("HUDCustomCat"));
+    UManagerLog::LogInfo(TEXT("Cat race left button clicked"), TEXT("HUDCustomCat"));
     
     // Cycle through cat races (ECat1, ECat2, ECat3 only)
     int32 currentIndex = (int32)selectedCatRace;
@@ -230,7 +229,7 @@ void UHUDCustomCat::OnCatRaceLeftClicked()
 
 void UHUDCustomCat::OnCatRaceRightClicked()
 {
-    UMPLogManager::LogInfo(TEXT("Cat race right button clicked"), TEXT("HUDCustomCat"));
+    UManagerLog::LogInfo(TEXT("Cat race right button clicked"), TEXT("HUDCustomCat"));
     
     // Cycle through cat races (ECat1, ECat2, ECat3 only)
     int32 currentIndex = (int32)selectedCatRace;
@@ -259,7 +258,7 @@ void UHUDCustomCat::OnCatRaceRightClicked()
 
 void UHUDCustomCat::OnHatLeftClicked()
 {
-    UMPLogManager::LogInfo(TEXT("Hat left button clicked"), TEXT("HUDCustomCat"));
+    UManagerLog::LogInfo(TEXT("Hat left button clicked"), TEXT("HUDCustomCat"));
     
     // Cycle through hats (excluding EHatMax)
     int32 currentIndex = (int32)selectedHat;
@@ -280,7 +279,7 @@ void UHUDCustomCat::OnHatLeftClicked()
 
 void UHUDCustomCat::OnHatRightClicked()
 {
-    UMPLogManager::LogInfo(TEXT("Hat right button clicked"), TEXT("HUDCustomCat"));
+    UManagerLog::LogInfo(TEXT("Hat right button clicked"), TEXT("HUDCustomCat"));
     
     // Cycle through hats (excluding EHatMax)
     int32 currentIndex = (int32)selectedHat;
@@ -301,7 +300,7 @@ void UHUDCustomCat::OnHatRightClicked()
 
 void UHUDCustomCat::OnAbilityLeftClicked()
 {
-    UMPLogManager::LogInfo(TEXT("Ability left button clicked"), TEXT("HUDCustomCat"));
+    UManagerLog::LogInfo(TEXT("Ability left button clicked"), TEXT("HUDCustomCat"));
     
     // Cycle through abilities (excluding EAbilityMax)
     int32 currentIndex = (int32)selectedAbility;
@@ -322,7 +321,7 @@ void UHUDCustomCat::OnAbilityLeftClicked()
 
 void UHUDCustomCat::OnAbilityRightClicked()
 {
-    UMPLogManager::LogInfo(TEXT("Ability right button clicked"), TEXT("HUDCustomCat"));
+    UManagerLog::LogInfo(TEXT("Ability right button clicked"), TEXT("HUDCustomCat"));
     
     // Cycle through abilities (excluding EAbilityMax)
     int32 currentIndex = (int32)selectedAbility;

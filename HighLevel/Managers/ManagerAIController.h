@@ -1,21 +1,19 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UObject/NoExportTypes.h"
-#include "CommonEnum.h"
-#include "AIControllerManager.generated.h"
+#include "ManagerMP.h"
+#include "../../CommonEnum.h"
+#include "ManagerAIController.generated.h"
 
 class AMPAIController;
 class AMPGMGameplay;
 
 UCLASS(Blueprintable)
-class UAIControllerManager : public UObject
+class UManagerAIController : public UManagerMP
 {
     GENERATED_BODY()
 
 public:
-    void Initialize(AMPGMGameplay* InGameMode);
-
     // Add or remove a bot (either human or cat). Returns true if successful.
     UFUNCTION(BlueprintCallable, Category="AI Manager")
     bool AddBot(ETeam team);
@@ -37,10 +35,12 @@ public:
     const TArray<AMPAIController*>& GetAllAIHumans() const { return AllAIHumans; }
     const TArray<AMPAIController*>& GetAllAICats() const { return AllAICats; }
 
-private:
-    UPROPERTY()
-    AMPGMGameplay* GameMode;
+    UFUNCTION(BlueprintCallable, Category = "Setter && Getter")
+    void SetNumAICats(int aiCatNum);
+    UFUNCTION(BlueprintCallable, Category = "Setter && Getter")
+    void SetNumAIHumans(int aiHumanNum);
 
+protected:
     UPROPERTY()
     TArray<TObjectPtr<AMPAIController>> AllAIHumans;
 
@@ -54,4 +54,10 @@ private:
     };
 
     TArray<FGlobalAITask> PendingTasks;
+
+    UPROPERTY()
+	int aiCatNumber = 0;
+
+    UPROPERTY()
+    int aiHumanNumber = 0;
 }; 

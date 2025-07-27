@@ -1,4 +1,4 @@
-#include "HUDLobbyManager.h"
+#include "HUDManagerLobby.h"
 #include "Components/CanvasPanel.h"
 #include "Components/Overlay.h"
 #include "Components/PanelWidget.h"
@@ -7,12 +7,12 @@
 #include "HUDLobby.h"
 #include "HUDCustomCat.h"
 #include "HUDCustomHuman.h"
-#include "MPControllerPlayer.h"
-#include "MPPlayerState.h"
-#include "../HighLevel/MPGI.h"
-#include "../HighLevel/MPLogManager.h"
+#include "../MPControllerPlayer.h"
+#include "../MPPlayerState.h"
+#include "../../../HighLevel/MPGI.h"
+#include "../../../HighLevel/Managers/ManagerLog.h"
 
-UHUDLobbyManager::UHUDLobbyManager()
+UHUDManagerLobby::UHUDManagerLobby()
 {
 	// Initialize default values
 	isReady = false;
@@ -28,19 +28,19 @@ UHUDLobbyManager::UHUDLobbyManager()
 	// Validate that the classes are valid
 	if (!lobbyHUDClass)
 	{
-		UMPLogManager::LogError(TEXT("Lobby HUD class is null in constructor"), TEXT("HUDLobbyManager"));
+		UManagerLog::LogError(TEXT("Lobby HUD class is null in constructor"), TEXT("HUDManagerLobby"));
 	}
 	if (!customCatHUDClass)
 	{
-		UMPLogManager::LogError(TEXT("Custom Cat HUD class is null in constructor"), TEXT("HUDLobbyManager"));
+		UManagerLog::LogError(TEXT("Custom Cat HUD class is null in constructor"), TEXT("HUDManagerLobby"));
 	}
 	if (!customHumanHUDClass)
 	{
-		UMPLogManager::LogError(TEXT("Custom Human HUD class is null in constructor"), TEXT("HUDLobbyManager"));
+		UManagerLog::LogError(TEXT("Custom Human HUD class is null in constructor"), TEXT("HUDManagerLobby"));
 	}
 }
 
-void UHUDLobbyManager::NativeConstruct()
+void UHUDManagerLobby::NativeConstruct()
 {
 	Super::NativeConstruct();
 	
@@ -53,54 +53,54 @@ void UHUDLobbyManager::NativeConstruct()
 	// Validate that all required components are found
 	if (!ValidateUIComponents())
 	{
-		UMPLogManager::LogError(TEXT("Required UI components not found - HUD may not function correctly"), TEXT("HUDLobbyManager"));
+		UManagerLog::LogError(TEXT("Required UI components not found - HUD may not function correctly"), TEXT("HUDManagerLobby"));
 		// Don't return early - we'll try to initialize anyway when SetOwner is called
 	}
 	
 	// Note: InitializeManager() will be called when SetOwner() is called
 	// to ensure proper initialization order
 	
-	UMPLogManager::LogInfo(TEXT("HUDLobbyManager constructed"), TEXT("HUDLobbyManager"));
+	UManagerLog::LogInfo(TEXT("HUDManagerLobby constructed"), TEXT("HUDManagerLobby"));
 }
 
-bool UHUDLobbyManager::ValidateUIComponents() const
+bool UHUDManagerLobby::ValidateUIComponents() const
 {
 	bool isValid = true;
 	
 	if (!lobbyOverlay)
 	{
-		UMPLogManager::LogError(TEXT("Lobby overlay not found"), TEXT("HUDLobbyManager"));
+		UManagerLog::LogError(TEXT("Lobby overlay not found"), TEXT("HUDManagerLobby"));
 		isValid = false;
 	}
 	
 	if (!customizationOverlay)
 	{
-		UMPLogManager::LogError(TEXT("Customization overlay not found"), TEXT("HUDLobbyManager"));
+		UManagerLog::LogError(TEXT("Customization overlay not found"), TEXT("HUDManagerLobby"));
 		isValid = false;
 	}
 	
 	if (!backButton)
 	{
-		UMPLogManager::LogError(TEXT("Back button not found"), TEXT("HUDLobbyManager"));
+		UManagerLog::LogError(TEXT("Back button not found"), TEXT("HUDManagerLobby"));
 		isValid = false;
 	}
 	
 	if (!readyButton)
 	{
-		UMPLogManager::LogError(TEXT("Ready button not found"), TEXT("HUDLobbyManager"));
+		UManagerLog::LogError(TEXT("Ready button not found"), TEXT("HUDManagerLobby"));
 		isValid = false;
 	}
 	
 	if (!countdownText)
 	{
-		UMPLogManager::LogWarning(TEXT("Countdown text not found - countdown will not be displayed"), TEXT("HUDLobbyManager"));
+		UManagerLog::LogWarning(TEXT("Countdown text not found - countdown will not be displayed"), TEXT("HUDManagerLobby"));
 		// This is not critical, so we don't set isValid = false
 	}
 	
 	return isValid;
 }
 
-void UHUDLobbyManager::SetOwner(AMPControllerPlayer* theOwner)
+void UHUDManagerLobby::SetOwner(AMPControllerPlayer* theOwner)
 {
 	Super::SetOwner(theOwner);
 	
@@ -110,7 +110,7 @@ void UHUDLobbyManager::SetOwner(AMPControllerPlayer* theOwner)
 		// Check if UI components are ready
 		if (!lobbyOverlay || !customizationOverlay || !backButton || !readyButton)
 		{
-			UMPLogManager::LogDebug(TEXT("UI components not ready yet - will initialize when available"), TEXT("HUDLobbyManager"));
+			UManagerLog::LogDebug(TEXT("UI components not ready yet - will initialize when available"), TEXT("HUDManagerLobby"));
 			// Don't return early - we'll try to initialize anyway
 		}
 		
@@ -135,11 +135,11 @@ void UHUDLobbyManager::SetOwner(AMPControllerPlayer* theOwner)
 		// Refresh current team in case PlayerState is now available
 		RefreshCurrentTeam();
 		
-		UMPLogManager::LogDebug(TEXT("Owner updated for existing HUDs"), TEXT("HUDLobbyManager"));
+		UManagerLog::LogDebug(TEXT("Owner updated for existing HUDs"), TEXT("HUDManagerLobby"));
 	}
 }
 
-void UHUDLobbyManager::NativeDestruct()
+void UHUDManagerLobby::NativeDestruct()
 {
 	// Unbind button events
 	if (backButton)
@@ -160,15 +160,15 @@ void UHUDLobbyManager::NativeDestruct()
 
 	Super::NativeDestruct();
 	
-	UMPLogManager::LogInfo(TEXT("Lobby Manager HUD destroyed"), TEXT("HUDLobbyManager"));
+	UManagerLog::LogInfo(TEXT("Lobby Manager HUD destroyed"), TEXT("HUDManagerLobby"));
 }
 
-void UHUDLobbyManager::InitializeManager()
+void UHUDManagerLobby::InitializeManager()
 {
 	// Ensure we have an owner before initializing
 	if (!owner)
 	{
-		UMPLogManager::LogWarning(TEXT("Cannot initialize manager - owner is null"), TEXT("HUDLobbyManager"));
+		UManagerLog::LogWarning(TEXT("Cannot initialize manager - owner is null"), TEXT("HUDManagerLobby"));
 		return;
 	}
 	
@@ -182,27 +182,27 @@ void UHUDLobbyManager::InitializeManager()
 	// Update UI
 	UpdateUI();
 	
-	UMPLogManager::LogInfo(TEXT("Lobby Manager initialized"), TEXT("HUDLobbyManager"));
+	UManagerLog::LogInfo(TEXT("Lobby Manager initialized"), TEXT("HUDManagerLobby"));
 }
 
-void UHUDLobbyManager::RefreshCurrentTeam()
+void UHUDManagerLobby::RefreshCurrentTeam()
 {
 	currentTeam = GetCurrentTeam();
-	UMPLogManager::LogDebug(FString::Printf(TEXT("Current team refreshed: %d"), (int32)currentTeam), TEXT("HUDLobbyManager"));
+	UManagerLog::LogDebug(FString::Printf(TEXT("Current team refreshed: %d"), (int32)currentTeam), TEXT("HUDManagerLobby"));
 }
 
-void UHUDLobbyManager::CreateHUDWidgets()
+void UHUDManagerLobby::CreateHUDWidgets()
 {
 	// Check if required overlays are available
 	if (!lobbyOverlay)
 	{
-		UMPLogManager::LogError(TEXT("Lobby overlay is null - cannot create lobby HUD"), TEXT("HUDLobbyManager"));
+		UManagerLog::LogError(TEXT("Lobby overlay is null - cannot create lobby HUD"), TEXT("HUDManagerLobby"));
 		return;
 	}
 	
 	if (!customizationOverlay)
 	{
-		UMPLogManager::LogError(TEXT("Customization overlay is null - cannot create customization HUDs"), TEXT("HUDLobbyManager"));
+		UManagerLog::LogError(TEXT("Customization overlay is null - cannot create customization HUDs"), TEXT("HUDManagerLobby"));
 		return;
 	}
 	
@@ -216,18 +216,18 @@ void UHUDLobbyManager::CreateHUDWidgets()
 			lobbyOverlay->AddChild(lobbyHUD);
 			
 			// Bind to team change events
-			lobbyHUD->OnTeamChanged.AddDynamic(this, &UHUDLobbyManager::OnTeamChanged);
+			lobbyHUD->OnTeamChanged.AddDynamic(this, &UHUDManagerLobby::OnTeamChanged);
 			
-			UMPLogManager::LogInfo(TEXT("Lobby HUD created and added to overlay"), TEXT("HUDLobbyManager"));
+			UManagerLog::LogInfo(TEXT("Lobby HUD created and added to overlay"), TEXT("HUDManagerLobby"));
 		}
 		else
 		{
-			UMPLogManager::LogError(TEXT("Failed to create lobby HUD"), TEXT("HUDLobbyManager"));
+			UManagerLog::LogError(TEXT("Failed to create lobby HUD"), TEXT("HUDManagerLobby"));
 		}
 	}
 	else
 	{
-		UMPLogManager::LogError(TEXT("Lobby HUD class is null - cannot create lobby HUD"), TEXT("HUDLobbyManager"));
+		UManagerLog::LogError(TEXT("Lobby HUD class is null - cannot create lobby HUD"), TEXT("HUDManagerLobby"));
 	}
 	
 	// Create customization HUDs (initially hidden)
@@ -239,16 +239,16 @@ void UHUDLobbyManager::CreateHUDWidgets()
 			customCatHUD->SetOwner(owner);
 			customCatHUD->SetVisibility(ESlateVisibility::Hidden);
 			customizationOverlay->AddChild(customCatHUD);
-			UMPLogManager::LogInfo(TEXT("Custom Cat HUD created and added to overlay"), TEXT("HUDLobbyManager"));
+			UManagerLog::LogInfo(TEXT("Custom Cat HUD created and added to overlay"), TEXT("HUDManagerLobby"));
 		}
 		else
 		{
-			UMPLogManager::LogError(TEXT("Failed to create custom cat HUD"), TEXT("HUDLobbyManager"));
+			UManagerLog::LogError(TEXT("Failed to create custom cat HUD"), TEXT("HUDManagerLobby"));
 		}
 	}
 	else
 	{
-		UMPLogManager::LogError(TEXT("Custom Cat HUD class is null - cannot create custom cat HUD"), TEXT("HUDLobbyManager"));
+		UManagerLog::LogError(TEXT("Custom Cat HUD class is null - cannot create custom cat HUD"), TEXT("HUDManagerLobby"));
 	}
 	
 	if (customHumanHUDClass)
@@ -259,27 +259,27 @@ void UHUDLobbyManager::CreateHUDWidgets()
 			customHumanHUD->SetOwner(owner);
 			customHumanHUD->SetVisibility(ESlateVisibility::Hidden);
 			customizationOverlay->AddChild(customHumanHUD);
-			UMPLogManager::LogInfo(TEXT("Custom Human HUD created and added to overlay"), TEXT("HUDLobbyManager"));
+			UManagerLog::LogInfo(TEXT("Custom Human HUD created and added to overlay"), TEXT("HUDManagerLobby"));
 		}
 		else
 		{
-			UMPLogManager::LogError(TEXT("Failed to create custom human HUD"), TEXT("HUDLobbyManager"));
+			UManagerLog::LogError(TEXT("Failed to create custom human HUD"), TEXT("HUDManagerLobby"));
 		}
 	}
 	else
 	{
-		UMPLogManager::LogError(TEXT("Custom Human HUD class is null - cannot create custom human HUD"), TEXT("HUDLobbyManager"));
+		UManagerLog::LogError(TEXT("Custom Human HUD class is null - cannot create custom human HUD"), TEXT("HUDManagerLobby"));
 	}
 }
 
-void UHUDLobbyManager::ShowCustomizationHUD(ETeam team)
+void UHUDManagerLobby::ShowCustomizationHUD(ETeam team)
 {
-	UMPLogManager::LogInfo(FString::Printf(TEXT("Showing customization HUD for team: %d"), (int32)team), TEXT("HUDLobbyManager"));
+	UManagerLog::LogInfo(FString::Printf(TEXT("Showing customization HUD for team: %d"), (int32)team), TEXT("HUDManagerLobby"));
 	
 	// Validate team value
 	if (team == ETeam::ENone)
 	{
-		UMPLogManager::LogWarning(TEXT("Cannot show customization HUD for ENone team"), TEXT("HUDLobbyManager"));
+		UManagerLog::LogWarning(TEXT("Cannot show customization HUD for ENone team"), TEXT("HUDManagerLobby"));
 		HideCustomizationHUD();
 		return;
 	}
@@ -303,11 +303,11 @@ void UHUDLobbyManager::ShowCustomizationHUD(ETeam team)
 		{
 			customCatHUD->SetVisibility(ESlateVisibility::Visible);
 			isCustomizationActive = true;
-			UMPLogManager::LogInfo(TEXT("Cat customization HUD shown"), TEXT("HUDLobbyManager"));
+			UManagerLog::LogInfo(TEXT("Cat customization HUD shown"), TEXT("HUDManagerLobby"));
 		}
 		else
 		{
-			UMPLogManager::LogError(TEXT("Cat customization HUD is null"), TEXT("HUDLobbyManager"));
+			UManagerLog::LogError(TEXT("Cat customization HUD is null"), TEXT("HUDManagerLobby"));
 		}
 		break;
 		
@@ -316,23 +316,23 @@ void UHUDLobbyManager::ShowCustomizationHUD(ETeam team)
 		{
 			customHumanHUD->SetVisibility(ESlateVisibility::Visible);
 			isCustomizationActive = true;
-			UMPLogManager::LogInfo(TEXT("Human customization HUD shown"), TEXT("HUDLobbyManager"));
+			UManagerLog::LogInfo(TEXT("Human customization HUD shown"), TEXT("HUDManagerLobby"));
 		}
 		else
 		{
-			UMPLogManager::LogError(TEXT("Human customization HUD is null"), TEXT("HUDLobbyManager"));
+			UManagerLog::LogError(TEXT("Human customization HUD is null"), TEXT("HUDManagerLobby"));
 		}
 		break;
 		
 	default:
-		UMPLogManager::LogWarning(FString::Printf(TEXT("Invalid team for customization HUD: %d"), (int32)team), TEXT("HUDLobbyManager"));
+		UManagerLog::LogWarning(FString::Printf(TEXT("Invalid team for customization HUD: %d"), (int32)team), TEXT("HUDManagerLobby"));
 		break;
 	}
 }
 
-void UHUDLobbyManager::HideCustomizationHUD()
+void UHUDManagerLobby::HideCustomizationHUD()
 {
-	UMPLogManager::LogInfo(TEXT("Hiding customization HUD"), TEXT("HUDLobbyManager"));
+	UManagerLog::LogInfo(TEXT("Hiding customization HUD"), TEXT("HUDManagerLobby"));
 	
 	if (customCatHUD)
 	{
@@ -347,16 +347,16 @@ void UHUDLobbyManager::HideCustomizationHUD()
 	isCustomizationActive = false;
 }
 
-void UHUDLobbyManager::UpdateReadyState(bool inIsReady)
+void UHUDManagerLobby::UpdateReadyState(bool inIsReady)
 {
 	isReady = inIsReady;
 	UpdateReadyButtonText();
 	
-	UMPLogManager::LogDebug(FString::Printf(TEXT("Ready state updated: %s"), 
-		isReady ? TEXT("Ready") : TEXT("Not Ready")), TEXT("HUDLobbyManager"));
+	UManagerLog::LogDebug(FString::Printf(TEXT("Ready state updated: %s"), 
+		isReady ? TEXT("Ready") : TEXT("Not Ready")), TEXT("HUDManagerLobby"));
 }
 
-void UHUDLobbyManager::UpdateReadyButtonText()
+void UHUDManagerLobby::UpdateReadyButtonText()
 {
 	if (readyButtonText)
 	{
@@ -371,12 +371,12 @@ void UHUDLobbyManager::UpdateReadyButtonText()
 		
 		readyButtonText->SetText(readyText);
 		
-		UMPLogManager::LogDebug(FString::Printf(TEXT("Ready button text updated: %s"), 
-			isReady ? TEXT("Ready") : TEXT("Not Ready")), TEXT("HUDLobbyManager"));
+		UManagerLog::LogDebug(FString::Printf(TEXT("Ready button text updated: %s"), 
+			isReady ? TEXT("Ready") : TEXT("Not Ready")), TEXT("HUDManagerLobby"));
 	}
 }
 
-void UHUDLobbyManager::UpdateCountdownText(int32 secondsRemaining)
+void UHUDManagerLobby::UpdateCountdownText(int32 secondsRemaining)
 {
 	if (countdownText)
 	{
@@ -389,11 +389,11 @@ void UHUDLobbyManager::UpdateCountdownText(int32 secondsRemaining)
 		FString countdownString = FString::Printf(TEXT("%d"), secondsRemaining);
 		countdownText->SetText(FText::FromString(countdownString));
 		
-		UMPLogManager::LogDebug(FString::Printf(TEXT("Countdown updated: %d seconds"), secondsRemaining), TEXT("HUDLobbyManager"));
+		UManagerLog::LogDebug(FString::Printf(TEXT("Countdown updated: %d seconds"), secondsRemaining), TEXT("HUDManagerLobby"));
 	}
 }
 
-void UHUDLobbyManager::SetReadyButtonEnabled(bool enabled)
+void UHUDManagerLobby::SetReadyButtonEnabled(bool enabled)
 {
 	if (readyButton)
 	{
@@ -401,7 +401,7 @@ void UHUDLobbyManager::SetReadyButtonEnabled(bool enabled)
 	}
 }
 
-ETeam UHUDLobbyManager::GetCurrentTeam() const
+ETeam UHUDManagerLobby::GetCurrentTeam() const
 {
 	if (owner)
 	{
@@ -412,22 +412,22 @@ ETeam UHUDLobbyManager::GetCurrentTeam() const
 		}
 		else
 		{
-			UMPLogManager::LogWarning(TEXT("Player state is null - cannot get current team"), TEXT("HUDLobbyManager"));
+			UManagerLog::LogWarning(TEXT("Player state is null - cannot get current team"), TEXT("HUDManagerLobby"));
 		}
 	}
 	else
 	{
-		UMPLogManager::LogWarning(TEXT("Owner is null - cannot get current team"), TEXT("HUDLobbyManager"));
+		UManagerLog::LogWarning(TEXT("Owner is null - cannot get current team"), TEXT("HUDManagerLobby"));
 	}
 	return ETeam::ENone;
 }
 
-bool UHUDLobbyManager::IsHost() const
+bool UHUDManagerLobby::IsHost() const
 {
 	UWorld* world = GetWorld();
 	if (!world)
 	{
-		UMPLogManager::LogWarning(TEXT("World is null - cannot determine host status"), TEXT("HUDLobbyManager"));
+		UManagerLog::LogWarning(TEXT("World is null - cannot determine host status"), TEXT("HUDManagerLobby"));
 		return false;
 	}
 	
@@ -437,19 +437,19 @@ bool UHUDLobbyManager::IsHost() const
 		return gameInstance->IsHost();
 	}
 	
-	UMPLogManager::LogWarning(TEXT("Game instance is null - cannot determine host status"), TEXT("HUDLobbyManager"));
+	UManagerLog::LogWarning(TEXT("Game instance is null - cannot determine host status"), TEXT("HUDManagerLobby"));
 	return false;
 }
 
-void UHUDLobbyManager::OnBackButtonClicked()
+void UHUDManagerLobby::OnBackButtonClicked()
 {
-	UMPLogManager::LogInfo(TEXT("Back button clicked"), TEXT("HUDLobbyManager"));
+	UManagerLog::LogInfo(TEXT("Back button clicked"), TEXT("HUDManagerLobby"));
 	
 	// Handle back button based on current state
 	if (isCustomizationActive)
 	{
 		// If customization is active, hide it and return to lobby only
-		UMPLogManager::LogInfo(TEXT("Hiding customization and returning to lobby"), TEXT("HUDLobbyManager"));
+		UManagerLog::LogInfo(TEXT("Hiding customization and returning to lobby"), TEXT("HUDManagerLobby"));
 		HideCustomizationHUD();
 	}
 	else
@@ -458,41 +458,41 @@ void UHUDLobbyManager::OnBackButtonClicked()
 		UWorld* world = GetWorld();
 		if (!world)
 		{
-			UMPLogManager::LogError(TEXT("World is null - cannot leave session"), TEXT("HUDLobbyManager"));
+			UManagerLog::LogError(TEXT("World is null - cannot leave session"), TEXT("HUDManagerLobby"));
 			return;
 		}
 		
 		UMPGI* gameInstance = Cast<UMPGI>(world->GetGameInstance());
 		if (gameInstance)
 		{
-			UMPLogManager::LogInfo(TEXT("Leaving session"), TEXT("HUDLobbyManager"));
+			UManagerLog::LogInfo(TEXT("Leaving session"), TEXT("HUDManagerLobby"));
 			gameInstance->EndSession();
 		}
 		else
 		{
-			UMPLogManager::LogError(TEXT("Could not get game instance for leaving session"), TEXT("HUDLobbyManager"));
+			UManagerLog::LogError(TEXT("Could not get game instance for leaving session"), TEXT("HUDManagerLobby"));
 		}
 	}
 }
 
-void UHUDLobbyManager::OnReadyButtonClicked()
+void UHUDManagerLobby::OnReadyButtonClicked()
 {
-	UMPLogManager::LogInfo(TEXT("Ready button clicked"), TEXT("HUDLobbyManager"));
+	UManagerLog::LogInfo(TEXT("Ready button clicked"), TEXT("HUDManagerLobby"));
 	
 	if (owner)
 	{
 		bool newReadyState = !isReady;
-		UMPLogManager::LogInfo(FString::Printf(TEXT("Setting ready state to: %s"), 
-			newReadyState ? TEXT("Ready") : TEXT("Not Ready")), TEXT("HUDLobbyManager"));
+		UManagerLog::LogInfo(FString::Printf(TEXT("Setting ready state to: %s"), 
+			newReadyState ? TEXT("Ready") : TEXT("Not Ready")), TEXT("HUDManagerLobby"));
 		owner->SetReadyState(newReadyState);
 	}
 	else
 	{
-		UMPLogManager::LogError(TEXT("Owner is null, cannot change ready state"), TEXT("HUDLobbyManager"));
+		UManagerLog::LogError(TEXT("Owner is null, cannot change ready state"), TEXT("HUDManagerLobby"));
 	}
 }
 
-void UHUDLobbyManager::UpdateUI()
+void UHUDManagerLobby::UpdateUI()
 {
 	// Update button texts
 	if (backButtonText)
@@ -506,7 +506,7 @@ void UHUDLobbyManager::UpdateUI()
 	}
 	else
 	{
-		UMPLogManager::LogWarning(TEXT("Back button text is null"), TEXT("HUDLobbyManager"));
+		UManagerLog::LogWarning(TEXT("Back button text is null"), TEXT("HUDManagerLobby"));
 	}
 	
 	UpdateReadyButtonText();
@@ -518,20 +518,20 @@ void UHUDLobbyManager::UpdateUI()
 	}
 	else
 	{
-		UMPLogManager::LogWarning(TEXT("Lobby HUD is null during UI update"), TEXT("HUDLobbyManager"));
+		UManagerLog::LogWarning(TEXT("Lobby HUD is null during UI update"), TEXT("HUDManagerLobby"));
 	}
 	
-	UMPLogManager::LogDebug(TEXT("UI updated"), TEXT("HUDLobbyManager"));
+	UManagerLog::LogDebug(TEXT("UI updated"), TEXT("HUDManagerLobby"));
 }
 
-void UHUDLobbyManager::OnTeamChanged(ETeam newTeam)
+void UHUDManagerLobby::OnTeamChanged(ETeam newTeam)
 {
-	UMPLogManager::LogInfo(FString::Printf(TEXT("Team changed to: %d"), (int32)newTeam), TEXT("HUDLobbyManager"));
+	UManagerLog::LogInfo(FString::Printf(TEXT("Team changed to: %d"), (int32)newTeam), TEXT("HUDManagerLobby"));
 	
 	// Validate team value
 	if (newTeam == ETeam::ENone)
 	{
-		UMPLogManager::LogWarning(TEXT("Team changed to ENone - hiding customization HUD"), TEXT("HUDLobbyManager"));
+		UManagerLog::LogWarning(TEXT("Team changed to ENone - hiding customization HUD"), TEXT("HUDManagerLobby"));
 		HideCustomizationHUD();
 		return;
 	}
@@ -556,30 +556,30 @@ void UHUDLobbyManager::OnTeamChanged(ETeam newTeam)
 	// -----------------------------------------------------------
 } 
 
-void UHUDLobbyManager::BindButtonEvents()
+void UHUDManagerLobby::BindButtonEvents()
 {
 	if (backButton)
 	{
-		backButton->OnClicked.AddDynamic(this, &UHUDLobbyManager::OnBackButtonClicked);
-		UMPLogManager::LogDebug(TEXT("Back button event bound"), TEXT("HUDLobbyManager"));
+		backButton->OnClicked.AddDynamic(this, &UHUDManagerLobby::OnBackButtonClicked);
+		UManagerLog::LogDebug(TEXT("Back button event bound"), TEXT("HUDManagerLobby"));
 	}
 	else
 	{
-		UMPLogManager::LogError(TEXT("Back button is null - cannot bind event"), TEXT("HUDLobbyManager"));
+		UManagerLog::LogError(TEXT("Back button is null - cannot bind event"), TEXT("HUDManagerLobby"));
 	}
 	
 	if (readyButton)
 	{
-		readyButton->OnClicked.AddDynamic(this, &UHUDLobbyManager::OnReadyButtonClicked);
-		UMPLogManager::LogDebug(TEXT("Ready button event bound"), TEXT("HUDLobbyManager"));
+		readyButton->OnClicked.AddDynamic(this, &UHUDManagerLobby::OnReadyButtonClicked);
+		UManagerLog::LogDebug(TEXT("Ready button event bound"), TEXT("HUDManagerLobby"));
 	}
 	else
 	{
-		UMPLogManager::LogError(TEXT("Ready button is null - cannot bind event"), TEXT("HUDLobbyManager"));
+		UManagerLog::LogError(TEXT("Ready button is null - cannot bind event"), TEXT("HUDManagerLobby"));
 	}
 } 
 
-void UHUDLobbyManager::FindUIComponents()
+void UHUDManagerLobby::FindUIComponents()
 {
 	// Find UI components using GetWidgetFromName
 	// Note: These should be bound via meta = (BindWidget) in Blueprint
@@ -587,45 +587,45 @@ void UHUDLobbyManager::FindUIComponents()
 	
 	if (!lobbyOverlay)
 	{
-		UMPLogManager::LogWarning(TEXT("Lobby overlay not found via binding - trying GetWidgetFromName"), TEXT("HUDLobbyManager"));
+		UManagerLog::LogWarning(TEXT("Lobby overlay not found via binding - trying GetWidgetFromName"), TEXT("HUDManagerLobby"));
 		lobbyOverlay = Cast<UOverlay>(GetWidgetFromName(TEXT("LobbyOverlay")));
 	}
 	
 	if (!customizationOverlay)
 	{
-		UMPLogManager::LogWarning(TEXT("Customization overlay not found via binding - trying GetWidgetFromName"), TEXT("HUDLobbyManager"));
+		UManagerLog::LogWarning(TEXT("Customization overlay not found via binding - trying GetWidgetFromName"), TEXT("HUDManagerLobby"));
 		customizationOverlay = Cast<UOverlay>(GetWidgetFromName(TEXT("CustomizationOverlay")));
 	}
 	
 	if (!backButton)
 	{
-		UMPLogManager::LogWarning(TEXT("Back button not found via binding - trying GetWidgetFromName"), TEXT("HUDLobbyManager"));
+		UManagerLog::LogWarning(TEXT("Back button not found via binding - trying GetWidgetFromName"), TEXT("HUDManagerLobby"));
 		backButton = Cast<UButton>(GetWidgetFromName(TEXT("BackButton")));
 	}
 	
 	if (!readyButton)
 	{
-		UMPLogManager::LogWarning(TEXT("Ready button not found via binding - trying GetWidgetFromName"), TEXT("HUDLobbyManager"));
+		UManagerLog::LogWarning(TEXT("Ready button not found via binding - trying GetWidgetFromName"), TEXT("HUDManagerLobby"));
 		readyButton = Cast<UButton>(GetWidgetFromName(TEXT("ReadyButton")));
 	}
 	
 	if (!countdownText)
 	{
-		UMPLogManager::LogWarning(TEXT("Countdown text not found via binding - trying GetWidgetFromName"), TEXT("HUDLobbyManager"));
+		UManagerLog::LogWarning(TEXT("Countdown text not found via binding - trying GetWidgetFromName"), TEXT("HUDManagerLobby"));
 		countdownText = Cast<UTextBlock>(GetWidgetFromName(TEXT("CountdownText")));
 	}
 	
 	if (!backButtonText)
 	{
-		UMPLogManager::LogWarning(TEXT("Back button text not found via binding - trying GetWidgetFromName"), TEXT("HUDLobbyManager"));
+		UManagerLog::LogWarning(TEXT("Back button text not found via binding - trying GetWidgetFromName"), TEXT("HUDManagerLobby"));
 		backButtonText = Cast<UTextBlock>(GetWidgetFromName(TEXT("BackButtonText")));
 	}
 	
 	if (!readyButtonText)
 	{
-		UMPLogManager::LogWarning(TEXT("Ready button text not found via binding - trying GetWidgetFromName"), TEXT("HUDLobbyManager"));
+		UManagerLog::LogWarning(TEXT("Ready button text not found via binding - trying GetWidgetFromName"), TEXT("HUDManagerLobby"));
 		readyButtonText = Cast<UTextBlock>(GetWidgetFromName(TEXT("ReadyButtonText")));
 	}
 	
-	UMPLogManager::LogDebug(TEXT("UI components search completed"), TEXT("HUDLobbyManager"));
+	UManagerLog::LogDebug(TEXT("UI components search completed"), TEXT("HUDManagerLobby"));
 } 

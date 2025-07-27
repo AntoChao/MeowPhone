@@ -1,10 +1,10 @@
 #include "HUDLobbyEntry.h"
 #include "Components/TextBlock.h"
 #include "Components/Button.h"
-#include "HighLevel/MPGI.h"
-#include "HighLevel/MPLogManager.h"
-#include "MPActor/Player/MPControllerPlayer.h"
-#include "MPActor/AI/MPAIController.h"
+#include "../../../HighLevel/MPGI.h"
+#include "../../../HighLevel/Managers/ManagerLog.h"
+#include "../MPControllerPlayer.h"
+#include "../../AI/MPAIController.h"
 
 UHUDLobbyEntry::UHUDLobbyEntry(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -59,7 +59,7 @@ void UHUDLobbyEntry::InitializeEntry(const FString& inPlayerName, bool inIsBot, 
 	// Update UI
 	UpdateUI();
 
-	UMPLogManager::LogDebug(FString::Printf(TEXT("Lobby entry initialized: %s (Bot: %s, Ready: %s, Team: %d)"), 
+	UManagerLog::LogDebug(FString::Printf(TEXT("Lobby entry initialized: %s (Bot: %s, Ready: %s, Team: %d)"), 
 		*playerName, isBot ? TEXT("Yes") : TEXT("No"), isReady ? TEXT("Yes") : TEXT("No"), (int32)playerTeam), TEXT("HUDLobbyEntry"));
 }
 
@@ -84,7 +84,7 @@ void UHUDLobbyEntry::UpdateReadyStatus(bool inIsReady)
 		}
 	}
 
-	UMPLogManager::LogDebug(FString::Printf(TEXT("Ready status updated: %s (Ready: %s)"), 
+	UManagerLog::LogDebug(FString::Printf(TEXT("Ready status updated: %s (Ready: %s)"), 
 		*playerName, isReady ? TEXT("Yes") : TEXT("No")), TEXT("HUDLobbyEntry"));
 }
 
@@ -97,7 +97,7 @@ void UHUDLobbyEntry::UpdatePlayerName(const FString& inPlayerName)
 		playerNameText->SetText(FText::FromString(playerName));
 	}
 
-	UMPLogManager::LogDebug(FString::Printf(TEXT("Player name updated: %s"), *playerName), TEXT("HUDLobbyEntry"));
+	UManagerLog::LogDebug(FString::Printf(TEXT("Player name updated: %s"), *playerName), TEXT("HUDLobbyEntry"));
 }
 
 void UHUDLobbyEntry::UpdateHostVisibility(bool isHost)
@@ -109,7 +109,7 @@ void UHUDLobbyEntry::UpdateHostVisibility(bool isHost)
 		removeButton->SetVisibility(shouldShow ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
 	}
 
-	UMPLogManager::LogDebug(FString::Printf(TEXT("Host visibility updated: %s (Host: %s, Bot: %s)"), 
+	UManagerLog::LogDebug(FString::Printf(TEXT("Host visibility updated: %s (Host: %s, Bot: %s)"), 
 		*playerName, isHost ? TEXT("Yes") : TEXT("No"), isBot ? TEXT("Yes") : TEXT("No")), TEXT("HUDLobbyEntry"));
 }
 
@@ -117,7 +117,7 @@ void UHUDLobbyEntry::OnRemoveButtonClicked()
 {
 	if (isBot && playerIndex >= 0)
 	{
-		UMPLogManager::LogInfo(FString::Printf(TEXT("Remove button clicked for bot: %s (Index: %d)"), 
+		UManagerLog::LogInfo(FString::Printf(TEXT("Remove button clicked for bot: %s (Index: %d)"), 
 			*playerName, playerIndex), TEXT("HUDLobbyEntry"));
 		
 		// Broadcast the remove bot event
@@ -125,7 +125,7 @@ void UHUDLobbyEntry::OnRemoveButtonClicked()
 	}
 	else
 	{
-		UMPLogManager::LogWarning(FString::Printf(TEXT("Remove button clicked but not a bot: %s (Bot: %s, Index: %d)"), 
+		UManagerLog::LogWarning(FString::Printf(TEXT("Remove button clicked but not a bot: %s (Bot: %s, Index: %d)"), 
 			*playerName, isBot ? TEXT("Yes") : TEXT("No"), playerIndex), TEXT("HUDLobbyEntry"));
 	}
 }

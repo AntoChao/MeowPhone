@@ -6,7 +6,7 @@
 #include "Perception/AISenseConfig_Sight.h"
 #include "Perception/AISenseConfig_Hearing.h"
 #include "NavigationSystem.h"
-#include "MPActor/Character/MPCharacter.h"
+#include "../Character/MPCharacter.h"
 
 AMPAIController::AMPAIController()
 {
@@ -129,7 +129,7 @@ void AMPAIController::MoveToRandomPoint(float Radius)
         MoveToLocation(OutLoc.Location, 5.f);
         if (AMPCharacter* Char = Cast<AMPCharacter>(MyPawn))
         {
-            Char->Move(FVector2D(1.f,0.f));
+            Char->AI_Move(FVector2D(1.f,0.f));
         }
     }
 }
@@ -139,7 +139,7 @@ void AMPAIController::JumpTowards(const FVector& TargetLoc)
     APawn* MyPawn = GetPawn();
     if (AMPCharacter* Char = Cast<AMPCharacter>(MyPawn))
     {
-        Char->JumpStart();
+        Char->AI_JumpStart();
         MoveToLocation(TargetLoc, 5.f);
     }
 }
@@ -151,6 +151,6 @@ void AMPAIController::StartInteractWithActor(AActor* Target)
     MoveToActor(Target, 80.f);
     if (AMPCharacter* Char = Cast<AMPCharacter>(MyPawn))
     {
-        Char->Interact();
+        Char->AI_Interact();
     }
 } 

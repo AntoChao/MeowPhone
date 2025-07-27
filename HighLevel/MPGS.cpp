@@ -6,7 +6,7 @@
 #include "../MPActor/Item/MPItem.h"
 #include "../MPActor/EnvActor/MPEnvActorComp.h"
 #include "Net/UnrealNetwork.h"
-#include "HighLevel/MPLogManager.h"
+#include "Managers/ManagerLog.h"
 
 AMPGS::AMPGS()
 {
@@ -91,20 +91,20 @@ void AMPGS::UpdateHumanProgression(int modifier)
 
 void AMPGS::OnRep_CurMPProgression()
 {
-	UMPLogManager::LogInfo(FString::Printf(TEXT("Client: Progression Updated to %f"), curMPProgression), TEXT("MPGS"));
+	UManagerLog::LogInfo(FString::Printf(TEXT("Client: Progression Updated to %f"), curMPProgression), TEXT("MPGS"));
 }
 
 void AMPGS::OnRep_CurMPProgressionPercentage()
 {
-	UMPLogManager::LogInfo(FString::Printf(TEXT("Client: Progression Percentage Updated to %.1f%%"), curMPProgressionPercentage * 100.0f), TEXT("MPGS"));
+	UManagerLog::LogInfo(FString::Printf(TEXT("Client: Progression Percentage Updated to %.1f%%"), curMPProgressionPercentage * 100.0f), TEXT("MPGS"));
 }
 
 void AMPGS::OnRep_CaughtCats()
 {
-	UMPLogManager::LogInfo(FString::Printf(TEXT("Client: Caught Cats Updated to %d"), caughtCats), TEXT("MPGS"));
+	UManagerLog::LogInfo(FString::Printf(TEXT("Client: Caught Cats Updated to %d"), caughtCats), TEXT("MPGS"));
 }
 
 void AMPGS::OnRep_CaughtCatsPercentage()
 {
-	UMPLogManager::LogInfo(FString::Printf(TEXT("Client: Caught Cats Percentage Updated to %.1f%%"), caughtCatsPercentage * 100.0f), TEXT("MPGS"));
+	UManagerLog::LogInfo(FString::Printf(TEXT("Client: Caught Cats Percentage Updated to %.1f%%"), caughtCatsPercentage * 100.0f), TEXT("MPGS"));
 }

@@ -1,11 +1,11 @@
 #include "MPEnvActorCompCage.h"
 #include "Net/UnrealNetwork.h"
 #include "Kismet/GameplayStatics.h"
-#include "HighLevel/MPLogManager.h"
-#include "HighLevel/MPGS.h"
-#include "MPActor/Character/MPCharacter.h"
-#include "MPActor/Character/MPCharacterCat.h"
-#include "MPActor/Character/MPCharacterHuman.h"
+#include "../../HighLevel/Managers/ManagerLog.h"
+#include "../../HighLevel/MPGS.h"
+#include "../Character/MPCharacter.h"
+#include "../Character/MPCharacterCat.h"
+#include "../Character/MPCharacterHuman.h"
 
 AMPEnvActorCompCage::AMPEnvActorCompCage()
 {
@@ -73,9 +73,9 @@ void AMPEnvActorCompCage::CatchCat(AMPCharacter* humanActor, AMPCharacterCat* ca
     if (!humanActor || !catToCatch) { return; }
 
     // Check if cat is still valid and not being destroyed
-    if (!IsValid(catToCatch) || catToCatch->IsPendingKill())
+    if (catToCatch)
     {
-        UMPLogManager::LogWarning(TEXT("ERROR: Trying to catch invalid or destroyed cat!"), TEXT("MPEnvActorCompCage"));
+        UManagerLog::LogWarning(TEXT("ERROR: Trying to catch invalid or destroyed cat!"), TEXT("MPEnvActorCompCage"));
         return;
     }
 
@@ -85,7 +85,7 @@ void AMPEnvActorCompCage::CatchCat(AMPCharacter* humanActor, AMPCharacterCat* ca
     // Verify that the human is actually holding this specific cat
     if (!human->IsHoldingCat() || human->GetHeldCat() != catToCatch)
     {
-        UMPLogManager::LogWarning(TEXT("ERROR: Human tried to catch a cat they're not holding!"), TEXT("MPEnvActorCompCage"));
+        UManagerLog::LogWarning(TEXT("ERROR: Human tried to catch a cat they're not holding!"), TEXT("MPEnvActorCompCage"));
         return;
     }
 
@@ -110,13 +110,13 @@ void AMPEnvActorCompCage::CatchCat(AMPCharacter* humanActor, AMPCharacterCat* ca
             {
                 // Player cat caught - update human progression
                 gameState->UpdateHumanProgression(1);
-                UMPLogManager::LogInfo(TEXT("Player Cat Caught! Human Progression Updated"), TEXT("MPEnvActorCompCage"));
+                UManagerLog::LogInfo(TEXT("Player Cat Caught! Human Progression Updated"), TEXT("MPEnvActorCompCage"));
             }
             else
             {
                 // AI cat caught - penalize human health
                 human->TakeHealthDamage(1);
-                UMPLogManager::LogInfo(TEXT("AI Cat Caught! Human Health Penalized"), TEXT("MPEnvActorCompCage"));
+                UManagerLog::LogInfo(TEXT("AI Cat Caught! Human Health Penalized"), TEXT("MPEnvActorCompCage"));
             }
         }
     }
@@ -131,7 +131,7 @@ void AMPEnvActorCompCage::CatchCat(AMPCharacter* humanActor, AMPCharacterCat* ca
     // isOccupied = false;
     // isOccupiedReplicated = false;
 
-    UMPLogManager::LogInfo(FString::Printf(TEXT("Cat caught in cage! IsPlayer: %s"), isPlayerCat ? TEXT("Yes") : TEXT("No")), TEXT("MPEnvActorCompCage"));
+    UManagerLog::LogInfo(FString::Printf(TEXT("Cat caught in cage! IsPlayer: %s"), isPlayerCat ? TEXT("Yes") : TEXT("No")), TEXT("MPEnvActorCompCage"));
 }
 
 void AMPEnvActorCompCage::OnRep_IsOccupied()

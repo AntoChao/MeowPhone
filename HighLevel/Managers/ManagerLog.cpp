@@ -1,16 +1,16 @@
-#include "MPLogManager.h"
+#include "Managers/ManagerLog.h"
 #include "Engine/Engine.h"
 #include "HAL/PlatformFilemanager.h"
 #include "Misc/DateTime.h"
 
 // Initialize static member
-FLogConfig UMPLogManager::LogConfig;
+FLogConfig UManagerLog::LogConfig;
 
-UMPLogManager::UMPLogManager()
+UManagerLog::UManagerLog()
 {
 }
 
-void UMPLogManager::InitializeLogging()
+void UManagerLog::InitializeLogging()
 {
 	// Set default configuration
 	LogConfig.logLevel = ELogLevel::Warning;
@@ -18,46 +18,46 @@ void UMPLogManager::InitializeLogging()
 	LogConfig.enableFileLogging = false;
 	LogConfig.screenLogDuration = 5.0f;
 
-	LogInfo(TEXT("Logging system initialized"), TEXT("MPLogManager"));
+	LogInfo(TEXT("Logging system initialized"), TEXT("ManagerLog"));
 }
 
-void UMPLogManager::LogError(const FString& message, const FString& context)
+void UManagerLog::LogError(const FString& message, const FString& context)
 {
 	InternalLog(ELogLevel::Error, message, context);
 }
 
-void UMPLogManager::LogWarning(const FString& message, const FString& context)
+void UManagerLog::LogWarning(const FString& message, const FString& context)
 {
 	InternalLog(ELogLevel::Warning, message, context);
 }
 
-void UMPLogManager::LogInfo(const FString& message, const FString& context)
+void UManagerLog::LogInfo(const FString& message, const FString& context)
 {
 	InternalLog(ELogLevel::Info, message, context);
 }
 
-void UMPLogManager::LogDebug(const FString& message, const FString& context)
+void UManagerLog::LogDebug(const FString& message, const FString& context)
 {
 	InternalLog(ELogLevel::Debug, message, context);
 }
 
-void UMPLogManager::LogVerbose(const FString& message, const FString& context)
+void UManagerLog::LogVerbose(const FString& message, const FString& context)
 {
 	InternalLog(ELogLevel::Verbose, message, context);
 }
 
-void UMPLogManager::SetLogConfig(const FLogConfig& newConfig)
+void UManagerLog::SetLogConfig(const FLogConfig& newConfig)
 {
 	LogConfig = newConfig;
-	LogInfo(TEXT("Logging configuration updated"), TEXT("MPLogManager"));
+	LogInfo(TEXT("Logging configuration updated"), TEXT("ManagerLog"));
 }
 
-bool UMPLogManager::ShouldLog(ELogLevel level)
+bool UManagerLog::ShouldLog(ELogLevel level)
 {
 	return static_cast<uint8>(level) <= static_cast<uint8>(LogConfig.logLevel);
 }
 
-FString UMPLogManager::FormatLogMessage(ELogLevel level, const FString& message, const FString& context)
+FString UManagerLog::FormatLogMessage(ELogLevel level, const FString& message, const FString& context)
 {
 	FString formattedMessage = FString::Printf(TEXT("[%s] %s"), *GetLogLevelString(level), *message);
 	
@@ -69,7 +69,7 @@ FString UMPLogManager::FormatLogMessage(ELogLevel level, const FString& message,
 	return formattedMessage;
 }
 
-void UMPLogManager::InternalLog(ELogLevel level, const FString& message, const FString& context)
+void UManagerLog::InternalLog(ELogLevel level, const FString& message, const FString& context)
 {
 	if (!ShouldLog(level))
 	{
@@ -113,7 +113,7 @@ void UMPLogManager::InternalLog(ELogLevel level, const FString& message, const F
 	}
 }
 
-FColor UMPLogManager::GetLogColor(ELogLevel level)
+FColor UManagerLog::GetLogColor(ELogLevel level)
 {
 	switch (level)
 	{
@@ -126,13 +126,13 @@ FColor UMPLogManager::GetLogColor(ELogLevel level)
 	case ELogLevel::Debug:
 		return FColor::Blue;
 	case ELogLevel::Verbose:
-		return FColor::Gray;
+		return FColor::Silver;
 	default:
 		return FColor::White;
 	}
 }
 
-FString UMPLogManager::GetLogLevelString(ELogLevel level)
+FString UManagerLog::GetLogLevelString(ELogLevel level)
 {
 	switch (level)
 	{

@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "MPHUD.h"
-#include "CommonEnum.h"
+#include "../../../CommonEnum.h"
 #include "HUDSessionGeneral.generated.h"
 
 class UTextBlock;
@@ -26,7 +26,7 @@ protected:
     virtual void UpdateTexts() override;
     virtual bool ValidateRootWidget() override;
 
-private:
+protected:
     // Root widget
     UPROPERTY(meta = (BindWidget))
     UCanvasPanel* rootCanvas;
@@ -41,7 +41,13 @@ private:
     UPROPERTY(meta = (BindWidget))
     UButton* backButton;
 
+    UPROPERTY(meta = (BindWidget)) 
+    UTextBlock* titleText;
+
     // Localization keys
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Localization Keys")
+    FString sessionTitleTextKey = TEXT("SESSION_TITLE");
+
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Localization Keys")
     FString createSessionTextKey = TEXT("SESSION_CREATE");
     

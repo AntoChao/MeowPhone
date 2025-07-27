@@ -4,7 +4,7 @@
 #include "GameFramework/Actor.h"
 #include "MPAISystemManager.generated.h"
 
-class AMPAIControllerHuman;
+class AMPAIControllerHumanPlayer;
 class AMPEnvActorComp;
 
 UCLASS(Blueprintable)
@@ -27,7 +27,7 @@ public:
 
 protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="AI Manager")
-        TArray<AMPAIControllerHuman*> allAIHumanControllers;
+        TArray<AMPAIControllerHumanPlayer*> allAIHumanControllers;
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="AI Manager")
         TArray<AMPEnvActorComp*> allUrgentEnvActor;

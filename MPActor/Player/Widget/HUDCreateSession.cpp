@@ -4,8 +4,8 @@
 #include "Components/CanvasPanel.h"
 #include "Components/EditableTextBox.h"
 #include "Components/CheckBox.h"
-#include "HighLevel/MPGI.h"
-#include "MPActor/Player/MPControllerPlayer.h"
+#include "../../../HighLevel/MPGI.h"
+#include "../../Player/MPControllerPlayer.h"
 
 // Constructor removed - not needed for UserWidget
 
@@ -16,7 +16,7 @@ void UHUDCreateSession::NativeConstruct()
     	// Validate root widget first
 	if (!ValidateRootWidget())
 	{
-		UMPLogManager::LogError(TEXT("Root widget validation failed!"), TEXT("HUDCreateSession"));
+		UManagerLog::LogError(TEXT("Root widget validation failed!"), TEXT("HUDCreateSession"));
 		return;
 	}
     
@@ -177,7 +177,7 @@ bool UHUDCreateSession::ValidateRootWidget()
 {
     if (!rootCanvas)
     {
-        UMPLogManager::LogError(TEXT("Root canvas is missing!"), TEXT("HUDCreateSession"));
+        UManagerLog::LogError(TEXT("Root canvas is missing!"), TEXT("HUDCreateSession"));
         return false;
     }
     return true;
@@ -186,7 +186,7 @@ bool UHUDCreateSession::ValidateRootWidget()
 // Button click functions
 void UHUDCreateSession::OnSessionModeClicked()
 {
-    UMPLogManager::LogInfo(TEXT("Session mode clicked"), TEXT("HUDCreateSession"));
+    UManagerLog::LogInfo(TEXT("Session mode clicked"), TEXT("HUDCreateSession"));
     
     // Toggle between single player and multiplayer
     isMultiplayerMode = !isMultiplayerMode;
@@ -198,11 +198,11 @@ void UHUDCreateSession::OnSessionModeClicked()
 
 void UHUDCreateSession::OnBackClicked()
 {
-    UMPLogManager::LogInfo(TEXT("Back clicked"), TEXT("HUDCreateSession"));
+    UManagerLog::LogInfo(TEXT("Back clicked"), TEXT("HUDCreateSession"));
     
     if (!owner)
     {
-        UMPLogManager::LogError(TEXT("Owner is null, cannot navigate"), TEXT("HUDCreateSession"));
+        UManagerLog::LogError(TEXT("Owner is null, cannot navigate"), TEXT("HUDCreateSession"));
         return;
     }
     
@@ -210,12 +210,12 @@ void UHUDCreateSession::OnBackClicked()
     owner->RemoveHUD(EHUDType::ECreateSession);
     owner->AttachHUD(EHUDType::ESessionGeneral, 0);
     
-    UMPLogManager::LogInfo(TEXT("Switched back to Session General HUD"), TEXT("HUDCreateSession"));
+    UManagerLog::LogInfo(TEXT("Switched back to Session General HUD"), TEXT("HUDCreateSession"));
 }
 
 void UHUDCreateSession::OnStartClicked()
 {
-    UMPLogManager::LogInfo(TEXT("Start clicked"), TEXT("HUDCreateSession"));
+    UManagerLog::LogInfo(TEXT("Start clicked"), TEXT("HUDCreateSession"));
     
     // Validate inputs
     ValidateInputs();
@@ -245,26 +245,26 @@ void UHUDCreateSession::OnSessionNameChanged(const FText& newText)
         }
     }
     
-    UMPLogManager::LogDebug(FString::Printf(TEXT("Session name changed to '%s'"), *sessionName), TEXT("HUDCreateSession"));
+    UManagerLog::LogDebug(FString::Printf(TEXT("Session name changed to '%s'"), *sessionName), TEXT("HUDCreateSession"));
 }
 
 void UHUDCreateSession::OnHostNameChanged(const FText& newText)
 {
     hostName = newText.ToString();
-    UMPLogManager::LogDebug(FString::Printf(TEXT("Host name changed to '%s'"), *hostName), TEXT("HUDCreateSession"));
+    UManagerLog::LogDebug(FString::Printf(TEXT("Host name changed to '%s'"), *hostName), TEXT("HUDCreateSession"));
 }
 
 void UHUDCreateSession::OnPasswordCheckChanged(bool isChecked)
 {
     usePassword = isChecked;
     UpdatePasswordFieldVisibility();
-    UMPLogManager::LogDebug(FString::Printf(TEXT("Password enabled: %s"), usePassword ? TEXT("Yes") : TEXT("No")), TEXT("HUDCreateSession"));
+    UManagerLog::LogDebug(FString::Printf(TEXT("Password enabled: %s"), usePassword ? TEXT("Yes") : TEXT("No")), TEXT("HUDCreateSession"));
 }
 
 void UHUDCreateSession::OnPasswordChanged(const FText& newText)
 {
     password = newText.ToString();
-    UMPLogManager::LogDebug(TEXT("Password changed"), TEXT("HUDCreateSession"));
+    UManagerLog::LogDebug(TEXT("Password changed"), TEXT("HUDCreateSession"));
 }
 
 // Helper functions
@@ -350,13 +350,13 @@ void UHUDCreateSession::InitializeHostName()
         if (!steamUsername.IsEmpty())
         {
             hostName = steamUsername;
-            UMPLogManager::LogDebug(FString::Printf(TEXT("Retrieved Steam username: %s"), *hostName), TEXT("HUDCreateSession"));
+            UManagerLog::LogDebug(FString::Printf(TEXT("Retrieved Steam username: %s"), *hostName), TEXT("HUDCreateSession"));
         }
         else
         {
             // Fallback to random host name
             hostName = gameInstance->GenerateRandomName();
-            UMPLogManager::LogDebug(FString::Printf(TEXT("Generated random host name: %s"), *hostName), TEXT("HUDCreateSession"));
+            UManagerLog::LogDebug(FString::Printf(TEXT("Generated random host name: %s"), *hostName), TEXT("HUDCreateSession"));
         }
         
         // Set the hint text in the input field
@@ -404,7 +404,7 @@ void UHUDCreateSession::ValidateInputs()
         }
     }
     
-    UMPLogManager::LogInfo(FString::Printf(TEXT("Validated inputs - Mode: %s, Session: '%s', Host: '%s', Password: %s"), 
+    UManagerLog::LogInfo(FString::Printf(TEXT("Validated inputs - Mode: %s, Session: '%s', Host: '%s', Password: %s"), 
            isMultiplayerMode ? TEXT("Multiplayer") : TEXT("Single Player"),
            *sessionName, *hostName, usePassword ? TEXT("Yes") : TEXT("No")), TEXT("HUDCreateSession"));
 }
@@ -412,7 +412,7 @@ void UHUDCreateSession::ValidateInputs()
 // Session creation
 void UHUDCreateSession::CreateMultiplayerSession()
 {
-    UMPLogManager::LogInfo(TEXT("Creating multiplayer session"), TEXT("HUDCreateSession"));
+    UManagerLog::LogInfo(TEXT("Creating multiplayer session"), TEXT("HUDCreateSession"));
     
     UMPGI* gameInstance = Cast<UMPGI>(GetWorld()->GetGameInstance());
     if (gameInstance)
@@ -424,13 +424,13 @@ void UHUDCreateSession::CreateMultiplayerSession()
     }
     else
     {
-        UMPLogManager::LogError(TEXT("Could not get game instance"), TEXT("HUDCreateSession"));
+        UManagerLog::LogError(TEXT("Could not get game instance"), TEXT("HUDCreateSession"));
     }
 }
 
 void UHUDCreateSession::StartSinglePlayerGame()
 {
-    UMPLogManager::LogInfo(TEXT("Starting single player game"), TEXT("HUDCreateSession"));
+    UManagerLog::LogInfo(TEXT("Starting single player game"), TEXT("HUDCreateSession"));
     
     UMPGI* gameInstance = Cast<UMPGI>(GetWorld()->GetGameInstance());
     if (gameInstance)
@@ -439,6 +439,6 @@ void UHUDCreateSession::StartSinglePlayerGame()
     }
     else
     {
-        UMPLogManager::LogError(TEXT("Could not get game instance"), TEXT("HUDCreateSession"));
+        UManagerLog::LogError(TEXT("Could not get game instance"), TEXT("HUDCreateSession"));
     }
 }

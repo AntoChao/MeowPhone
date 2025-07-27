@@ -3,12 +3,7 @@
 #include "Components/Button.h"
 #include "Components/ScrollBox.h"
 #include "HUDCreditEntry.h"
-#include "MPControllerPlayer.h"
-
-UHUDCredit::UHUDCredit()
-{
-
-}
+#include "../MPControllerPlayer.h"
 
 void UHUDCredit::NativeConstruct()
 {

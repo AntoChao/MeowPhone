@@ -39,15 +39,15 @@ bool AMPItem::IsInteractable(AMPCharacter* player)
 	return !isPickedUp;
 }
 
-FName AMPItem::GetInteractHintTextKey(AMPCharacter* player)
+FText AMPItem::GetInteractHintText(AMPCharacter* player)
 {
-	if (IsInteractable(targetActor))
+	if (IsInteractable(player))
 	{
-		return UMPLocalizationManager::Get()->GetLocalizedText(interactHintTextKey);
+		return UManagerLocalization::GetInstance()->GetLocalizedText(interactHintTextKey);
 	}
 	else
 	{
-		return UMPLocalizationManager::Get()->GetLocalizedText(uninteractableHintTextKey);
+		return UManagerLocalization::GetInstance()->GetLocalizedText(uninteractableHintTextKey);
 	}
 }
 

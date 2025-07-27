@@ -7,6 +7,9 @@
 
 enum class EHumanAction : uint8;
 class AMPCharacterCat;
+enum class EHumanPosture : uint8;
+enum class EMoveState : uint8;
+enum class EHumanInteractionState : uint8;
 
 UCLASS(BlueprintType, Blueprintable)
 class AMPCharacterHuman : public AMPCharacter
@@ -49,15 +52,24 @@ protected:
     UPROPERTY(ReplicatedUsing = OnRep_IsDead, BlueprintReadWrite, Category = "Health Properties")
     bool isDead = false;
 
-    UFUNCTION(BlueprintCallable, Category = "Health Methods")
-    void TakeHealthDamage(int32 damageAmount);
+   
     UFUNCTION(BlueprintCallable, Category = "Health Methods")
     void HealHealth(int32 healAmount);
     UFUNCTION(BlueprintCallable, Category = "Health Methods")
     void Die();
+
+    UFUNCTION()
+    void OnRep_Health();
+    UFUNCTION()
+    void OnRep_IsDead();
+
+public:
     UFUNCTION(BlueprintCallable, Category = "Health Methods")
     bool IsDead() const { return isDead; }
     
+    UFUNCTION(BlueprintCallable, Category = "Health Methods")
+    void TakeHealthDamage(int32 damageAmount);
+
     UFUNCTION(BlueprintCallable, Category = "Health Methods")
     int32 GetCurrentHealth() const { return currentHealth; }
     UFUNCTION(BlueprintCallable, Category = "Health Methods")
@@ -65,13 +77,8 @@ protected:
     UFUNCTION(BlueprintCallable, Category = "Health Methods")
     float GetHealthPercentage() const { return maxHealth > 0 ? (float)currentHealth / (float)maxHealth : 0.0f; }
 
-    UFUNCTION()
-        void OnRep_Health();
-    UFUNCTION()
-        void OnRep_IsDead();
-
 // 5. controller/ input reaction
-protected:
+public:
     virtual void Move(FVector2D direction) override;
     virtual void Run() override;
     virtual void RunStop() override;
@@ -82,7 +89,7 @@ protected:
     virtual void Interact() override;
 
 // 5.1 controller enable/disable
-protected:
+public:
     virtual bool CheckIfIsAbleToLook() override;
     virtual bool CheckIfIsAbleToMove() override;
     virtual bool CheckIfIsAbleToInteract() override;
@@ -113,8 +120,11 @@ protected:
     void StopHoldingCat();
 
     UFUNCTION(BlueprintCallable, Category = "Control Method")
-    bool IsHoldingCat() const { return animState.curInteraction == EHumanInteractionState::HoldingCat && IsValid(catHolding); }
-    
+    bool IsHoldingCat();
+
+    UFUNCTION(BlueprintCallable, Category = "Control Method")
+    void PutCatInCage();
+
     // force release (struggle out)
     UFUNCTION(BlueprintCallable, Category = "Control Method")
     void ForceReleaseCat();
@@ -126,13 +136,13 @@ protected:
 
     // State getters
     UFUNCTION(BlueprintCallable, Category = "Control Method")
-    AMPCharacterCat* GetHeldCat() const { return IsValid(catHolding) ? catHolding : nullptr; }
+    AMPCharacterCat* GetHeldCat() const;
     UFUNCTION(BlueprintCallable, Category = "Control Method")
-    bool IsBeingRubbed() const { return animState.curInteraction == EHumanInteractionState::BeingRubbed; }
+    bool IsBeingRubbed() const;
     UFUNCTION(BlueprintCallable, Category = "Control Method")
-    AMPCharacterCat* GetCatRubbing() const { return IsValid(catRubbing) ? catRubbing : nullptr; }
+    AMPCharacterCat* GetCatRubbing() const;
     UFUNCTION(BlueprintCallable, Category = "Control Method")
-    float GetHeldCatStrugglePercentage() const { return IsValid(catHolding) ? catHolding->GetStruggleBarPercentage() : 0.0f; }
+    float GetHeldCatStrugglePercentage() const;
 
 // 6. animation system
 // 6.1 animation state
@@ -140,10 +150,11 @@ protected:
     // Replicated animation state struct
     UPROPERTY(ReplicatedUsing = OnRep_AnimState, BlueprintReadOnly, Category = "AnimState")
     FHumanAnimState animState;
+
     // Setters for animation state
     void SetPosture(EHumanPosture newPosture);
-    void SetMove(EMoveState newMove);
-    void SetAir(EAirState newAir);
+    virtual void SetMove(EMoveState newMove) override;
+    virtual void SetAir(EAirState newAir) override;
     void SetContext(EHumanContext newContext, bool bMandatory = false);
     void SetInteraction(EHumanInteractionState newInteraction);
     
@@ -157,7 +168,6 @@ protected:
 protected:
     UFUNCTION(BlueprintCallable, Category = "Animation Methods")   
     void PlayHumanContextAnimMontage(EHumanContext context);
-    UFUNCTION(BlueprintCallable, Category = "Animation Methods")
     virtual void OnMontageEndedContextClear(UAnimMontage* montage, bool bInterrupted) override;
 
 // all montages
@@ -208,9 +218,6 @@ protected:
     // Exposed value for distance customization
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
     float holdAnimWarpDistanceOffset = 0.f;
-    // Add play rate for hold animation montage
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
-    float holdAnimMontagePlayRate = 1.0f;
 
     // BlueprintCallable function to trigger snapping
     UFUNCTION(BlueprintCallable)
@@ -219,7 +226,7 @@ protected:
     UFUNCTION(BlueprintCallable)
     void updateHoldAnimHandTargets();
     // Function to setup motion warping for hold
-    void setupHoldAnimMotionWarping(class AMPCharacterCat* catActor);
+    void setupHoldAnimMotionWarping(AMPCharacterCat* catActor);
     UFUNCTION(BlueprintCallable)
     void stopHoldAnimCleanup();
 

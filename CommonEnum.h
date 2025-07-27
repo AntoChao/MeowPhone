@@ -49,11 +49,12 @@ UENUM(BlueprintType, Blueprintable)
 enum class ELanguage : uint8 {
 	EEnglish,
 	EChinese,
-	ESpanish
+	ESpanish,
+	Max      UMETA(Hidden)
 };
 
 UENUM(BlueprintType, Blueprintable)
-enum class EWindowMode : uint8 {
+enum class EWindowModeOur : uint8 {
 	FullScreen UMETA(DisplayName = "Full Screen"),
 	FullScreenWindow UMETA(DisplayName = "Full Screen Window"),
 	Window UMETA(DisplayName = "Window")
@@ -266,4 +267,12 @@ enum class EAIHumanState : uint8
     UseItem         UMETA(DisplayName="UseItem"),
     InteractContext UMETA(DisplayName="InteractContext"),
     Stunned         UMETA(DisplayName="Stunned")
+};
+
+// enum
+UENUM(BlueprintType)
+enum class EMPItem : uint8
+{
+	none,
+	catFood,
 };

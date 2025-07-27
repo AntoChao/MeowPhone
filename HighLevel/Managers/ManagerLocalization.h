@@ -2,16 +2,20 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
-#include "CommonStruct.h"
-#include "MPLocalizationManager.generated.h"
+#include "../CommonStruct.h"
+
+// Forward declaration to avoid circular include
+class UMPHUD;
+
+#include "ManagerLocalization.generated.h"
 
 UCLASS(BlueprintType, Blueprintable)
-class MEOWPHONE_API UMPLocalizationManager : public UObject
+class MEOWPHONE_API UManagerLocalization : public UObject
 {
     GENERATED_BODY()
 
 public:
-    UMPLocalizationManager();
+    UManagerLocalization();
 
     // Initialize the localization system
     UFUNCTION(BlueprintCallable, Category = "Localization")
@@ -19,11 +23,10 @@ public:
 
     // Get localized text by key
     UFUNCTION(BlueprintCallable, Category = "Localization")
-    FText GetLocalizedText(const FString& textKey, ELanguage language = ELanguage::EEnglish) const;
+    FText GetLocalizedText(const FString& textKey) const;
 
-    // Get localized text for current game language
     UFUNCTION(BlueprintCallable, Category = "Localization")
-    FText GetLocalizedTextForCurrentLanguage(const FString& textKey) const;
+    FText GetLocalizedTextForLanguage(const FString& textKey, ELanguage language) const;
 
     // Set current language (called by Game Instance only)
     UFUNCTION(BlueprintCallable, Category = "Localization")
@@ -41,22 +44,32 @@ public:
 	DECLARE_MULTICAST_DELEGATE(FOnLanguageChanged);
 	FOnLanguageChanged OnLanguageChanged;
 
+    // Allow HUD widgets to subscribe/unsubscribe to language change events
+    UFUNCTION(BlueprintCallable, Category = "Localization")
+    void SubscribeToLanguageChanges(UMPHUD* subscriber);
+
+    UFUNCTION(BlueprintCallable, Category = "Localization")
+    void UnsubscribeFromLanguageChanges(UMPHUD* subscriber);
+
     // Check if text key exists
     UFUNCTION(BlueprintCallable, Category = "Localization")
     bool HasTextKey(const FString& textKey) const;
 
+    UFUNCTION(BlueprintCallable, Category = "Localization")
+    void SetDataTable(UDataTable* newDataTable);
+
 protected:
     // Data table containing all localized text
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Localization")
-    UDataTable* localizationDataTable;
+    UDataTable* textDataTable;
 
     // Current language (managed by Game Instance, not stored here)
     UPROPERTY()
     ELanguage currentLanguage;
 
-    // Cached text data for performance
+    // Cached text for quick lookup: key_language -> localized FText
     UPROPERTY()
-    TMap<FString, FLocalizedText> cachedTextData;
+    TMap<FString, FText> cachedTextData;
 
     // Load text data from data table
     UFUNCTION(BlueprintCallable, Category = "Localization")
@@ -68,5 +81,8 @@ protected:
 
 public:
     // Static instance for easy access
-    static UMPLocalizationManager* GetInstance(UObject* WorldContext);
+    static UManagerLocalization* GetInstance(UObject* WorldContext);
+
+    /* Static global accessors */
+    static UManagerLocalization* GetInstance();
 }; 

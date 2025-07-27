@@ -13,7 +13,7 @@
 enum class ELanguage : uint8;
 enum class EGameLevel : uint8;
 struct FSessionInfo;
-class UMPLocalizationManager;
+class UManagerLocalization;
 
 class FDelegateHandle;
 
@@ -65,11 +65,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Localization")
 		ELanguage getGameLanguage() { return GetCurrentLanguage(); }
 
-	UFUNCTION(BlueprintCallable, Category = "Localization")
-		void setGameLanguage(ELanguage newLanguage) { SetCurrentLanguage(newLanguage); }
-
 	UFUNCTION(BlueprintCallable, Category = " getter && setter")
-		FString getCurPlayerName();
+		FString GetCurPlayerName();
 
 // Level management
 protected:
@@ -103,70 +100,70 @@ public:
 	
 	UFUNCTION(BlueprintCallable, Category = "Session Management")
 		FString GenerateRandomName() const;
-};
+
 
 // Steam Online Subsystem Session Control
 // session section
 protected:
-	
-	UPROPERTY(BlueprintReadWrite, Category = "Session Properties")
-		TSharedPtr<FOnlineSessionSearch> searchSettings;
+
+	// UPROPERTY(BlueprintReadWrite, Category = "Session Properties")
+	TSharedPtr<FOnlineSessionSearch> searchSettings;
 
 	// Removed unused sessionInterface - each function gets it fresh from onlineSubsystem
-	
-	UPROPERTY(BlueprintReadWrite, Category = "Session Properties")
-		bool foundSucceeded;
-	
-	UPROPERTY(BlueprintReadWrite, Category = "Session Properties")
-		TArray<FSessionInfo> sessionList;
-		
-	UPROPERTY(BlueprintReadWrite, Category = "Session Properties")
-		FName curSessionName;
 
 	UPROPERTY(BlueprintReadWrite, Category = "Session Properties")
-		FString hostPlayerID;
+	bool foundSucceeded;
 
 	UPROPERTY(BlueprintReadWrite, Category = "Session Properties")
-		int32 sessionSize;
+	TArray<FSessionInfo> sessionList;
+
+	UPROPERTY(BlueprintReadWrite, Category = "Session Properties")
+	FName curSessionName;
+
+	UPROPERTY(BlueprintReadWrite, Category = "Session Properties")
+	FString hostPlayerID;
+
+	UPROPERTY(BlueprintReadWrite, Category = "Session Properties")
+	int32 sessionSize;
 
 	// Session configuration constants
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Session Properties")
-		int32 maxSearchResults = 100;
+	int32 maxSearchResults = 100;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Session Properties")
-		float searchTimeoutSeconds = 30.0f;
+	float searchTimeoutSeconds = 30.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Session Properties")
-		bool allowFriendsOnlyJoin = false;
+	bool allowFriendsOnlyJoin = false;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Session Properties")
-		bool allowJoinInProgress = true;
+	bool allowJoinInProgress = true;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Session Properties")
-		bool enableSessionLogging = true;
+	bool enableSessionLogging = true;
 
 	// Password protection for sessions
 	UPROPERTY()
 	bool sessionUsePassword = false;
-	
+
 	UPROPERTY()
 	FString sessionPassword = TEXT("");
 
 public:
 	UFUNCTION(BlueprintCallable, Category = "Session Methods")
-		void HostSession(FName sessionName, int numPlayers);
+	void HostSession(FName sessionName, int numPlayers);
 
 	UFUNCTION(BlueprintCallable, Category = "Session Methods")
-		void SearchForSessions();
+	void SearchForSessions();
 
 	UFUNCTION(BlueprintCallable, Category = "Session Methods")
-		void JoinSession(int sessionIndex);
+	void JoinSessions(int sessionIndex);
 
 	UFUNCTION(BlueprintCallable, Category = "Session Methods")
-		void EndSession();
+	void EndSession();
 
 	UFUNCTION(BlueprintCallable, Category = "Session Methods")
-		void DestroySession(FName sessionName);
+	void DestroySession(FName sessionName);
 
-// session complete section
+	// session complete section
 protected:
-	FOnCreateSessionsCompleteDelegate createSessionsCompletedDelegate;
+	FOnCreateSessionCompleteDelegate createSessionsCompletedDelegate;
 	FOnFindSessionsCompleteDelegate searchForSessionsCompletedDelegate;
 	FOnJoinSessionCompleteDelegate joinSessionCompletedDelegate;
 	FOnEndSessionCompleteDelegate endSessionCompletedDelegate;
@@ -179,59 +176,60 @@ protected:
 	FDelegateHandle destroySessionCompleteHandle;
 
 	UFUNCTION(BlueprintCallable, Category = "Session Complete Methods")
-		void HostSessionCompleted(FName sessionName, bool hostCompleted);
+	void HostSessionCompleted(FName sessionName, bool hostCompleted);
 
 	UFUNCTION(BlueprintCallable, Category = "Session Complete Methods")
-		void SearchForSessionsCompleted(bool searchCompleted);
+	void SearchForSessionsCompleted(bool searchCompleted);
+
+	void JoinSessionCompleted(FName sessionName, EOnJoinSessionCompleteResult::Type result);
 
 	UFUNCTION(BlueprintCallable, Category = "Session Complete Methods")
-		void JoinSessionCompleted(FName sessionName);
+	bool TravelToSession(FName sessionName);
 
 	UFUNCTION(BlueprintCallable, Category = "Session Complete Methods")
-		bool TravelToSession(FName sessionName);
-	
-	UFUNCTION(BlueprintCallable, Category = "Session Complete Methods")
-		void EndSessionCompleted(FName sessionName, bool endCompleted);
+	void EndSessionCompleted(FName sessionName, bool endCompleted);
 
 	UFUNCTION(BlueprintCallable, Category = "Session Complete Methods")
-		void DestroySessionCompleted(FName sessionName, bool destroyCompleted);
+	void DestroySessionCompleted(FName sessionName, bool destroyCompleted);
 
 	// Session utility methods
 	UFUNCTION(BlueprintCallable, Category = "Session Methods")
-		bool IsInSession() const { return !curSessionName.IsNone(); }
-	
-	UFUNCTION(BlueprintCallable, Category = "Session Methods")
-		bool IsMultiplayerMode() const { return !curSessionName.IsNone(); }
-	
-	UFUNCTION(BlueprintCallable, Category = "Session Methods")
-		bool IsSinglePlayerMode() const { return curSessionName.IsNone(); }
-	UFUNCTION(BlueprintCallable, Category = "Session Methods")
-		FName GetCurrentSessionName() const { return curSessionName; }
-	UFUNCTION(BlueprintCallable, Category = "Session Methods")
-		int32 GetSessionListCount() const { return sessionList.Num(); }
-	UFUNCTION(BlueprintCallable, Category = "Session Methods")
-		void ClearSessionList() { sessionList.Empty(); }
-	UFUNCTION(BlueprintCallable, Category = "Session Methods")
-		void ClearCurrentSession() { curSessionName = NAME_None; }
-	UFUNCTION(BlueprintCallable, Category = "Session Methods")
-		FSessionInfo GetSessionInfo(int32 index) const;
+	bool IsInSession() const { return !curSessionName.IsNone(); }
 
+	UFUNCTION(BlueprintCallable, Category = "Session Methods")
+	bool IsMultiplayerMode() const { return !curSessionName.IsNone(); }
 
-	
+	UFUNCTION(BlueprintCallable, Category = "Session Methods")
+	bool IsSinglePlayerMode() const { return curSessionName.IsNone(); }
+	UFUNCTION(BlueprintCallable, Category = "Session Methods")
+	FName GetCurrentSessionName() const { return curSessionName; }
+	UFUNCTION(BlueprintCallable, Category = "Session Methods")
+	void ClearSessionList() { sessionList.Empty(); }
+	UFUNCTION(BlueprintCallable, Category = "Session Methods")
+	void ClearCurrentSession() { curSessionName = NAME_None; }
+
+public:
+	UFUNCTION(BlueprintCallable, Category = "Session Methods")
+	int32 GetSessionListCount() const { return sessionList.Num(); }
+	UFUNCTION(BlueprintCallable, Category = "Session Methods")
+	FSessionInfo GetSessionInfo(int32 index) const;
+
 	// Localization
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Localization")
-	UMPLocalizationManager* localizationManager;
-	
+	UManagerLocalization* localizationManager;
+
 	UFUNCTION(BlueprintCallable, Category = "Localization")
 	void InitializeLocalization();
-	
+
 	UFUNCTION(BlueprintCallable, Category = "Localization")
-	UMPLocalizationManager* GetLocalizationManager() const { return localizationManager; }
-	
+	UManagerLocalization* GetLocalizationManager() const { return localizationManager; }
+
 	// Host detection utility
 	UFUNCTION(BlueprintCallable, Category = "Session Methods")
 	bool IsHost() const;
-	
+
 	// Set host player ID (called when session is created)
 	UFUNCTION(BlueprintCallable, Category = "Session Methods")
 	void SetHostPlayerID(const FString& hostID);
+
+};

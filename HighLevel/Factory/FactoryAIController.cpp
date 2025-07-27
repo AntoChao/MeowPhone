@@ -1,5 +1,5 @@
 #include "FactoryAIController.h"
-#include "../CommonEnum.h"
+#include "../../CommonEnum.h"
 
 UFactoryAIController::UFactoryAIController()
 {
