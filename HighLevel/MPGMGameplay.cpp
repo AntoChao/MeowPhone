@@ -26,7 +26,6 @@
 #include "../MPActor/Character/MPCharacter.h"
 #include "../MPActor/Item/MPItem.h"
 #include "../MPActor/AI/MPAIController.h"
-#include "../MPActor/AI/MPAISystemManager.h"
 #include "../MPActor/Ability/MPAbility.h"
 #include "../MPActor/EnvActor/MPEnvActorComp.h"
 #include "../MPActor/EnvActor/MPEnvActorCompPushable.h"
@@ -42,10 +41,9 @@ AMPGMGameplay::AMPGMGameplay()
 AMPGMGameplay::~AMPGMGameplay()
 {
 	// Clean up all timers to prevent memory leaks
-	if (GetWorld())
+	if (ManagerLobby)
 	{
-		GetWorld()->GetTimerManager().ClearTimer(readyTimerHandle);
-		GetWorld()->GetTimerManager().ClearTimer(restartLobbyTimerHandle);
+		ManagerLobby->ClearAllTimers();
 	}
 }
 
@@ -230,7 +228,7 @@ void AMPGMGameplay::InitializeAllManagers()
 		ManagerLobby = NewObject<UManagerLobby>(this, UManagerLobby::StaticClass());
 		if (ManagerLobby)
 		{
-			ManagerLobby->Initialize(this);
+			ManagerLobby->InitializeManager(this);
 		}
 	}
 
@@ -239,7 +237,7 @@ void AMPGMGameplay::InitializeAllManagers()
 		ManagerPreview = NewObject<UManagerPreview>(this, UManagerPreview::StaticClass());
 		if (ManagerPreview)
 		{
-			ManagerPreview->Initialize(this);
+			ManagerPreview->InitializeManager(this);
 		}
 	}
 
@@ -248,7 +246,7 @@ void AMPGMGameplay::InitializeAllManagers()
 		ManagerMatch = NewObject<UManagerMatch>(this, UManagerMatch::StaticClass());
 		if (ManagerMatch)
 		{
-			ManagerMatch->Initialize(this);
+			ManagerMatch->InitializeManager(this);
 		}
 	}
 
@@ -257,7 +255,7 @@ void AMPGMGameplay::InitializeAllManagers()
 		ManagerAIController = NewObject<UManagerAIController>(this, UManagerAIController::StaticClass());
 		if (ManagerAIController)
 		{
-			ManagerAIController->Initialize(this);
+			ManagerAIController->InitializeManager(this);
 		}
 	}
 }
@@ -465,8 +463,7 @@ void AMPGMGameplay::RestartLobby()
 	// Clear all timers
 	if (GetWorld())
 	{
-		GetWorld()->GetTimerManager().ClearTimer(readyTimerHandle);
-		GetWorld()->GetTimerManager().ClearTimer(restartLobbyTimerHandle);
+		ManagerLobby->ClearAllTimers();
 	}
 	
 	// Reset all players

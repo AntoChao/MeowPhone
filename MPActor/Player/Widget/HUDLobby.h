@@ -1,5 +1,29 @@
 #pragma once
 
+// [Meow-Phone Project]
+//
+// This is the UI widget for the main game lobby. It is responsible for displaying the
+// lists of players on the Human and Cat teams, and providing buttons for players to
+// switch teams or for the host to add/remove bots.
+//
+// How to utilize in Blueprint:
+// 1. Create a Widget Blueprint inheriting from this class (e.g., `WBP_Lobby`).
+// 2. In the UMG editor, you must create all the UI elements and name them to match the `BindWidget` properties (e.g., `UScrollBox` named `humanPlayersScrollBox`, `UButton` named `humanJoinButton`).
+// 3. In the Blueprint's defaults, you MUST set the `Lobby Entry Class` property. This requires you to first create another Widget Blueprint for a single player row (inheriting from `UHUDLobbyEntry`) and then assign that `WBP_LobbyEntry` class here.
+// 4. This widget is managed by the `UHUDLobbyManager`. The manager is responsible for creating this widget and calling its `UpdatePlayerLists` function whenever the lobby state changes.
+// 5. The button click events (`OnHumanJoinButtonClicked`, etc.) are bound in C++. They call functions on the `AMPControllerPlayer` to send requests to the server (e.g., to switch teams or add a bot).
+//
+// Necessary things to define:
+// - All `BindWidget` properties must have corresponding widgets in the child Blueprint.
+// - `lobbyEntryClass` MUST be assigned to a valid `UHUDLobbyEntry` child Blueprint.
+//
+// How it interacts with other classes:
+// - UMPHUD: The base HUD class.
+// - UHUDLobbyManager: The parent/manager widget that controls this one.
+// - UHUDLobbyEntry: This widget dynamically creates instances of the lobby entry widget for each player in the game and adds them to its `ScrollBox` elements.
+// - AMPPlayerState: The `UpdatePlayerLists` function gets the `PlayerArray` from the Game State, iterates through all the `AMPPlayerState` objects, and uses their data (name, team, ready status) to create and populate the `UHUDLobbyEntry` widgets.
+// - AMPControllerPlayer: Button clicks on this UI result in calls to the Player Controller to send `ServerRequest...` RPCs to the server.
+
 #include "MPHUD.h"
 #include "HUDLobby.generated.h"
 

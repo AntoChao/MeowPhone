@@ -1,5 +1,26 @@
 #pragma once
 
+// [Meow-Phone Project]
+//
+// This class represents a single player's entry or row in the lobby UI. Its job is to
+// display the name and ready status of one player. For bots, it also provides a "remove"
+// button that is only visible to the host.
+//
+// How to utilize in Blueprint:
+// 1. Create a Widget Blueprint inheriting from this class (e.g., `WBP_LobbyEntry`). This will be the visual template for each player row.
+// 2. In the UMG editor, you must create `TextBlock` widgets named `playerNameText` and `readyStatusText`, and a `Button` named `removeButton`.
+// 3. You do not create this widget yourself. The main `UHUDLobby` widget creates instances of this class. You must assign your `WBP_LobbyEntry` Blueprint to the `Lobby Entry Class` property on the `WBP_Lobby` widget.
+// 4. The `UHUDLobby` widget calls `InitializeEntry` on each instance it creates, passing in all the necessary data (name, team, etc.) to populate the row.
+// 5. The remove button's `OnClicked` event is bound in C++. It fires the `OnRemoveBotClicked` delegate, which the parent `UHUDLobby` widget listens to in order to handle the remove request.
+//
+// Necessary things to define:
+// - The child Widget Blueprint must have correctly named widgets for `playerNameText`, `readyStatusText`, and `removeButton`.
+//
+// How it interacts with other classes:
+// - UUserWidget: The base class.
+// - UHUDLobby: The parent widget that creates, populates, and manages instances of this widget. It also listens to the `OnRemoveBotClicked` delegate.
+// - Player Data: This widget is purely data-driven. It holds variables like `playerName` and `isReady` but does not fetch them itself; they are pushed into it by the parent `UHUDLobby` widget via the `InitializeEntry` function.
+
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "../../../CommonEnum.h"

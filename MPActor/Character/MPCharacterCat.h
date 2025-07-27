@@ -1,5 +1,34 @@
 #pragma once
 
+// [Meow-Phone Project]
+//
+// This is the specialized character class for the Cat. It inherits all the base functionality
+// from `AMPCharacter` and adds a significant amount of cat-specific mechanics, including:
+// - **Advanced Movement**: A double-jump/wall-jump mechanic.
+// - **Human Interaction**: Systems for being held by a human, a "struggle" minigame to escape, and being "rubbed".
+// - **Abilities**: A system to initialize and use active and passive abilities.
+// - **Complex Animation State**: A much more detailed animation state machine (`FCatAnimState`) to handle cat-specific postures and actions (e.g., sitting, stretching, sleeping).
+//
+// How to utilize in Blueprint:
+// 1. Create a Blueprint class inheriting from `AMPCharacterCat` (e.g., `BP_Cat`). This will be your main playable cat.
+// 2. In the Blueprint's defaults, you MUST configure:
+//    - **Skeletal Mesh**: The visual model for the cat.
+//    - **Anim Class**: The Animation Blueprint that drives the cat's animations. This AnimBP must be specifically designed to work with the `FCatAnimState` struct.
+//    - **Animation Montages**: Populate the large list of montage properties (e.g., `verticalJump_Montage`, `longFalling_Montage`) with the corresponding animation assets.
+//    - **Hint Texts**: Set the various hint text properties for different interaction scenarios.
+// 3. The `initPassiveAbilities` array can be populated with `EAbility` enums to grant the cat specific passive abilities at spawn.
+//
+// Necessary things to define:
+// - All the `UAnimMontage` properties must be assigned in the Blueprint for the character's contextual animations to work.
+// - The cat's Animation Blueprint must get the `AMPCharacterCat` owner and read the `animState` variable to drive its state machine.
+//
+// How it interacts with other classes:
+// - AMPCharacter: Inherits all its base functionality.
+// - AMPCharacterHuman: Has special interactions with the human character, such as being held (`StartedToBeHold`) or rubbed (`StartToBeRubbed`). The human character is the one who initiates these interactions.
+// - AMPAbility: The character initializes and uses active and passive abilities.
+// - FCatAnimState (Struct): This struct is the core of the cat's animation system. This class sets the values in the struct, and the Animation Blueprint reads them to play the correct animations.
+// - Replication: `FCatAnimState` and the `struggleBar` are replicated, ensuring that all clients see the cat's animations and struggle progress correctly.
+
 #include "CoreMinimal.h"
 #include "MPCharacter.h"
 #include "../../CommonStruct.h"

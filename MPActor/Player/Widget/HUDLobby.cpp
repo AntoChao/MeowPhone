@@ -8,6 +8,7 @@
 #include "../../../HighLevel/MPGMGameplay.h"
 #include "../../../HighLevel/MPGI.h"
 #include "../../../HighLevel/Managers/ManagerLog.h"
+#include "../../../HighLevel/Managers/ManagerAIController.h"
 #include "HUDLobbyEntry.h"
 
 UHUDLobby::UHUDLobby()
@@ -159,7 +160,7 @@ void UHUDLobby::UpdatePlayerLists()
 	}
 	
 	// Get human AI bots
-	TArray<AMPAIController*> humanAIs = gameMode->GetHumanAIs();
+	TArray<AMPAIController*> humanAIs = gameMode->GetManagerAIController()->GetAllAIHumans();
 	for (int32 i = 0; i < humanAIs.Num(); i++)
 	{
 		AMPAIController* aiController = humanAIs[i];
@@ -188,7 +189,7 @@ void UHUDLobby::UpdatePlayerLists()
 	}
 	
 	// Get cat AI bots
-	TArray<AMPAIController*> catAIs = gameMode->GetCatAIs();
+	TArray<AMPAIController*> catAIs = gameMode->GetManagerAIController()->GetAllAICats();
 	for (int32 i = 0; i < catAIs.Num(); i++)
 	{
 		AMPAIController* aiController = catAIs[i];

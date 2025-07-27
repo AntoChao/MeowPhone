@@ -25,7 +25,7 @@
 #include "../Player/Widget/HUDCreateSession.h"
 #include "../Player/Widget/HUDSearchSession.h"
 #include "../Player/Widget/HUDLobby.h"
-#include "../Player/Widget/HUDManagerLobby.h"
+#include "../Player/Widget/HUDLobbyManager.h"
 #include "../Player/Widget/HUDCharacterHuman.h"
 #include "../Player/Widget/HUDCharacterCat.h"
 #include "../Player/Widget/HUDMenu.h"
@@ -89,7 +89,7 @@ void AMPControllerPlayer::ServerRequestTeamSwitch_Implementation(ETeam newTeam)
 	AMPGMGameplay* gameMode = Cast<AMPGMGameplay>(GetWorld()->GetAuthGameMode());
 	if (gameMode)
 	{
-		bool success = gameMode->ManagerLobby->SwitchPlayerTeam(this, newTeam);
+		bool success = gameMode->GetManagerLobby()->SwitchPlayerTeam(this, newTeam);
 		ClientTeamSwitchResult(newTeam, success);
 		// Team change will trigger OnRep_PlayerTeam callback to update HUD
 	}
@@ -864,9 +864,9 @@ void AMPControllerPlayer::ServerSetReadyState_Implementation(bool inIsReady)
 	
 	// Call GameMode to handle ready state
 	AMPGMGameplay* gameMode = Cast<AMPGMGameplay>(GetWorld()->GetAuthGameMode());
-	if (gameMode && gameMode->ManagerLobby)
+	if (gameMode && gameMode->GetManagerLobby())
 	{
-		bool success = gameMode->ManagerLobby->SetPlayerReady(this, inIsReady);
+		bool success = gameMode->GetManagerLobby()->SetPlayerReady(this, inIsReady);
 		ClientReadyStateResult(inIsReady, success);
 	}
 	else
@@ -992,8 +992,8 @@ void AMPControllerPlayer::FocusPreviewCamera()
     if (PreviewSlotIndex < 0) return;
     AMPGMGameplay* GM = Cast<AMPGMGameplay>(GetWorld()->GetAuthGameMode());
     if (!GM) return;
-    if (!GM->ManagerPreview->GetPreviewCharacters().IsValidIndex(PreviewSlotIndex)) return;
-    AActor* PreviewChar = GM->ManagerPreview->GetPreviewCharacters()[PreviewSlotIndex];
+    if (!GM->GetManagerPreview()->GetPreviewCharacters().IsValidIndex(PreviewSlotIndex)) return;
+    AActor* PreviewChar = GM->GetManagerPreview()->GetPreviewCharacters()[PreviewSlotIndex];
     if (!PreviewChar) return;
     UCameraComponent* PreviewCam = PreviewChar->FindComponentByClass<UCameraComponent>();
     if (PreviewCam)

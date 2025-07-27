@@ -1,5 +1,28 @@
 #pragma once
 
+// [Meow-Phone Project]
+//
+// This is the primary Game Mode for the main gameplay level. It is the master object that
+// orchestrates the entire match. It is responsible for creating and holding references to all
+// the specialized managers (Lobby, Match, AI, Preview) and all the factories. It also holds
+// level-specific data like spawn points and preview locations.
+//
+// How to utilize in Blueprint:
+// 1. A Blueprint must be created from this class (e.g., `BP_MPGMGameplay`).
+// 2. This Blueprint must be set as the "Default Game Mode" for your main gameplay level.
+// 3. In the Blueprint editor for `BP_MPGMGameplay`, you MUST configure several key properties:
+//    - **Factory Classes**: Assign all the `...FactoryClass` properties with their corresponding Factory Blueprints (e.g., set `Cat Factory Class` to `BP_FactoryCat`).
+//    - **Spawn Points**: Populate the `allHumanSpawnLocations`, `allCatSpawnLocations`, and their corresponding rotation arrays. These are typically set by creating `TargetPoint` actors in your level, creating variables in the Game Mode Blueprint to hold references to them, and then populating the arrays from those references in the `BeginPlay` event. The same applies to `characterPreviewLocations`.
+//    - **Debug Settings**: Configure the debug modes as needed for testing.
+//
+// How it interacts with other classes:
+// - AMPGM: Inherits the base functionality, including the cached Game Instance reference.
+// - Managers (UManagerLobby, UManagerMatch, etc.): This class creates and owns instances of all the major manager classes. It acts as a central hub, allowing managers to communicate with each other through it (e.g., `GetManagerLobby()`). It calls `InitializeAllManagers` at the start to set them up.
+// - Factories (UFactoryCat, UFactoryItem, etc.): It holds the `TSubclassOf` for each factory and is responsible for creating the factory instances. It exposes wrapper functions like `SpawnItem` and `SpawnAbility` that delegate the actual spawning work to the appropriate factory instance.
+// - AMPGS (Game State): It holds a reference to the Game State and is responsible for initializing it. The Game State is where replicated data visible to all clients is stored.
+// - AMPControllerPlayer: It manages the list of all connected player controllers, handling `PostLogin` (when a player joins) and `Logout` (when a player leaves).
+// - Player States & Characters: It keeps track of all player characters and controllers in the game.
+
 #include "CoreMinimal.h"
 #include "MPGM.h"
 #include "TimerManager.h"
@@ -128,6 +151,16 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Managers")
 	UManagerMatch* ManagerMatch;
 
+public:
+	UFUNCTION(BlueprintCallable, Category = "Manager Methods")
+	UManagerLobby* GetManagerLobby() const { return ManagerLobby; }
+	UFUNCTION(BlueprintCallable, Category = "Manager Methods")
+	UManagerAIController* GetManagerAIController() const { return ManagerAIController; }
+	UFUNCTION(BlueprintCallable, Category = "Manager Methods")
+	UManagerPreview* GetManagerPreview() const { return ManagerPreview; }
+	UFUNCTION(BlueprintCallable, Category = "Manager Methods")
+	UManagerMatch* GetManagerMatch() const { return ManagerMatch; }
+
 // manager lobby
 protected:
 	UPROPERTY(BlueprintReadWrite, Category = "GameState Properties")
@@ -140,7 +173,9 @@ protected:
 public:
 	UFUNCTION(BlueprintCallable, Category = "Player Methods")
 		TArray<AMPControllerPlayer*> GetAllPlayerControllers() const { return allPlayersControllers; }
-	
+	UFUNCTION(BlueprintCallable, Category = "Player Methods")
+		TArray<AMPCharacter*> GetAllPlayerCharacters() const { return allPlayerCharacters; }
+
 	// Team-specific player lists
 	UFUNCTION(BlueprintCallable, Category = "Player Methods")
 		TArray<AMPControllerPlayer*> GetHumanPlayers() const;
@@ -157,12 +192,8 @@ public:
 		bool RemoveBot(int32 playerIndex);
 
 public:
-	FTimerHandle readyTimerHandle;
-	FTimerHandle restartLobbyTimerHandle;
-
 	UFUNCTION(BlueprintCallable, Category = "Lobby Methods")
 	void RemoveControlledCharacters(AMPControllerPlayer* aPlayer);
-
 	
 // manager preview
 protected:
@@ -193,30 +224,9 @@ public:
 
 // manager ai controller
 protected:
-	UPROPERTY(BlueprintReadWrite, Category = "Setup Properties")
-		AMPAISystemManager* theHumanAIManager = nullptr;
 
-	UPROPERTY(BlueprintReadWrite, Category = "Setup Properties")
-	int catAIIndex = 1;
-	UPROPERTY(BlueprintReadWrite, Category = "Setup Properties")
-	int humanAIIndex = 2;
-	UPROPERTY(BlueprintReadWrite, Category = "Setup Properties")
-	int aiManagerIndex = 0;
-
-	UPROPERTY(BlueprintReadWrite, Category = "Setup Properties")
-		TArray<AMPAIController*> allAICats;
-	UPROPERTY(BlueprintReadWrite, Category = "Setup Properties")
-		TArray<AMPAIController*> allAIHumans;
-
+// manager match
 public:
-		// AI list access
-	UFUNCTION(BlueprintCallable, Category = "AI Methods")
-		TArray<AMPAIController*> GetAllHumanAIs() const { return allAIHumans; }
-	UFUNCTION(BlueprintCallable, Category = "AI Methods")
-		TArray<AMPAIController*> GetAllCatAIs() const { return allAICats; }
-
-	// manager match
-protected:
 	UPROPERTY(BlueprintReadWrite, Category = "Setup Properties")
 		int itemRemainPercentage = 75;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawn Properties")

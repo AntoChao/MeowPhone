@@ -66,17 +66,17 @@ void UManagerPreview::DestroyAllPreviewCharacters()
 
 void UManagerPreview::SpawnOrReplacePreviewCharacter(AMPControllerPlayer* Player, ETeam Team, int32 SlotIdx, int CatRace, int HumanProfession, int Hat)
 {
-    if (!GameMode) return;
+    if (!gameMode) return;
 
     DestroyPreviewCharacter(SlotIdx);
     FVector loc = characterPreviewLocations.IsValidIndex(SlotIdx) ? characterPreviewLocations[SlotIdx] : FVector::ZeroVector;
     FRotator rot = characterPreviewRotations.IsValidIndex(SlotIdx) ? characterPreviewRotations[SlotIdx] : FRotator::ZeroRotator;
     AActor* newChar = nullptr;
-    if (Team == ETeam::ECat && GameMode->catFactoryInstance) {
-        newChar = GameMode->catFactoryInstance->SpawnMPActor(CatRace, loc, rot);
+    if (Team == ETeam::ECat && gameMode->catFactoryInstance) {
+        newChar = gameMode->catFactoryInstance->SpawnMPActor(CatRace, loc, rot);
     }
-    else if (Team == ETeam::EHuman && GameMode->humanFactoryInstance) {
-        newChar = GameMode->humanFactoryInstance->SpawnMPActor(HumanProfession, loc, rot);
+    else if (Team == ETeam::EHuman && gameMode->humanFactoryInstance) {
+        newChar = gameMode->humanFactoryInstance->SpawnMPActor(HumanProfession, loc, rot);
     }
     if (newChar) {
         previewCharacters[SlotIdx] = newChar;

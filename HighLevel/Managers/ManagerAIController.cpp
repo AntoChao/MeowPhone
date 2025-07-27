@@ -1,23 +1,37 @@
 #include "ManagerAIController.h"
 #include "BehaviorTree/BlackboardComponent.h"
+#include "../../MPActor/AI/MPAISystemManager.h"
+#include "../Factory/FactoryAIController.h"
 
 #include "../../CommonEnum.h"
 #include "../MPGMGameplay.h"
 #include "../Factory/FactoryAIController.h"
 
-#include "../Managers/ManagerLog.h"
+#include "ManagerLog.h"
 #include "../../MPActor/AI/MPAIControllerHumanPlayer.h"
 #include "../../MPActor/AI/MPAIController.h"
 
+void UManagerAIController::SetupAIManager()
+{
+    if (!gameMode || !gameMode->aiControllerFactoryInstance) return;
+
+    AISystemManager = Cast<AMPAISystemManager>(gameMode->aiControllerFactoryInstance->SpawnMPActor(0, FVector(0.0f, 0.0f, 0.0f), FRotator(0.0f, 0.0f, 0.0f)));
+
+    if (AISystemManager)
+    {
+        AISystemManager->Initialize();
+    }
+}
+
 bool UManagerAIController::AddBot(ETeam team)
 {
-    if (!GameMode || !GameMode->aiControllerFactoryInstance)
+    if (!gameMode || !gameMode->aiControllerFactoryInstance)
     {
         UManagerLog::LogError(TEXT("Failed to create AI controller for bot: Factory instance missing"), TEXT("ManagerAIController"));
         return false;
     }
 
-    AMPAIController* NewAI = GameMode->aiControllerFactoryInstance->SpawnAIController(team);
+    AMPAIController* NewAI = gameMode->aiControllerFactoryInstance->SpawnAIController(team);
     if (!NewAI)
     {
         UManagerLog::LogError(TEXT("Failed to spawn AI controller"), TEXT("ManagerAIController"));
@@ -78,17 +92,17 @@ bool UManagerAIController::RemoveBot(int32 playerIndex)
 
 void UManagerAIController::SpawnLobbyAIs()
 {
-    if (!GameMode) return;
+    if (!gameMode) return;
 
     // Helper lambdas
     auto SpawnCatPawn = [&](AMPAIController* Controller, int32 Index)
     {
-        if (!Controller || !GameMode->catFactoryInstance) return;
+        if (!Controller || !gameMode->catFactoryInstance) return;
         int MaxCatRace = static_cast<int>(ECatRace::EDiedCat);
         int RandomRace = FMath::RandRange(0, MaxCatRace - 1);
-        FVector Loc = GameMode->allCatSpawnLocations.IsValidIndex(Index) ? GameMode->allCatSpawnLocations[Index] : FVector::ZeroVector;
-        FRotator Rot = GameMode->allCatSpawnRotations.IsValidIndex(Index) ? GameMode->allCatSpawnRotations[Index] : FRotator::ZeroRotator;
-        AActor* PawnActor = GameMode->catFactoryInstance->SpawnMPActor(RandomRace, Loc, Rot);
+        FVector Loc = gameMode->allCatSpawnLocations.IsValidIndex(Index) ? gameMode->allCatSpawnLocations[Index] : FVector::ZeroVector;
+        FRotator Rot = gameMode->allCatSpawnRotations.IsValidIndex(Index) ? gameMode->allCatSpawnRotations[Index] : FRotator::ZeroRotator;
+        AActor* PawnActor = gameMode->catFactoryInstance->SpawnMPActor(RandomRace, Loc, Rot);
         if (PawnActor)
         {
             APawn* Pawn = Cast<APawn>(PawnActor);
@@ -101,12 +115,12 @@ void UManagerAIController::SpawnLobbyAIs()
 
     auto SpawnHumanPawn = [&](AMPAIController* Controller, int32 Index)
     {
-        if (!Controller || !GameMode->humanFactoryInstance) return;
+        if (!Controller || !gameMode->humanFactoryInstance) return;
         int MaxHuman = static_cast<int>(EHumanProfession::EDiedHuman);
         int RandomProf = FMath::RandRange(0, MaxHuman - 1);
-        FVector Loc = GameMode->allHumanSpawnLocations.IsValidIndex(Index) ? GameMode->allHumanSpawnLocations[Index] : FVector::ZeroVector;
-        FRotator Rot = GameMode->allHumanSpawnRotations.IsValidIndex(Index) ? GameMode->allHumanSpawnRotations[Index] : FRotator::ZeroRotator;
-        AActor* PawnActor = GameMode->humanFactoryInstance->SpawnMPActor(RandomProf, Loc, Rot);
+        FVector Loc = gameMode->allHumanSpawnLocations.IsValidIndex(Index) ? gameMode->allHumanSpawnLocations[Index] : FVector::ZeroVector;
+        FRotator Rot = gameMode->allHumanSpawnRotations.IsValidIndex(Index) ? gameMode->allHumanSpawnRotations[Index] : FRotator::ZeroRotator;
+        AActor* PawnActor = gameMode->humanFactoryInstance->SpawnMPActor(RandomProf, Loc, Rot);
         if (PawnActor)
         {
             APawn* Pawn = Cast<APawn>(PawnActor);

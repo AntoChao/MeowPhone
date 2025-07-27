@@ -1,5 +1,33 @@
 #pragma once
 
+// [Meow-Phone Project]
+//
+// This is the one and only Player Controller class for a human player. It is a critical,
+// central hub that handles three major areas of responsibility:
+// 1. **Input Handling**: It binds player input (from keyboard, mouse, or gamepad) via the Enhanced Input system to specific gameplay actions (Move, Jump, Interact, etc.).
+// 2. **UI Management**: It is responsible for creating, showing, hiding, and holding references to ALL of the game's UI widgets (HUDs).
+// 3. **Client-to-Server Communication**: It is the primary vehicle for a client to communicate their intentions to the server. When a player presses a button to perform a replicated action (like using an item or setting their ready status), the input function here calls a `Server_` RPC, sending the request to the server for validation and execution.
+//
+// How to utilize in Blueprint:
+// 1. A Blueprint must be created from this class (`BP_ControllerPlayer`).
+// 2. This Blueprint must be set as the `PlayerController Class` in your Game Modes (`AMPGMInit` and `AMPGMGameplay`).
+// 3. In the `BP_ControllerPlayer` Blueprint's defaults, you MUST configure:
+//    - **HUD Classes**: All of the `...HUDClass` properties must be assigned with their corresponding UI Widget Blueprints. This controller will not be able to create any UIs if these are not set.
+//    - **Input Actions**: All of the `UInputAction` properties must be assigned with the correct Input Action assets from your project.
+//    - **Input Mapping Context**: The `gpGamppingContext` must be assigned with your primary IMC.
+//
+// Necessary things to define:
+// - All `TSubclassOf<U...HUD>` properties MUST be set in the Blueprint.
+// - All `UInputAction` properties and the `UInputMappingContext` MUST be set in the Blueprint.
+//
+// How it interacts with other classes:
+// - APlayerController: The base class.
+// - Enhanced Input System (`UInputMappingContext`, `UInputAction`): Binds hardware input to gameplay functions.
+// - HUD Widgets (`UHUDInit`, `UHUDLobby`, etc.): It creates and manages the lifecycle of all UI screens. The UI, in turn, often calls functions on this Player Controller to send requests to the server.
+// - Server RPCs: It is filled with `UFUNCTION(Server, Reliable)` functions. These are the bridge from the client to the server. For example, `InteractFunc` is called by local input, which then calls `Server_RequestInteract` to ask the server to perform the action.
+// - AMPCharacter: When in a match, it possesses a character pawn. The input functions here (e.g., `MoveFunc`) directly call the corresponding functions on the possessed pawn (e.g., `controlledBody->Move()`).
+// - Game Mode / Player State: It communicates with server-side objects like the Game Mode to execute requests (e.g., `ServerSetReadyState` is received by the controller's server instance, which then calls a function on the `UManagerLobby`).
+
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
 #include "MPControllerPlayer.generated.h"

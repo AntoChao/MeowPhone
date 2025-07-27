@@ -1,7 +1,34 @@
 #pragma once
 
+// [Meow-Phone Project]
+//
+// This class is a high-level "manager" widget that controls the entire lobby and
+// character customization UI. It acts as a container that holds and orchestrates
+// several child widgets: the main lobby, the cat customization screen, and the human
+// customization screen.
+//
+// How to utilize in Blueprint:
+// 1. Create a Widget Blueprint inheriting from this class (e.g., `WBP_LobbyManager`). This is the top-level widget for the lobby scene.
+// 2. In the UMG editor, you must create the basic layout, including `Overlay` widgets named `lobbyOverlay` and `customizationOverlay` to serve as containers for the child widgets. You also need the shared buttons like `backButton` and `readyButton`.
+// 3. In the Blueprint's defaults, you MUST assign the `TSubclassOf` properties:
+//    - `lobbyHUDClass`: Set this to your `WBP_Lobby` Blueprint.
+//    - `customCatHUDClass`: Set this to your `WBP_CustomCat` Blueprint.
+//    - `customHumanHUDClass`: Set this to your `WBP_CustomHuman` Blueprint.
+// 4. When this manager widget is created, its C++ `NativeConstruct` calls `CreateHUDWidgets`. This function creates instances of the three child widgets you specified and places them into the appropriate `Overlay` containers.
+// 5. This manager handles the overall state. For example, when a player joins a team, `OnTeamChanged` is called, which then calls `ShowCustomizationHUD` to make the correct customization panel visible.
+//
+// Necessary things to define:
+// - All `BindWidget` properties must have corresponding widgets in the child Blueprint.
+// - All three `...HUDClass` properties must be assigned to their respective child Widget Blueprints.
+//
+// How it interacts with other classes:
+// - UMPHUD: The base HUD class.
+// - AMPControllerPlayer: Creates this manager widget. This widget also calls functions on the controller to send requests to the server (e.g., `OnReadyButtonClicked` tells the controller to send a `ServerSetReadyState` RPC).
+// - UHUDLobby, UHUDCustomCat, UHUDCustomHuman: This class creates, owns, and manages the visibility of these three child widgets. It acts as the central coordinator for the entire pre-game UI.
+// - AMPPlayerState: It reads the local player's team and ready status from the Player State to correctly configure its own state and UI.
+
 #include "MPHUD.h"
-#include "HUDManagerLobby.generated.h"
+#include "HUDLobbyManager.generated.h"
 
 class UCanvasPanel;
 class UOverlay;

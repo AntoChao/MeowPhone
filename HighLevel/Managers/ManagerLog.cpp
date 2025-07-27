@@ -1,7 +1,11 @@
-#include "Managers/ManagerLog.h"
 #include "Engine/Engine.h"
+#include "ManagerLog.h"
+
 #include "HAL/PlatformFilemanager.h"
 #include "Misc/DateTime.h"
+#include "../../CommonStruct.h"
+#include "../../CommonEnum.h"
+
 
 // Initialize static member
 FLogConfig UManagerLog::LogConfig;

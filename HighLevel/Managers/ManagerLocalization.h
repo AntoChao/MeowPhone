@@ -1,16 +1,40 @@
 #pragma once
 
-#include "CoreMinimal.h"
-#include "Engine/DataTable.h"
-#include "../CommonStruct.h"
+// [Meow-Phone Project]
+//
+// This is a singleton manager responsible for handling all text localization in the game.
+// It reads from a DataTable to provide the correct text based on the currently selected language.
+// It also provides a mechanism for UI elements to automatically update when the language changes.
+//
+// How to utilize in Blueprint:
+// 1. Get the singleton instance of this manager using the static `GetInstance()` function.
+// 2. To get a piece of text for a UI element, call `GetLocalizedText` with the appropriate `textKey`. The key corresponds to a row name in your localization DataTable.
+// 3. In your game's Option/Settings menu, you would call `SetCurrentLanguage` on this manager when the player chooses a new language. This will trigger all subscribed UI elements to refresh.
+// 4. Any custom HUD class (`UMPHUD`) that needs its text to update automatically when the language changes should call `SubscribeToLanguageChanges` on this manager during its `Initialize` or `Construct` event, passing in a reference to itself.
+//
+// Necessary things to define:
+// - `textDataTable`: This is the most critical property. You MUST create a `UManagerLocalization` Blueprint and assign your localization DataTable to this property. The Game Instance should then be configured to use this specific Blueprint.
+// - The DataTable itself must be structured correctly, typically with a key (FString or FName) as the first column and then separate columns for each supported language (e.g., "en", "es", "fr").
+//
+// How it interacts with other classes:
+// - UManagerMP: Inherits from the base manager class.
+// - UMPGI (Game Instance): The Game Instance is the ideal owner for this manager, as localization needs to persist across level changes. The GI is responsible for creating and initializing it.
+// - UDataTable: It relies entirely on a DataTable asset for all of its source text.
+// - UMPHUD: HUD widgets can subscribe to this manager's `OnLanguageChanged` delegate to know when they need to refresh their text fields.
+// - CommonStruct.h (FLocalizedString): It likely uses structs defined here to structure the data within the DataTable.
+// - FText: The manager's core output is Unreal's `FText` type, which is designed for localization.
 
-// Forward declaration to avoid circular include
-class UMPHUD;
+#include "CoreMinimal.h"
+#include "../../CommonStruct.h"
+#include "ManagerMP.h"
 
 #include "ManagerLocalization.generated.h"
 
+class UDataTable;
+class UMPHUD;
+
 UCLASS(BlueprintType, Blueprintable)
-class MEOWPHONE_API UManagerLocalization : public UObject
+class UManagerLocalization : public UManagerMP
 {
     GENERATED_BODY()
 
@@ -80,9 +104,6 @@ protected:
     FText defaultText;
 
 public:
-    // Static instance for easy access
-    static UManagerLocalization* GetInstance(UObject* WorldContext);
-
     /* Static global accessors */
     static UManagerLocalization* GetInstance();
 }; 

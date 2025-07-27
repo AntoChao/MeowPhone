@@ -1,5 +1,35 @@
 #pragma once
 
+// [Meow-Phone Project]
+//
+// This is the base class for all pickupable items in the game. It is a feature-rich actor
+// that handles the full lifecycle of an item: being an interactable object in the world,
+// being picked up, being used by a character, and being dropped. It has built-in, replicated
+// systems for usage duration, cooldowns, and different item types.
+//
+// How to utilize in Blueprint:
+// 1. Create a new Blueprint inheriting from this class to make a specific item (e.g., `BP_HealthPotion`, `BP_Catnip`).
+// 2. In the Blueprint's defaults, you must configure:
+//    - `itemBodyMesh`: Assign a Static Mesh for the item's appearance.
+//    - `itemTag`: A unique enum to identify this item type.
+//    - `itemType`: `Direct` for instant-effect items, `Duration` for items with an effect over time.
+//    - `totalUsageDuration` / `totalCooldown` / `isSingleUse`: Define the item's usage behavior.
+// 3. The item's actual gameplay effect is implemented by overriding one of the `ApplyUsageEffect...` functions in the Blueprint:
+//    - For `Direct` items, override `ApplyUsageEffectDirect`.
+//    - For `Duration` items, override `ApplyUsageEffectDurationEffect`.
+// 4. Items are spawned into the world by the `UFactoryItem` and exist as physical objects that can be picked up.
+//
+// Necessary things to define:
+// - A `StaticMesh` must be assigned to the `itemBodyMesh`.
+// - The usage and cooldown properties must be configured in the Blueprint.
+// - An `Apply...` event must be implemented in the Blueprint to define what the item does.
+//
+// How it interacts with other classes:
+// - AActor / IMPInteractable: It exists in the world as an actor that characters can interact with to pick it up.
+// - AMPCharacter: When picked up (`BePickedUp`), the item is "owned" by the character, its collision is disabled, and it is hidden. The character can then call `BeUsed` or `BeDroped`.
+// - UFactoryItem: Responsible for spawning these items in the world.
+// - Replication: `isPickedUp`, `isBeingUse`, and `isInCooldown` are all replicated. This ensures clients have a correct representation of the item's state, whether it's in the world or in a player's inventory, and whether it's usable. `OnRep_` functions trigger the visual changes (like hiding the mesh when picked up).
+
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "../MPInteractable.h"

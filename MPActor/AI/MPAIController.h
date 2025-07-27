@@ -1,5 +1,29 @@
 #pragma once
 
+// [Meow-Phone Project]
+//
+// This is the abstract base class for all AI Controllers in the game. It provides a
+// foundational set of AI systems, including a Behavior Tree, a Blackboard, and a Perception
+// Component (for sight and hearing). It also includes base logic for handling status effects
+// like being stunned.
+//
+// How to utilize in Blueprint:
+// 1. You should not create a Blueprint directly from this class because it is `Abstract`. Instead, create Blueprints from its child classes (e.g., `AMPAIControllerCatBot`).
+// 2. In a child Blueprint, the most important property to set is `Behavior Tree Asset`. Assign the specific Behavior Tree that this AI should run.
+// 3. The perception system (sight and hearing) is set up in C++ but can be configured in the child Blueprint. You can tweak properties like sight radius and hearing range on the `PerceptionComp`.
+// 4. This class exposes helper functions like `ApplyStun` which can be called from other actors (like an ability) to affect the AI.
+// 5. The Blackboard key names (`BB_StateKey`, `BB_StunnedKey`) can be changed in the child Blueprint's defaults if your Blackboard uses different key names.
+//
+// Necessary things to define:
+// - In any child Blueprint, you MUST assign a `UBehaviorTree` asset to the `BehaviorTreeAsset` property. Without it, the AI will do nothing.
+//
+// How it interacts with other classes:
+// - AAIController: The standard Unreal AI Controller it inherits from.
+// - UBehaviorTreeComponent / UBlackboardComponent: It creates and manages these components, which are essential for running the AI logic defined in the Behavior Tree asset.
+// - UAIPerceptionComponent: It sets up and manages the AI's ability to see and hear the world. The `OnPerceptionUpdated` and `OnTargetPerceptionUpdated` functions are the entry points for reacting to perceived stimuli.
+// - Child AI Controllers (e.g., `AMPAIControllerCatBot`): Concrete AI controllers inherit from this class to gain all the base systems and then implement specialized logic.
+// - Behavior Tree Tasks/Services/Decorators: These assets read from and write to the Blackboard owned by this controller to make decisions and control the AI's flow of logic. For example, a task might call `ChooseNextVoluntaryAction`.
+
 #include "CoreMinimal.h"
 #include "AIController.h"
 #include "../../CommonEnum.h"

@@ -1,5 +1,23 @@
 #pragma once
 
+// [Meow-Phone Project]
+//
+// This header file is the central repository for most custom data structures (Structs)
+// used throughout the project. Structs are used to group related variables into a single,
+// convenient package.
+//
+// How to utilize in Blueprint:
+// - Any struct marked with `USTRUCT(BlueprintType)` is accessible in Blueprints. They can be used as variable types, function parameters, and return values. You can also use "Make" and "Break" nodes to construct them or access their members.
+//
+// How it interacts with other classes:
+// - Like `CommonEnum.h`, this file is widely included across the project by any class that needs to use one of these data structures.
+// - For example:
+//   - `FLogConfig` is used by `UManagerLog` to configure its behavior.
+//   - `FSessionInfo` is used by the `UMPGI` and `UHUDSearchSession` widgets to store and display data about found multiplayer games.
+//   - `FCatAnimState` and `FHumanAnimState` are critical structs used by the `AMPCharacterCat` and `AMPCharacterHuman` classes, respectively. These structs are replicated and contain all the information their Animation Blueprints need to drive the animation state machines.
+//   - `FLocalizedText` is likely the base struct for the rows in the localization DataTable.
+//   - `FCreditEntryData` is used by the `UHUDCredit` widget to populate its list of credits.
+
 #include "CoreMinimal.h"
 #include "CommonEnum.h"
 #include "CommonStruct.generated.h"

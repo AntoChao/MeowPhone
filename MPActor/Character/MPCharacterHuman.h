@@ -1,5 +1,34 @@
 #pragma once
 
+// [Meow-Phone Project]
+//
+// This is the specialized character class for the Human. It inherits from `AMPCharacter` and
+// implements all human-specific gameplay mechanics, which primarily revolve around interacting
+// with and catching cats. Key features include:
+// - **Health System**: A simple health/lives system where the human can take damage and "die".
+// - **Cat Interaction**: The logic for catching a cat (`StartHoldingCat`), carrying it, and placing it in a cage (`PutCatInCage`). This includes handling the cat's struggle attempts (`ForceReleaseCat`).
+// - **Animation State**: Its own animation state machine (`FHumanAnimState`) to drive human-specific animations.
+// - **Motion Warping**: A detailed system for using Motion Warping to ensure the "hold cat" animation aligns correctly with the captured cat actor.
+//
+// How to utilize in Blueprint:
+// 1. Create a Blueprint class inheriting from `AMPCharacterHuman` (e.g., `BP_Human`).
+// 2. In the Blueprint's defaults, you MUST configure:
+//    - **Skeletal Mesh** and **Anim Class**: The visual model and Animation Blueprint for the human. The AnimBP must be designed to work with the `FHumanAnimState` struct.
+//    - **Animation Montages**: Assign all the necessary montage assets (`holdAnimMontage`, `putCatInCage_Montage`, etc.).
+// 3. The `maxHealth` property can be configured in the Blueprint.
+//
+// Necessary things to define:
+// - All `UAnimMontage` properties must be assigned for animations to work.
+// - The Human's Animation Blueprint must read the `animState` variable to drive its logic.
+// - Sockets (like `holdAnimChestSocket`) must exist on the human's skeleton for motion warping and attachments to work correctly.
+//
+// How it interacts with other classes:
+// - AMPCharacter: Inherits all base functionality.
+// - AMPCharacterCat: The primary target of the human's special interactions. The human can call functions on the cat, like `StartedToBeHold`, and the cat can call functions back, like `Straggle`, which results in the human calling `ForceReleaseCat`.
+// - UMotionWarpingComponent: Used extensively in `holdAnimSnapping` to align the human's animation to the cat being held, making the interaction look natural regardless of the exact positions.
+// - FHumanAnimState (Struct): Contains all the replicated state variables needed to drive the human's animation blueprint.
+// - Replication: `currentHealth`, `isDead`, and `animState` are all replicated to ensure clients have an accurate view of the human's status and animations.
+
 #include "CoreMinimal.h"
 #include "MPCharacter.h"
 

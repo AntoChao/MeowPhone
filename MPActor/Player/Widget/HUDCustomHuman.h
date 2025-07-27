@@ -1,5 +1,28 @@
 #pragma once
 
+// [Meow-Phone Project]
+//
+// This class is the UI widget for the Human Customization screen. It is functionally
+// identical to `UHUDCustomCat`, but provides options for the human character, such as
+// their profession and hat.
+//
+// How to utilize in Blueprint:
+// 1. Create a Widget Blueprint inheriting from this class (e.g., `WBP_CustomHuman`).
+// 2. In the UMG editor, create all the UI elements (`Button`, `TextBlock`, etc.) and name them to match the `BindWidget` properties below (e.g., a `Button` named `characterLeftButton`, a `TextBlock` named `characterText`).
+// 3. This widget is shown during the pre-match customization phase, created by the `AMPControllerPlayer`.
+// 4. The C++ `NativeConstruct` binds the button click events. When a player clicks a button, the C++ logic cycles through the enum values for that option.
+// 5. After a change, `UpdateCharacterPreview` is called, which tells the `UManagerPreview` to update the character model in the world.
+// 6. `SaveCustomization` is called to write the final choices into the player's `AMPPlayerState`.
+//
+// Necessary things to define:
+// - All `BindWidget` properties must have corresponding, correctly named widgets in the child Widget Blueprint.
+//
+// How it interacts with other classes:
+// - UMPHUD: The base HUD class.
+// - UManagerPreview (via Game Mode): Updates the preview character's appearance when an option is changed.
+// - AMPPlayerState: Saves the selected customization choices (`selectedHumanProfession`, `selectedHat`) to be replicated and used when the character spawns.
+// - E... Enums (`EHumanProfession`, `EHat`): The UI logic iterates through these enums to provide the customization choices.
+
 #include "CoreMinimal.h"
 #include "MPHUD.h"
 #include "HUDCustomHuman.generated.h"

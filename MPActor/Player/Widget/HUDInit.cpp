@@ -1,5 +1,6 @@
 #include "HUDInit.h"
 
+#include "Kismet/GameplayStatics.h"
 #include "Components/Button.h"
 #include "Components/TextBlock.h"
 #include "Components/CanvasPanel.h"

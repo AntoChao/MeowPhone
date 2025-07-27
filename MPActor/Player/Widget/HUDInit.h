@@ -1,5 +1,26 @@
 #pragma once
 
+// [Meow-Phone Project]
+//
+// This class is the UI for the game's Main Menu. It serves as the initial entry point
+// for the player, providing buttons to start or join a game, open options, view credits,
+// and quit the game.
+//
+// How to utilize in Blueprint:
+// 1. Create a Widget Blueprint inheriting from this class (e.g., `WBP_MainMenu`).
+// 2. In the UMG editor, you must create all the `Button` and `TextBlock` widgets and name them to match the `BindWidget` properties below (e.g., a `Button` named `generalSessionButton`, a `TextBlock` named `startGameTXTBlock`).
+// 3. This widget is created by the `AMPControllerPlayer` when the `InitLevel` is loaded. The `AMPGMInit` Game Mode is configured to use a HUD class that creates this widget.
+// 4. In `NativeConstruct`, the C++ code binds all the button click events to their respective functions (`GoSessionGeneralWidget`, `QuitGame`, etc.). You do not need to do this in the Blueprint graph.
+// 5. When a button is clicked, its function is called. These functions then tell the `AMPControllerPlayer` to open up other widgets (e.g., `GoOptionWidget` tells the controller to show the options menu).
+//
+// Necessary things to define:
+// - All `BindWidget` properties MUST have corresponding, correctly named widgets in the child Widget Blueprint.
+//
+// How it interacts with other classes:
+// - UMPHUD: The base HUD class.
+// - AMPControllerPlayer: It is created by the player controller and calls functions on the controller to navigate to other UI screens. For example, `GoSessionGeneralWidget` calls `controller->AttachHUD(EHUDType::SessionGeneral, ...)`
+// - UKismetSystemLibrary::QuitGame: The `QuitGame` function calls this to exit the application.
+
 #include "CoreMinimal.h"
 #include "MPHUD.h"
 
@@ -9,14 +30,6 @@ class UButton;
 class UTextBlock;
 class UCanvasPanel;
 struct FLocalizedText;
-
-/* Init widget
-* 4 buttoms
-* start game
-* options
-* creadit
-* quit
-*/
 
 UCLASS()
 class UHUDInit : public UMPHUD

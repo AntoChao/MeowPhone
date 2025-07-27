@@ -1,4 +1,4 @@
-#include "HUDManagerLobby.h"
+#include "HUDLobbyManager.h"
 #include "Components/CanvasPanel.h"
 #include "Components/Overlay.h"
 #include "Components/PanelWidget.h"

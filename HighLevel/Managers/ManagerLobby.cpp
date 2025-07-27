@@ -4,26 +4,26 @@
 #include "../MPGMGameplay.h"
 #include "../Managers/ManagerLog.h"
 #include "../MPGS.h"
-#include "../../MPActor/Player/Widget/HUDManagerLobby.h"
+#include "../../MPActor/Player/Widget/HUDLobbyManager.h"
 #include "../../MPActor/Player/Widget/HUDLobby.h"
 #include "../../MPActor/Player/MPControllerPlayer.h"
 #include "../../MPActor/Player/MPPlayerState.h"
 
 void UManagerLobby::StartLobby()
 {
-    if (!GameMode || !GameMode->GetGameState()) return;
-    GameMode->GetGameState()->curGameplayStatus = EGPStatus::ELobby;
+    if (!gameMode || !gameMode->GetGameState()) return;
+    gameMode->GetGameState()->curGameplayStatus = EGPStatus::ELobby;
 
     // Log debug mode status
-    if (GameMode->GetSinglePlayerDebugMode() || GameMode->GetMultiplayerDebugMode())
+    if (gameMode->GetSinglePlayerDebugMode() || gameMode->GetMultiplayerDebugMode())
     {
-        UManagerLog::LogInfo(FString::Printf(TEXT("Debug mode status: %s"), *GameMode->GetDebugModeStatus()), TEXT("MPGMGameplay"));
+        UManagerLog::LogInfo(FString::Printf(TEXT("Debug mode status: %s"), *gameMode->GetDebugModeStatus()), TEXT("MPGMGameplay"));
     }
 
     // Auto-assign teams for any unassigned players
     AutoAssignTeams();
 
-    for (AMPControllerPlayer* eachPlayer : GameMode->allPlayersControllers)
+    for (AMPControllerPlayer* eachPlayer : gameMode->GetAllPlayerControllers())
     {
         if (eachPlayer)
         {
@@ -35,11 +35,11 @@ void UManagerLobby::StartLobby()
 
 bool UManagerLobby::CheckReadyToStartGame() const
 {
-    if (GameMode->GetSinglePlayerDebugMode())
+    if (gameMode->GetSinglePlayerDebugMode())
     {
         return CheckAtLeastOnePlayerReady();
     }
-    else if (GameMode->GetMultiplayerDebugMode())
+    else if (gameMode->GetMultiplayerDebugMode())
     {
         return CheckAtLeastOnePlayerReady();
     }
@@ -51,7 +51,7 @@ bool UManagerLobby::CheckReadyToStartGame() const
 
 bool UManagerLobby::CheckAtLeastOnePlayerReady() const
 {
-    for (AMPControllerPlayer* eachPlayer : GameMode->allPlayersControllers)
+    for (AMPControllerPlayer* eachPlayer : gameMode->GetAllPlayerControllers())
     {
         AMPPlayerState* eachPlayerState = Cast<AMPPlayerState>(eachPlayer->PlayerState);
         if (eachPlayerState && eachPlayerState->isPlayerReady)
@@ -64,13 +64,13 @@ bool UManagerLobby::CheckAtLeastOnePlayerReady() const
 
 bool UManagerLobby::CheckBothTeamHasPlayers() const
 {
-    if (GameMode->GetSinglePlayerDebugMode() || GameMode->GetMultiplayerDebugMode())
+    if (gameMode->GetSinglePlayerDebugMode() || gameMode->GetMultiplayerDebugMode())
     {
         return true;
     }
     int humanPlayers = 0;
     int catPlayers = 0;
-    for (AMPControllerPlayer* eachPlayer : GameMode->allPlayersControllers)
+    for (AMPControllerPlayer* eachPlayer : gameMode->GetAllPlayerControllers())
     {
         AMPPlayerState* eachState = Cast<AMPPlayerState>(eachPlayer->PlayerState);
         if (eachState)
@@ -89,7 +89,7 @@ bool UManagerLobby::CheckBothTeamHasPlayers() const
 bool UManagerLobby::CheckHalfPlayersAreReady() const
 {
     int numReadyPlayers = 0;
-    for (AMPControllerPlayer* eachPlayer : GameMode->allPlayersControllers)
+    for (AMPControllerPlayer* eachPlayer : gameMode->GetAllPlayerControllers())
     {
         AMPPlayerState* eachPlayerState = Cast<AMPPlayerState>(eachPlayer->PlayerState);
         if (eachPlayerState && eachPlayerState->isPlayerReady)
@@ -97,7 +97,7 @@ bool UManagerLobby::CheckHalfPlayersAreReady() const
             numReadyPlayers++;
         }
     }
-    int halfPlayers = FMath::Max(1, GameMode->allPlayersControllers.Num() / 2);
+    int halfPlayers = FMath::Max(1, gameMode->GetAllPlayerControllers().Num() / 2);
     return numReadyPlayers >= halfPlayers;
 }
 
@@ -140,7 +140,7 @@ bool UManagerLobby::SwitchPlayerTeam(AMPControllerPlayer* player, ETeam newTeam)
 void UManagerLobby::AutoAssignTeams()
 {
     TArray<AMPControllerPlayer*> unassignedPlayers;
-    for (AMPControllerPlayer* player : GameMode->allPlayersControllers)
+    for (AMPControllerPlayer* player : gameMode->GetAllPlayerControllers())
     {
         AMPPlayerState* playerState = Cast<AMPPlayerState>(player->PlayerState);
         if (playerState && playerState->playerTeam == ETeam::ENone)
@@ -161,7 +161,7 @@ void UManagerLobby::AutoAssignTeams()
 int UManagerLobby::GetTeamPlayerCount(ETeam team) const
 {
     int count = 0;
-    for (AMPControllerPlayer* player : GameMode->allPlayersControllers)
+    for (AMPControllerPlayer* player : gameMode->GetAllPlayerControllers())
     {
         AMPPlayerState* playerState = Cast<AMPPlayerState>(player->PlayerState);
         if (playerState && playerState->playerTeam == team)
@@ -176,26 +176,26 @@ void UManagerLobby::CountdownReadyGame()
 {
     if (!CheckReadyToStartGame())
     {
-        GameMode->GetGameState()->isMostPlayerReady = false;
-        if (GameMode->GetWorld())
+        gameMode->GetGameState()->isMostPlayerReady = false;
+        if (gameMode->GetWorld())
         {
-            GameMode->GetWorld()->GetTimerManager().ClearTimer(GameMode->readyTimerHandle);
+            gameMode->GetWorld()->GetTimerManager().ClearTimer(readyTimerHandle);
         }
         UManagerLog::LogInfo(TEXT("Lobby: Countdown CANCELLED - conditions no longer met"), TEXT("MPGMGameplay"));
         return;
     }
-    if (GameMode->GetGameState()->curReadyTime > 0)
+    if (gameMode->GetGameState()->curReadyTime > 0)
     {
-        UWorld* serverWorld = GameMode->GetWorld();
+        UWorld* serverWorld = gameMode->GetWorld();
         if (serverWorld)
         {
-            GameMode->GetGameState()->curReadyTime -= 1;
-            ClientUpdateReadyCountdown(GameMode->GetGameState()->curReadyTime);
-            UManagerLog::LogInfo(FString::Printf(TEXT("Lobby: Countdown %d seconds remaining"), GameMode->GetGameState()->curReadyTime), TEXT("MPGMGameplay"));
-            serverWorld->GetTimerManager().ClearTimer(GameMode->readyTimerHandle);
+            gameMode->GetGameState()->curReadyTime -= 1;
+            ClientUpdateReadyCountdown(gameMode->GetGameState()->curReadyTime);
+            UManagerLog::LogInfo(FString::Printf(TEXT("Lobby: Countdown %d seconds remaining"), gameMode->GetGameState()->curReadyTime), TEXT("MPGMGameplay"));
+            serverWorld->GetTimerManager().ClearTimer(readyTimerHandle);
             FTimerDelegate readyTimerDel;
-            readyTimerDel.BindUFunction(GameMode, FName("CountdownReadyGame"));
-            serverWorld->GetTimerManager().SetTimer(GameMode->readyTimerHandle, readyTimerDel, 1, false);
+            readyTimerDel.BindUFunction(gameMode, FName("CountdownReadyGame"));
+            serverWorld->GetTimerManager().SetTimer(readyTimerHandle, readyTimerDel, 1, false);
         }
     }
     else
@@ -207,14 +207,14 @@ void UManagerLobby::CountdownReadyGame()
 
 void UManagerLobby::EndReadyTime()
 {
-    for (AMPControllerPlayer* eachPlayer : GameMode->allPlayersControllers)
+    for (AMPControllerPlayer* eachPlayer : gameMode->GetAllPlayerControllers())
     {
         if (eachPlayer)
         {
             eachPlayer->RemoveHUD(EHUDType::ELobby);
         }
     }
-    GameMode->StartCustomizeCharacter();
+    gameMode->StartCustomizeCharacter();
 }
 
 bool UManagerLobby::SetPlayerReady(AMPControllerPlayer* player, bool isReady)
@@ -250,7 +250,7 @@ void UManagerLobby::BroadcastPlayerListUpdate()
 void UManagerLobby::ClientUpdateLobbyHUDs_Implementation()
 {
     UManagerLog::LogDebug(TEXT("Client received lobby update request"), TEXT("MPGMGameplay"));
-    for (AMPControllerPlayer* eachPlayer : GameMode->allPlayersControllers)
+    for (AMPControllerPlayer* eachPlayer : gameMode->GetAllPlayerControllers())
     {
         if (eachPlayer && eachPlayer->GetManagerLobbyHUD() && eachPlayer->GetManagerLobbyHUD()->lobbyHUD)
         {
@@ -270,11 +270,20 @@ void UManagerLobby::ClientUpdateLobbyHUDs_Implementation()
 // Countdown update RPCs
 void UManagerLobby::ClientUpdateReadyCountdown_Implementation(int32 secondsRemaining)
 {
-    for (AMPControllerPlayer* eachPlayer : GameMode->allPlayersControllers)
+    for (AMPControllerPlayer* eachPlayer : gameMode->GetAllPlayerControllers())
     {
         if (eachPlayer)
         {
             eachPlayer->UpdateLobbyHUDCountdownText(secondsRemaining);
         }
+    }
+}
+
+void UManagerLobby::ClearAllTimers()
+{
+    if (gameMode->GetWorld())
+    {
+        gameMode->GetWorld()->GetTimerManager().ClearTimer(readyTimerHandle);
+        gameMode->GetWorld()->GetTimerManager().ClearTimer(restartLobbyTimerHandle);
     }
 }

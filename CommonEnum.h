@@ -1,5 +1,31 @@
 #pragma once
 
+// [Meow-Phone Project]
+//
+// This header file is the central repository for almost all enumerations (Enums) used
+// throughout the project. Enums are used to create a set of named integral constants,
+// which makes the code more readable and less prone to errors than using raw numbers.
+//
+// How to utilize in Blueprint:
+// - Any enum marked with `UENUM(BlueprintType)` is accessible in Blueprints. They can be used as variable types, function parameters, and in `Switch` nodes.
+// - This allows Blueprints to work with well-defined states and types, for example, checking `if (playerTeam == ETeam::ECat)` instead of `if (playerTeam == 2)`.
+//
+// How it interacts with other classes:
+// - This file is one of the most widely included headers in the project. Nearly every major class, from characters and items to UI widgets and game modes, includes this file to use these enums.
+// - For example:
+//   - `EGameLevel` is used by the Game Instance to open the correct map.
+//   - `ETeam` is used by Player States, Game Modes, and Characters to define allegiances.
+//   - `ECatRace` and `EHumanProfession` are used in character customization and factories.
+//   - The animation state enums (`EMoveState`, `ECatPosture`, etc.) are used by the Character classes to drive their Animation Blueprints.
+//   - `EHUDType` is used by the Player Controller to manage which UI widget is currently active.
+//
+// Summary of Enum Categories:
+// - **System & Settings**: `ELogLevel`, `EGameLevel`, `EHUDType`, `ELanguage`, `EWindowModeOur`, etc. These define application-level states and options.
+// - **Gameplay State**: `EGPStatus`, `ETeam`. These define the high-level state of the match and players.
+// - **Gameplay Types**: `ECatRace`, `EHumanProfession`, `EEnvActor`, `EItem`, `EAbility`, `EHat`. These define the specific "types" of various game entities.
+// - **Animation States**: `EMoveState`, `EAirState`, `ECatPosture`, `EHumanPosture`, etc. These are used exclusively by the animation system to define a character's current pose and action.
+// - **AI States**: `EAICatState`, `EAIHumanState`. These are used in Behavior Trees and Blackboards to control AI decision-making.
+
 #include "CoreMinimal.h"
 #include "CommonEnum.generated.h"
 

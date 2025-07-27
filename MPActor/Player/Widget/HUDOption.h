@@ -1,5 +1,28 @@
 #pragma once
 
+// [Meow-Phone Project]
+//
+// This class is the UI for the game's Options/Settings screen. It provides controls
+// for changing various settings like window mode, resolution, graphics quality, VSync,
+// and language.
+//
+// How to utilize in Blueprint:
+// 1. Create a Widget Blueprint inheriting from this class (e.g., `WBP_Options`).
+// 2. In the UMG editor, you MUST create all the UI elements (`ComboBoxString`, `CheckBox`, `Button`, etc.) and name them to match the `BindWidget` properties below (e.g., a `ComboBoxString` named `windowModeComboBox`).
+// 3. This widget is created by the `AMPControllerPlayer` and can be accessed from the main menu (`HUDInit`) or the in-game pause menu (`HUDMenu`).
+// 4. All the logic is handled in C++. In `NativeConstruct`, it populates the combo boxes with available options (e.g., `PopulateResolutions`) and binds the `OnSelectionChanged` and `OnClicked` events to their C++ handler functions.
+// 5. When the "Apply" button is clicked, `OnApplyClicked` calls `ApplyCurrentSettings` and `SaveSettings`, which use the `UGameUserSettings` object to make the changes persistent.
+// 6. The `SetPreviousHUD` function is important; it's used to remember which menu opened this one so the "Back" button can return to the correct place.
+//
+// Necessary things to define:
+// - All `BindWidget` properties MUST have corresponding, correctly named widgets in the child Widget Blueprint.
+//
+// How it interacts with other classes:
+// - UMPHUD: The base HUD class.
+// - UGameUserSettings: This is a standard Unreal Engine class for managing graphics and scalability settings. This UI reads from and writes to the global `UGameUserSettings` object (accessed via `GEngine->GetGameUserSettings()`) to load and apply settings.
+// - UManagerLocalization: When the language is changed, this UI calls `SetCurrentLanguage` on the localization manager to apply the change game-wide.
+// - AMPControllerPlayer: Creates this widget. The "Back" button functionality tells the controller to remove this widget and re-display the previous one.
+
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "MPHUD.h"

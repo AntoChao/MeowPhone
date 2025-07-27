@@ -1,5 +1,27 @@
 #pragma once
 
+// [Meow-Phone Project]
+//
+// This class is the UI widget for the Cat Customization screen. It provides the player
+// with options to change their cat's race, hat, and selected ability.
+//
+// How to utilize in Blueprint:
+// 1. Create a Widget Blueprint inheriting from this class (e.g., `WBP_CustomCat`).
+// 2. In the UMG editor, you must create all the UI elements (`Button`, `TextBlock`, etc.) and name them to match the `BindWidget` properties below (e.g., a `Button` named `raceLeftButton`, a `TextBlock` named `raceText`).
+// 3. This widget is typically displayed during a character customization phase before a match begins, managed by the `UManagerMatch` and created by the `AMPControllerPlayer`.
+// 4. The button click events are already bound in C++. When a player clicks a left/right button (e.g., `OnCatRaceLeftClicked`), the C++ logic cycles through the enum values for the customization option.
+// 5. After each change, `UpdateCharacterPreview` is called, which then calls a function on the `UManagerPreview` (via the Game Mode) to update the visual appearance of the preview character in the world.
+// 6. The `SaveCustomization` function is called to store the final choices in the player's `AMPPlayerState`.
+//
+// Necessary things to define:
+// - All `BindWidget` properties in this header must have corresponding, correctly named widgets in the child Widget Blueprint.
+//
+// How it interacts with other classes:
+// - UMPHUD: The base HUD class.
+// - UManagerPreview (via Game Mode): When an option is changed, this UI tells the preview manager to update the character model, showing the new race or hat.
+// - AMPPlayerState: When customization is complete, this UI saves the selected enums (`selectedCatRace`, `selectedHat`, etc.) to the player's Player State so the choices are remembered and replicated to others.
+// - E... Enums (`ECatRace`, `EHat`, `EAbility`): The UI's core logic cycles through the values of these enums to provide the customization options.
+
 #include "CoreMinimal.h"
 #include "MPHUD.h"
 #include "HUDCustomCat.generated.h"

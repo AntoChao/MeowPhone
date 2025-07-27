@@ -1,5 +1,28 @@
 #pragma once
 
+// [Meow-Phone Project]
+//
+// This is the base class for nearly all UI Widget Blueprints in the project. Its primary
+// purpose is to provide common functionality and references that every UI screen needs,
+// such as a pointer to the Game Instance and the owning Player Controller. It also
+// contains the core logic for handling language changes.
+//
+// How to utilize in Blueprint:
+// - You should not create a widget directly from this class. Instead, all other `UHUD...` classes inherit from it.
+// - Any child Blueprint that inherits from a class derived from `UMPHUD` will gain access to the `curGameInstance` and `owner` (Player Controller) variables automatically.
+// - It provides the `GetLocalizedText` helper function, which simplifies getting text from the localization manager for all child classes.
+// - In `NativeConstruct`, it automatically subscribes to language change events. When the language is changed in the options menu, the `OnLanguageChanged` function is called on every active widget that inherits from this class, which in turn calls `UpdateTexts`.
+//
+// Necessary things to define:
+// - Child classes are expected to override the `UpdateTexts` function to implement their specific logic for refreshing text when the language changes.
+//
+// How it interacts with other classes:
+// - UUserWidget: The base class for all UMG widgets.
+// - AMPControllerPlayer: It holds a reference to the `owner` player controller that created it.
+// - UMPGI (Game Instance): It holds a reference to the game instance for easy access to global systems.
+// - UManagerLocalization: It interacts directly with the localization manager to handle language change subscriptions and to provide the `GetLocalizedText` helper.
+// - All other `UHUD...` classes: Every other UI class in the project inherits from this one to gain its foundational features.
+
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 

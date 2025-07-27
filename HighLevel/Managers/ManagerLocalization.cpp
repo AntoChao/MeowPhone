@@ -1,8 +1,14 @@
-#include "Managers/ManagerLocalization.h"
+#include "ManagerLocalization.h"
+
 #include "Engine/DataTable.h"
-#include "../MPActor/Player/Widget/MPHUD.h"
-#include "Managers/ManagerLog.h"
 #include "Kismet/GameplayStatics.h"
+
+#include "../MPGI.h"
+
+#include "ManagerLog.h"
+#include "ManagerMP.h"
+
+#include "../../MPActor/Player/Widget/MPHUD.h"
 
 UManagerLocalization::UManagerLocalization()
 {

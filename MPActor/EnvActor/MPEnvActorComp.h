@@ -1,5 +1,34 @@
 #pragma once
 
+// [Meow-Phone Project]
+//
+// This is the base class for all interactive and dynamic environmental actors. Despite the
+// "Comp" in its name, it is an Actor, not a component. It provides a robust framework for
+// creating objects that players and AI can interact with, complete with replication, cooldowns,
+// interaction durations, and hooks for AI systems.
+//
+// How to utilize in Blueprint:
+// 1. Create a Blueprint class inheriting from this class (or one of its children like `AMPEnvActorCompCage`). This will be your environmental object (e.g., `BP_Vase`, `BP_Switch`).
+// 2. In the Blueprint's defaults, you must configure:
+//    - **Static Mesh**: Assign a `UStaticMeshComponent` to `envActorBodyMesh` to give the actor its visual appearance.
+//    - **Interaction Properties**: Set `isSingleUse`, `totalInteractDuration`, `totalCooldown`, and the hint text keys to define how the object behaves when interacted with.
+//    - **Behavior Flags**: Set booleans like `isAbleToBeRandomlized` or `isAbleToCauseUrgentEvent` to enable specific behaviors.
+// 3. The core interaction logic is implemented by overriding the `ApplyInteractEffect...` functions.
+//    - For instant effects, override `ApplyInteractEffectDirect`.
+//    - For effects that happen over a duration, override `ApplyInteractEffectDurationEffect`.
+//
+// Necessary things to define:
+// - A `StaticMesh` must be assigned to the `envActorBodyMesh` component in the Blueprint.
+// - Interaction parameters (`totalCooldown`, etc.) must be set to non-zero values for those features to work.
+//
+// How it interacts with other classes:
+// - AActor: The base class.
+// - IMPInteractable / IMPPlaySoundInterface: Implements these interfaces to be discoverable by the character's interaction trace and to play sounds.
+// - AMPCharacter: Characters interact with it by calling `BeInteracted`. This class then controls the logic, timers, and cooldowns.
+// - AMPAISystemManager: If `isAbleToCauseUrgentEvent` is true, this actor can get a reference to the AI System Manager and send it notifications, causing AI to come and investigate.
+// - Replication: `isInteracting` and `isInCooldown` are replicated so all clients can correctly see the object's state (e.g., visually changing its material or disabling its interaction prompt).
+// - Child Classes (`AMPEnvActorCompCage`, `...Fracture`, etc.): Inherit this base functionality and add more specialized logic (e.g., breaking, holding a cat).
+
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "../MPInteractable.h"

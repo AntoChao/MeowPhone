@@ -24,18 +24,18 @@
 #include "../../MPActor/EnvActor/MPEnvActorCompPushable.h"
 #include "../../MPActor/AI/MPAIController.h"
 #include "../../MPActor/AI/MPAISystemManager.h"
-#include "../../MPActor/Player/Widget/HUDManagerLobby.h"
+#include "../../MPActor/Player/Widget/HUDLobbyManager.h"
 #include "../../MPActor/Player/Widget/HUDEnd.h"
 
 // character custom
 void UManagerMatch::StartCustomizeCharacter()
 {
-    if (!GameMode || !GameMode->GetGameState()) return;
+    if (!gameMode || !gameMode->GetGameState()) return;
 
-    GameMode->GetGameState()->curGameplayStatus = EGPStatus::ECustomCharacter;
-    GameMode->GetGameState()->curCustomCharacterTime = GameMode->GetGameState()->customCharacterTotalTime;
+    gameMode->GetGameState()->curGameplayStatus = EGPStatus::ECustomCharacter;
+    gameMode->GetGameState()->curCustomCharacterTime = gameMode->GetGameState()->customCharacterTotalTime;
 
-    for (AMPControllerPlayer* eachPlayer : GameMode->allPlayersControllers)
+    for (AMPControllerPlayer* eachPlayer : gameMode->GetAllPlayerControllers())
     {
         if (eachPlayer && eachPlayer->GetManagerLobbyHUD())
         {
@@ -52,15 +52,15 @@ void UManagerMatch::StartCustomizeCharacter()
 
 void UManagerMatch::CountdownCustomizeCharacter()
 {
-    if (!GameMode || !GameMode->GetGameState()) return;
+    if (!gameMode || !gameMode->GetGameState()) return;
 
-    if (GameMode->GetGameState()->curCustomCharacterTime > 0)
+    if (gameMode->GetGameState()->curCustomCharacterTime > 0)
     {
-        UWorld* serverWorld = GameMode->GetWorld();
+        UWorld* serverWorld = gameMode->GetWorld();
         if (serverWorld)
         {
-            GameMode->GetGameState()->curCustomCharacterTime -= 1;
-            GameMode->ClientUpdateCustomizationCountdown(GameMode->GetGameState()->curCustomCharacterTime);
+            gameMode->GetGameState()->curCustomCharacterTime -= 1;
+            gameMode->ClientUpdateCustomizationCountdown(gameMode->GetGameState()->curCustomCharacterTime);
 
             serverWorld->GetTimerManager().ClearTimer(customCharacterTimerHandle);
             FTimerDelegate customCharacterTimerDel;
@@ -76,9 +76,9 @@ void UManagerMatch::CountdownCustomizeCharacter()
 
 void UManagerMatch::EndCustomizeCharacter()
 {
-    if (!GameMode) return;
+    if (!gameMode) return;
 
-    for (AMPControllerPlayer* eachPlayer : GameMode->allPlayersControllers)
+    for (AMPControllerPlayer* eachPlayer : gameMode->GetAllPlayerControllers())
     {
         if (eachPlayer)
         {
@@ -112,9 +112,9 @@ void UManagerMatch::SetupMap()
 
 void UManagerMatch::SetupMapItems()
 {
-    if (!GameMode) return;
+    if (!gameMode) return;
     TArray<AActor*> allActors;
-    UGameplayStatics::GetAllActorsOfClass(GameMode->GetWorld(), AMPItem::StaticClass(), allActors);
+    UGameplayStatics::GetAllActorsOfClass(gameMode->GetWorld(), AMPItem::StaticClass(), allActors);
 
     for (AActor* eachActor : allActors)
     {
@@ -122,7 +122,7 @@ void UManagerMatch::SetupMapItems()
         if (eachItem)
         {
             int32 randomNumber = FMath::RandRange(1, 100);
-            if (randomNumber > GameMode->itemRemainPercentage)
+            if (randomNumber > gameMode->itemRemainPercentage)
             {
                 eachItem->GetEliminated();
             }
@@ -132,10 +132,10 @@ void UManagerMatch::SetupMapItems()
 
 void UManagerMatch::SetupMapEnvActors()
 {
-    if (!GameMode || !GameMode->GetGameState()) return;
+    if (!gameMode || !gameMode->GetGameState()) return;
 
     TArray<AActor*> allActors;
-    UGameplayStatics::GetAllActorsOfClass(GameMode->GetWorld(), AMPEnvActorComp::StaticClass(), allActors);
+    UGameplayStatics::GetAllActorsOfClass(gameMode->GetWorld(), AMPEnvActorComp::StaticClass(), allActors);
 
     for (AActor* eachActor : allActors)
     {
@@ -143,7 +143,7 @@ void UManagerMatch::SetupMapEnvActors()
         if (eachEnvActor)
         {
             int32 randomNumber = FMath::RandRange(1, 100);
-            if (randomNumber > GameMode->envActorRandomnessPercentage)
+            if (randomNumber > gameMode->envActorRandomnessPercentage)
             {
                 eachEnvActor->BeRandomized();
             }
@@ -152,7 +152,7 @@ void UManagerMatch::SetupMapEnvActors()
 
     float totalProgressionWeight = 0.0f;
     TArray<AActor*> remainingActors;
-    UGameplayStatics::GetAllActorsOfClass(GameMode->GetWorld(), AMPEnvActorComp::StaticClass(), remainingActors);
+    UGameplayStatics::GetAllActorsOfClass(gameMode->GetWorld(), AMPEnvActorComp::StaticClass(), remainingActors);
 
     for (AActor* eachActor : remainingActors)
     {
@@ -167,9 +167,9 @@ void UManagerMatch::SetupMapEnvActors()
         }
     }
 
-    GameMode->GetGameState()->totalMPProgression = totalProgressionWeight;
-    GameMode->GetGameState()->curMPProgression = 0.0f;
-    GameMode->GetGameState()->curMPProgressionPercentage = 0.0f;
+    gameMode->GetGameState()->totalMPProgression = totalProgressionWeight;
+    gameMode->GetGameState()->curMPProgression = 0.0f;
+    gameMode->GetGameState()->curMPProgressionPercentage = 0.0f;
 
     if (totalProgressionWeight <= 0.0f)
     {
@@ -177,31 +177,31 @@ void UManagerMatch::SetupMapEnvActors()
     }
     else
     {
-        float requiredProgression = totalProgressionWeight * GameMode->GetGameState()->catWinProgressionPercentage;
+        float requiredProgression = totalProgressionWeight * gameMode->GetGameState()->catWinProgressionPercentage;
         UManagerLog::LogInfo(FString::Printf(TEXT("Cat Team Objective Set: Total Weight = %f, Required = %f (%.1f%%)"),
-        totalProgressionWeight, requiredProgression, GameMode->GetGameState()->catWinProgressionPercentage * 100.0f), TEXT("ManagerMatch"));
+        totalProgressionWeight, requiredProgression, gameMode->GetGameState()->catWinProgressionPercentage * 100.0f), TEXT("ManagerMatch"));
     }
 }
 
 void UManagerMatch::SetupPlayers()
 {
-    if (!GameMode || !GameMode->GetGameState()) return;
+    if (!gameMode || !gameMode->GetGameState()) return;
 
     int humanIndex = 0;
     int catIndex = 0;
     int catPlayerCount = 0;
 
-    for (AMPControllerPlayer* eachPlayer : GameMode->allPlayersControllers)
+    for (AMPControllerPlayer* eachPlayer : gameMode->GetAllPlayerControllers())
     {
         AMPPlayerState* eachState = Cast<AMPPlayerState>(eachPlayer->PlayerState);
         if (eachState)
         {
             if (eachState->playerTeam == ETeam::EHuman)
             {
-                if (GameMode->humanFactoryInstance)
+                if (gameMode->humanFactoryInstance)
                 {
                     int professionInt = static_cast<int>(eachState->humanProfession);
-                    AActor* humanBody = GameMode->humanFactoryInstance->SpawnMPActor(professionInt, GameMode->allHumanSpawnLocations[humanIndex], GameMode->allHumanSpawnRotations[humanIndex]);
+                    AActor* humanBody = gameMode->humanFactoryInstance->SpawnMPActor(professionInt, gameMode->allHumanSpawnLocations[humanIndex], gameMode->allHumanSpawnRotations[humanIndex]);
 
                     if (humanBody)
                     {
@@ -209,7 +209,7 @@ void UManagerMatch::SetupPlayers()
                         if (humanMPBody)
                         {
                             eachPlayer->Possess(humanMPBody);
-                            GameMode->allPlayerCharacters.Add(humanMPBody);
+                            gameMode->GetAllPlayerCharacters().Add(humanMPBody);
                             humanIndex++;
                             UManagerLog::LogInfo(TEXT("One human player created successfully"), TEXT("ManagerMatch"));
                         }
@@ -220,10 +220,10 @@ void UManagerMatch::SetupPlayers()
             else if (eachState->playerTeam == ETeam::ECat)
             {
                 catPlayerCount++;
-                if (GameMode->catFactoryInstance)
+                if (gameMode->catFactoryInstance)
                 {
                     int catInt = static_cast<int>(eachState->catRace);
-                    AActor* catBody = GameMode->catFactoryInstance->SpawnMPActor(catInt, GameMode->allCatSpawnLocations[catIndex], GameMode->allCatSpawnRotations[catIndex]);
+                    AActor* catBody = gameMode->catFactoryInstance->SpawnMPActor(catInt, gameMode->allCatSpawnLocations[catIndex], gameMode->allCatSpawnRotations[catIndex]);
 
                     if (catBody)
                     {
@@ -231,7 +231,7 @@ void UManagerMatch::SetupPlayers()
                         if (catMPBody)
                         {
                             eachPlayer->Possess(catMPBody);
-                            GameMode->allPlayerCharacters.Add(catMPBody);
+                            gameMode->GetAllPlayerCharacters().Add(catMPBody);
                             catIndex++;
                             UManagerLog::LogInfo(TEXT("One cat player created successfully"), TEXT("ManagerMatch"));
                         }
@@ -242,9 +242,9 @@ void UManagerMatch::SetupPlayers()
         }
     }
 
-    GameMode->GetGameState()->totalCatPlayers = catPlayerCount;
-    GameMode->GetGameState()->caughtCats = 0;
-    GameMode->GetGameState()->caughtCatsPercentage = 0.0f;
+    gameMode->GetGameState()->totalCatPlayers = catPlayerCount;
+    gameMode->GetGameState()->caughtCats = 0;
+    gameMode->GetGameState()->caughtCatsPercentage = 0.0f;
 
     if (catPlayerCount <= 0)
     {
@@ -258,89 +258,23 @@ void UManagerMatch::SetupPlayers()
 
 void UManagerMatch::SetupAIs()
 {
-    if (GameMode && GameMode->ManagerAIController)
+    if (gameMode && gameMode->GetManagerAIController())
     {
-        GameMode->ManagerAIController->SpawnLobbyAIs();
-    }
-    SetupAIManager();
-}
-
-void UManagerMatch::SetupAICats()
-{
-    if (!GameMode || !GameMode->ManagerAIController) return;
-    int numAICats = GameMode->ManagerAIController->GetAllAICats().Num();
-    for (int i = 0; i < numAICats; i++)
-    {
-        if (GameMode->catFactoryInstance && GameMode->aiControllerFactoryInstance)
-        {
-            int maxCatRace = static_cast<int>(ECatRace::EDiedCat);
-            int randomCatRace = FMath::RandRange(0, maxCatRace - 1);
-            AActor* catBody = GameMode->catFactoryInstance->SpawnMPActor(randomCatRace, GameMode->allCatSpawnLocations[i], GameMode->allCatSpawnRotations[i]);
-
-            AActor* aiController = GameMode->aiControllerFactoryInstance->SpawnMPActor(GameMode->catAIIndex, GameMode->allCatSpawnLocations[i], GameMode->allCatSpawnRotations[i]);
-
-            if (catBody && aiController)
-            {
-                AMPCharacter* catAIMPBody = Cast<AMPCharacter>(catBody);
-                AMPAIController* aiMPController = Cast<AMPAIController>(aiController);
-                if (catAIMPBody && aiMPController)
-                {
-                    aiMPController->Possess(catAIMPBody);
-                }
-            }
-        }
-    }
-}
-
-void UManagerMatch::SetupAIHumans()
-{
-    if (!GameMode || !GameMode->ManagerAIController) return;
-    int numAIHumans = GameMode->ManagerAIController->GetAllAIHumans().Num();
-    for (int i = 0; i < numAIHumans; i++)
-    {
-        if (GameMode->humanFactoryInstance && GameMode->aiControllerFactoryInstance)
-        {
-            int maxHumanRace = static_cast<int>(EHumanProfession::EDiedHuman);
-            int randomHumanRace = FMath::RandRange(0, maxHumanRace - 1);
-            AActor* humanBody = GameMode->humanFactoryInstance->SpawnMPActor(randomHumanRace, GameMode->allHumanSpawnLocations[i], GameMode->allHumanSpawnRotations[i]);
-
-            AActor* aiController = GameMode->aiControllerFactoryInstance->SpawnMPActor(GameMode->humanAIIndex, GameMode->allHumanSpawnLocations[i], GameMode->allHumanSpawnRotations[i]);
-
-            if (humanBody && aiController)
-            {
-                AMPCharacter* humanAIMPBody = Cast<AMPCharacter>(humanBody);
-                AMPAIController* aiMPController = Cast<AMPAIController>(aiController);
-                if (humanAIMPBody && aiMPController)
-                {
-                    aiMPController->Possess(humanAIMPBody);
-                }
-            }
-        }
-    }
-}
-
-void UManagerMatch::SetupAIManager()
-{
-    if (!GameMode || !GameMode->aiControllerFactoryInstance) return;
-
-    GameMode->theHumanAIManager = Cast<AMPAISystemManager>(GameMode->aiControllerFactoryInstance->SpawnMPActor(GameMode->aiManagerIndex, FVector(0.0f, 0.0f, 0.0f), FRotator(0.0f, 0.0f, 0.0f)));
-
-    if (GameMode->theHumanAIManager)
-    {
-        GameMode->theHumanAIManager->Initialize();
+        gameMode->GetManagerAIController()->SpawnLobbyAIs();
+        gameMode->GetManagerAIController()->SetupAIManager();
     }
 }
 
 // prepare time
 void UManagerMatch::StartPrepareTime()
 {
-    if (!GameMode || !GameMode->GetGameState()) return;
+    if (!gameMode || !gameMode->GetGameState()) return;
 
-    GameMode->GetGameState()->curGameplayStatus = EGPStatus::EPrepare;
-    GameMode->GetGameState()->curPrepareTime = GameMode->GetGameState()->prepareTotalTime;
+    gameMode->GetGameState()->curGameplayStatus = EGPStatus::EPrepare;
+    gameMode->GetGameState()->curPrepareTime = gameMode->GetGameState()->prepareTotalTime;
     CountdownPrepareGame();
 
-    for (AMPControllerPlayer* eachPlayer : GameMode->allPlayersControllers)
+    for (AMPControllerPlayer* eachPlayer : gameMode->GetAllPlayerControllers())
     {
         eachPlayer->PrepareStartUpdate();
     }
@@ -348,14 +282,14 @@ void UManagerMatch::StartPrepareTime()
 
 void UManagerMatch::CountdownPrepareGame()
 {
-    if (!GameMode || !GameMode->GetGameState()) return;
+    if (!gameMode || !gameMode->GetGameState()) return;
 
-    if (GameMode->GetGameState()->curPrepareTime > 0)
+    if (gameMode->GetGameState()->curPrepareTime > 0)
     {
-        UWorld* serverWorld = GameMode->GetWorld();
+        UWorld* serverWorld = gameMode->GetWorld();
         if (serverWorld)
         {
-            GameMode->GetGameState()->curPrepareTime -= 1;
+            gameMode->GetGameState()->curPrepareTime -= 1;
 
             serverWorld->GetTimerManager().ClearTimer(prepareTimerHandle);
             FTimerDelegate prepareTimerDel;
@@ -376,13 +310,13 @@ void UManagerMatch::EndPrepareTime()
 
 void UManagerMatch::StartGameplayTime()
 {
-    if (!GameMode || !GameMode->GetGameState()) return;
+    if (!gameMode || !gameMode->GetGameState()) return;
 
-    GameMode->GetGameState()->curGameplayStatus = EGPStatus::EGameplay;
-    GameMode->GetGameState()->curGameplayTime = GameMode->GetGameState()->gameplayTotalTime;
+    gameMode->GetGameState()->curGameplayStatus = EGPStatus::EGameplay;
+    gameMode->GetGameState()->curGameplayTime = gameMode->GetGameState()->gameplayTotalTime;
 
-    bool catObjectiveImpossible = (GameMode->GetGameState()->totalMPProgression <= 0.0f);
-    bool humanObjectiveImpossible = (GameMode->GetGameState()->totalCatPlayers <= 0);
+    bool catObjectiveImpossible = (gameMode->GetGameState()->totalMPProgression <= 0.0f);
+    bool humanObjectiveImpossible = (gameMode->GetGameState()->totalCatPlayers <= 0);
 
     if (catObjectiveImpossible && humanObjectiveImpossible)
     {
@@ -399,7 +333,7 @@ void UManagerMatch::StartGameplayTime()
 
     CountdownGameplayGame();
 
-    for (AMPControllerPlayer* eachPlayer : GameMode->allPlayersControllers)
+    for (AMPControllerPlayer* eachPlayer : gameMode->GetAllPlayerControllers())
     {
         eachPlayer->GameplayStartUpdate();
     }
@@ -407,17 +341,17 @@ void UManagerMatch::StartGameplayTime()
 
 void UManagerMatch::CountdownGameplayGame()
 {
-    if (!GameMode || !GameMode->GetGameState()) return;
+    if (!gameMode || !gameMode->GetGameState()) return;
 
-    if (GameMode->GetGameState()->curGameplayTime > 0)
+    if (gameMode->GetGameState()->curGameplayTime > 0)
     {
-        UWorld* serverWorld = GameMode->GetWorld();
+        UWorld* serverWorld = gameMode->GetWorld();
         if (serverWorld)
         {
-            GameMode->GetGameState()->curGameplayTime -= 1;
+            gameMode->GetGameState()->curGameplayTime -= 1;
             CheckIfGameEnd();
 
-            if (GameMode->GetGameState()->curGameplayTime > 0)
+            if (gameMode->GetGameState()->curGameplayTime > 0)
             {
                 serverWorld->GetTimerManager().ClearTimer(gameplayTimerHandle);
                 FTimerDelegate gameplayTimerDel;
@@ -434,14 +368,14 @@ void UManagerMatch::CountdownGameplayGame()
 
 bool UManagerMatch::CheckIfGameEnd()
 {
-    if (!GameMode || !GameMode->GetGameState()) return false;
+    if (!gameMode || !gameMode->GetGameState()) return false;
 
     bool isGameEnd = false;
     FString winningTeam = TEXT("");
 
-    if (GameMode->GetGameState()->totalMPProgression > 0.0f && GameMode->GetGameState()->curMPProgression >= 0.0f)
+    if (gameMode->GetGameState()->totalMPProgression > 0.0f && gameMode->GetGameState()->curMPProgression >= 0.0f)
     {
-        bool hasReachedTarget = (GameMode->GetGameState()->curMPProgressionPercentage >= GameMode->GetGameState()->catWinProgressionPercentage);
+        bool hasReachedTarget = (gameMode->GetGameState()->curMPProgressionPercentage >= gameMode->GetGameState()->catWinProgressionPercentage);
         if (hasReachedTarget)
         {
             isGameEnd = true;
@@ -449,10 +383,10 @@ bool UManagerMatch::CheckIfGameEnd()
         }
     }
 
-    if (!isGameEnd && GameMode->GetGameState()->totalCatPlayers > 0)
+    if (!isGameEnd && gameMode->GetGameState()->totalCatPlayers > 0)
     {
-        bool hasCaughtAllCats = (GameMode->GetGameState()->caughtCats >= GameMode->GetGameState()->totalCatPlayers) ||
-                                (GameMode->GetGameState()->caughtCatsPercentage >= 0.999f);
+        bool hasCaughtAllCats = (gameMode->GetGameState()->caughtCats >= gameMode->GetGameState()->totalCatPlayers) ||
+                                (gameMode->GetGameState()->caughtCatsPercentage >= 0.999f);
         if (hasCaughtAllCats)
         {
             isGameEnd = true;
@@ -463,7 +397,7 @@ bool UManagerMatch::CheckIfGameEnd()
     if (!isGameEnd)
     {
         bool allHumansDead = true;
-        for (AMPControllerPlayer* eachPlayer : GameMode->allPlayersControllers)
+        for (AMPControllerPlayer* eachPlayer : gameMode->GetAllPlayerControllers())
         {
             AMPPlayerState* eachState = Cast<AMPPlayerState>(eachPlayer->PlayerState);
             if (eachState && eachState->playerTeam == ETeam::EHuman)
@@ -483,14 +417,14 @@ bool UManagerMatch::CheckIfGameEnd()
         }
     }
 
-    if (!isGameEnd && GameMode->GetGameState()->curGameplayTime == 0)
+    if (!isGameEnd && gameMode->GetGameState()->curGameplayTime == 0)
     {
-        if (GameMode->GetGameState()->curMPProgressionPercentage > GameMode->GetGameState()->caughtCatsPercentage)
+        if (gameMode->GetGameState()->curMPProgressionPercentage > gameMode->GetGameState()->caughtCatsPercentage)
         {
             isGameEnd = true;
             winningTeam = TEXT("Cat (Time Out)");
         }
-        else if (GameMode->GetGameState()->caughtCatsPercentage > GameMode->GetGameState()->curMPProgressionPercentage)
+        else if (gameMode->GetGameState()->caughtCatsPercentage > gameMode->GetGameState()->curMPProgressionPercentage)
         {
             isGameEnd = true;
             winningTeam = TEXT("Human (Time Out)");
@@ -514,7 +448,7 @@ bool UManagerMatch::CheckIfGameEnd()
 
 void UManagerMatch::EndGameplayTime()
 {
-    if (!GameMode || !GameMode->GetGameState()) return;
+    if (!gameMode || !gameMode->GetGameState()) return;
 
     RemoveGameplayHUD();
 
@@ -524,21 +458,21 @@ void UManagerMatch::EndGameplayTime()
     
     bool catWin = false;
     bool humanWin = false;
-    if (GameMode->GetGameState()->curMPProgressionPercentage >= GameMode->GetGameState()->catWinProgressionPercentage)
+    if (gameMode->GetGameState()->curMPProgressionPercentage >= gameMode->GetGameState()->catWinProgressionPercentage)
         catWin = true;
-    if (GameMode->GetGameState()->caughtCatsPercentage >= 0.999f || GameMode->GetGameState()->caughtCats >= GameMode->GetGameState()->totalCatPlayers)
+    if (gameMode->GetGameState()->caughtCatsPercentage >= 0.999f || gameMode->GetGameState()->caughtCats >= gameMode->GetGameState()->totalCatPlayers)
         humanWin = true;
-    if (!catWin && !humanWin && GameMode->GetGameState()->curGameplayTime == 0)
+    if (!catWin && !humanWin && gameMode->GetGameState()->curGameplayTime == 0)
     {
-        if (GameMode->GetGameState()->curMPProgressionPercentage > GameMode->GetGameState()->caughtCatsPercentage)
+        if (gameMode->GetGameState()->curMPProgressionPercentage > gameMode->GetGameState()->caughtCatsPercentage)
             catWin = true;
         else
             humanWin = true;
     }
-    humanProgress = GameMode->GetGameState()->caughtCatsPercentage;
-    catProgress = GameMode->GetGameState()->curMPProgressionPercentage;
+    humanProgress = gameMode->GetGameState()->caughtCatsPercentage;
+    catProgress = gameMode->GetGameState()->curMPProgressionPercentage;
 
-    for (AMPControllerPlayer* eachPlayer : GameMode->allPlayersControllers)
+    for (AMPControllerPlayer* eachPlayer : gameMode->GetAllPlayerControllers())
     {
         if (eachPlayer)
         {
@@ -568,8 +502,8 @@ void UManagerMatch::EndGameplayTime()
 
 void UManagerMatch::RemoveGameplayHUD()
 {
-    if (!GameMode) return;
-    for (AMPControllerPlayer* eachPlayer : GameMode->allPlayersControllers)
+    if (!gameMode) return;
+    for (AMPControllerPlayer* eachPlayer : gameMode->GetAllPlayerControllers())
     {
         if (eachPlayer)
         {
@@ -594,9 +528,9 @@ void UManagerMatch::RemoveGameplayHUD()
 
 void UManagerMatch::RegisterPlayerDeath(AMPControllerPlayer* diedPlayer, FVector diedPlayerLocation, FRotator diedPlayerRotation)
 {
-    if (!GameMode || !diedPlayer || CheckIfGameEnd()) return;
+    if (!gameMode || !diedPlayer || CheckIfGameEnd()) return;
 
-    GameMode->RemoveControlledCharacters(diedPlayer);
+    gameMode->RemoveControlledCharacters(diedPlayer);
 
     AMPPlayerState* diedPlayerState = Cast<AMPPlayerState>(diedPlayer->PlayerState);
     if (diedPlayerState)
@@ -604,16 +538,16 @@ void UManagerMatch::RegisterPlayerDeath(AMPControllerPlayer* diedPlayer, FVector
         AActor* diedBody = nullptr;
         if (diedPlayerState->playerTeam == ETeam::EHuman)
         {
-            if (GameMode->humanFactoryInstance)
+            if (gameMode->humanFactoryInstance)
             {
-                diedBody = GameMode->humanFactoryInstance->SpawnMPActor(static_cast<int>(EHumanProfession::EDiedHuman), diedPlayerLocation, diedPlayerRotation);
+                diedBody = gameMode->humanFactoryInstance->SpawnMPActor(static_cast<int>(EHumanProfession::EDiedHuman), diedPlayerLocation, diedPlayerRotation);
             }
         }
         else if (diedPlayerState->playerTeam == ETeam::ECat)
         {
-            if (GameMode->catFactoryInstance)
+            if (gameMode->catFactoryInstance)
             {
-                diedBody = GameMode->catFactoryInstance->SpawnMPActor(static_cast<int>(ECatRace::EDiedCat), diedPlayerLocation, diedPlayerRotation);
+                diedBody = gameMode->catFactoryInstance->SpawnMPActor(static_cast<int>(ECatRace::EDiedCat), diedPlayerLocation, diedPlayerRotation);
             }
         }
 
@@ -623,7 +557,7 @@ void UManagerMatch::RegisterPlayerDeath(AMPControllerPlayer* diedPlayer, FVector
             if (mpDiedBody)
             {
                 diedPlayer->Possess(mpDiedBody);
-                GameMode->allPlayerCharacters.Add(mpDiedBody);
+                gameMode->GetAllPlayerCharacters().Add(mpDiedBody);
             }
         }
     }
@@ -631,16 +565,16 @@ void UManagerMatch::RegisterPlayerDeath(AMPControllerPlayer* diedPlayer, FVector
 
 void UManagerMatch::DisplayProgressionStatus()
 {
-    if (!GameMode || !GameMode->GetGameState()) return;
+    if (!gameMode || !gameMode->GetGameState()) return;
 
     UManagerLog::LogInfo(TEXT("=== Game Progression Status ==="), TEXT("ManagerMatch"));
     UManagerLog::LogInfo(FString::Printf(TEXT("Cat Team: %f/%f (%.1f%%) - Required: %.1f%%"),
-        GameMode->GetGameState()->curMPProgression, GameMode->GetGameState()->totalMPProgression,
-        GameMode->GetGameState()->curMPProgressionPercentage * 100.0f,
-        GameMode->GetGameState()->catWinProgressionPercentage * 100.0f), TEXT("ManagerMatch"));
+        gameMode->GetGameState()->curMPProgression, gameMode->GetGameState()->totalMPProgression,
+        gameMode->GetGameState()->curMPProgressionPercentage * 100.0f,
+        gameMode->GetGameState()->catWinProgressionPercentage * 100.0f), TEXT("ManagerMatch"));
     UManagerLog::LogInfo(FString::Printf(TEXT("Human Team: %d/%d (%.1f%%)"),
-        GameMode->GetGameState()->caughtCats, GameMode->GetGameState()->totalCatPlayers,
-        GameMode->GetGameState()->caughtCatsPercentage * 100.0f), TEXT("ManagerMatch"));
-    UManagerLog::LogInfo(FString::Printf(TEXT("Time Remaining: %d seconds"), GameMode->GetGameState()->curGameplayTime), TEXT("ManagerMatch"));
+        gameMode->GetGameState()->caughtCats, gameMode->GetGameState()->totalCatPlayers,
+        gameMode->GetGameState()->caughtCatsPercentage * 100.0f), TEXT("ManagerMatch"));
+    UManagerLog::LogInfo(FString::Printf(TEXT("Time Remaining: %d seconds"), gameMode->GetGameState()->curGameplayTime), TEXT("ManagerMatch"));
     UManagerLog::LogInfo(TEXT("================================"), TEXT("ManagerMatch"));
 } 

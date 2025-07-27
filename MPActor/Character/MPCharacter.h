@@ -1,5 +1,36 @@
 #pragma once
 
+// [Meow-Phone Project]
+//
+// This is the base class for all characters in the game, both Human and Cat. It is a
+// feature-rich class that implements a wide range of common functionalities, including:
+// - **Interaction**: A system for detecting and interacting with other objects via the `IMPInteractable` interface.
+// - **Movement**: Standard character movement (walking, running, crouching, jumping) with replicated speed values.
+// - **Inventory**: A basic inventory system for picking up, holding, using, and dropping items.
+// - **Animation**: A framework for playing animation montages and managing animation states.
+// - **Sound**: An interface for playing local and replicated sounds.
+// - **Status Effects**: A system for handling conditions like being stunned.
+//
+// How to utilize in Blueprint:
+// 1. You should not create a Blueprint directly from this class. Instead, create Blueprints from its child classes, `AMPCharacterCat` and `AMPCharacterHuman`.
+// 2. Child Blueprints (like `BP_Cat`) inherit all this functionality. The primary setup in those Blueprints will be to assign visual assets (Skeletal Mesh) and animation assets (AnimBP Class).
+// 3. Many functions are exposed to Blueprints for extension. For example, you can override `BeInteracted` in a child Blueprint to define custom reactions.
+// 4. Input handling (Move, Jump, Interact) is implemented here, receiving calls from a Player Controller.
+//
+// Necessary things to define:
+// - While this class has many properties, most are configured in the child classes (`AMPCharacterCat`, `AMPCharacterHuman`) or set at runtime.
+// - The `initItems` array can be populated in a child Blueprint to give a character items at spawn.
+// - `detectDistance` can be tweaked in child Blueprints.
+//
+// How it interacts with other classes:
+// - ACharacter: Inherits from the standard Unreal character class.
+// - IMPInteractable / IMPPlaySoundInterface: Implements these interfaces to define interaction and sound-playing behavior.
+// - AMPControllerPlayer: The player controller calls the input functions on this class (Move, Jump, Interact, etc.) to control the character's actions.
+// - AMPAIController: The AI controller calls the `AI_...` wrapper functions to drive the character's behavior.
+// - AMPItem: This character can hold and use items of this type. It uses a factory in C++ to spawn them.
+// - UMotionWarpingComponent: Includes this component to allow for dynamic adjustment of animations, such as aligning a character to an interaction target.
+// - Replication: Many properties (`curSpeed`, `curHoldingItem`, `isDoingAnAnimation`, `bIsStunned`) are replicated so that their state is correctly synchronized and displayed on clients. `OnRep_` functions are used to trigger visual or logical updates when this data changes on a client.
+
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "../MPInteractable.h"

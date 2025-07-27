@@ -3,6 +3,8 @@
 #include "Components/Button.h"
 #include "../../../HighLevel/MPGI.h"
 #include "../../../HighLevel/Managers/ManagerLog.h"
+#include "../../../HighLevel/Managers/ManagerLocalization.h"
+
 #include "../MPControllerPlayer.h"
 #include "../../AI/MPAIController.h"
 
